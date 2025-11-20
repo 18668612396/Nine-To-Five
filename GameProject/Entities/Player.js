@@ -45,26 +45,33 @@ class Player extends GameObject {
         this.recalcStats();
         this.ammo = this.maxAmmo; // Start full
 
-        // Animation State
-        this.sprites = [];
-        this.loadedSprites = 0;
-        this.frameCount = 4;
-        this.currentFrame = 0;
-        this.animTimer = 0;
-        this.animSpeed = 8; 
-        this.facingRight = true;
-        this.loadAssets();
+        // Setup Renderers
+        this.setupRenderers();
+        
+        // Setup Collider
+        this.collider = new CircleCollider(this.r);
+        this.addComponent(this.collider);
     }
 
-    loadAssets() {
-        // 加载小葵第一套时装的跑步动作
+    setupRenderers() {
+        // Shadow
+        const shadow = new StaticRenderer('rgba(0, 0, 0, 0.5)', this.r * 2, this.r, 'ellipse');
+        shadow.offsetY = this.r * 2 - 5;
+        this.addComponent(shadow);
+
+        // Sprite Animation
+        const sprites = [];
         const basePath = 'assets/actors/players/xiaokui/xiaokui01/run/xiaokui01_0';
         for(let i=1; i<=4; i++) {
             const img = new Image();
             img.src = `${basePath}${i}.png`;
-            img.onload = () => this.loadedSprites++;
-            this.sprites.push(img);
+            sprites.push(img);
         }
+        
+        this.animator = new DynamicRenderer(sprites, 8);
+        this.animator.width = this.r * 4;
+        this.animator.height = this.r * 4;
+        this.addComponent(this.animator);
     }
 
     recalcStats() {
@@ -129,19 +136,15 @@ class Player extends GameObject {
         this.y = Math.max(this.r, Math.min(this.worldHeight - this.r, this.y));
 
         // Update Animation Logic
-        if (input.keys['a']) this.facingRight = false;
-        if (input.keys['d']) this.facingRight = true;
+        if (input.keys['a']) this.animator.flipX = true;
+        if (input.keys['d']) this.animator.flipX = false;
 
         const isMoving = input.keys['w'] || input.keys['s'] || input.keys['a'] || input.keys['d'];
         if (isMoving) {
-            this.animTimer++;
-            if (this.animTimer >= this.animSpeed) {
-                this.currentFrame = (this.currentFrame + 1) % this.frameCount;
-                this.animTimer = 0;
-            }
+            this.animator.play();
         } else {
-            this.currentFrame = 0; // Idle frame
-            this.animTimer = 0;
+            this.animator.stop();
+            this.animator.currentFrame = 0; // Reset to idle
         }
     }
 
@@ -182,53 +185,8 @@ class Player extends GameObject {
 
     draw(ctx) {
         super.draw(ctx);
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        
-        // 绘制阴影
-        ctx.save();
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.beginPath();
-        // 绘制椭圆阴影，位置下移至脚底 (图片大小为 r*4，半高为 r*2)
-        ctx.ellipse(0, this.r * 2 - 5, this.r, this.r * 0.5, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        if (this.loadedSprites === this.frameCount) {
-            // 绘制图片
-            ctx.save();
-            if (!this.facingRight) ctx.scale(-1, 1);
-            
-            const img = this.sprites[this.currentFrame];
-            // 调整图片大小，这里假设图片比较大，稍微缩小一点或者根据半径调整
-            // 假设碰撞半径 r=20，直径40。我们将图片绘制为 80x80 以覆盖碰撞体
-            const size = this.r * 4; 
-            ctx.drawImage(img, -size/2, -size/2, size, size);
-            ctx.restore();
-
-            // 可选：绘制碰撞框用于调试
-            // ctx.beginPath(); ctx.arc(0, 0, this.r, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(255,0,0,0.5)'; ctx.stroke();
-        } else {
-            // 图片未加载完成时的 Fallback 绘制
-            // 身体
-            ctx.beginPath();
-            ctx.arc(0, 0, this.r, 0, Math.PI * 2);
-            ctx.fillStyle = this.color;
-            ctx.fill();
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // 耳朵
-            ctx.fillStyle = this.color;
-            ctx.beginPath(); ctx.moveTo(-15, -10); ctx.lineTo(-20, -25); ctx.lineTo(-5, -15); ctx.fill();
-            ctx.beginPath(); ctx.moveTo(15, -10); ctx.lineTo(20, -25); ctx.lineTo(5, -15); ctx.fill();
-
-            // 法师帽 (简单的三角形)
-            ctx.fillStyle = '#6200ea';
-            ctx.beginPath(); ctx.moveTo(-15, -15); ctx.lineTo(0, -45); ctx.lineTo(15, -15); ctx.fill();
-        }
-
-        ctx.restore();
+        // Fallback drawing removed as we use Renderers now
+        // Debug collider
+        // ctx.save(); ctx.translate(this.x, this.y); ctx.beginPath(); ctx.arc(0, 0, this.r, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(255,0,0,0.5)'; ctx.stroke(); ctx.restore();
     }
 }

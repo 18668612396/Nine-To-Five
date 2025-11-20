@@ -43,7 +43,7 @@ class DynamicRenderer extends Renderer {
         const h = this.height || img.height;
 
         ctx.save();
-        ctx.translate(t.x, t.y);
+        ctx.translate(t.x + this.offsetX, t.y + this.offsetY);
         ctx.rotate(t.rotation);
         ctx.scale(this.flipX ? -t.scale.x : t.scale.x, t.scale.y);
 

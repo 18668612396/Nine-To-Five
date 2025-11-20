@@ -179,7 +179,12 @@ class Game extends EngineObject {
             const dy = y - this.player.y;
             if (Math.sqrt(dx*dx + dy*dy) < 300) continue;
             
-            this.obstacles.push({x, y, r});
+            // Convert Obstacle to GameObject
+            const obs = new GameObject('Obstacle', x, y);
+            obs.r = r; // Keep for legacy or just use collider
+            obs.addComponent(new StaticRenderer('#555', r*2, r*2, 'circle'));
+            obs.addComponent(new CircleCollider(r));
+            this.obstacles.push(obs);
         }
 
         this.uiManager.update(this.player, this.survivalTime, this.maxSurvivalTime);
@@ -248,12 +253,12 @@ class Game extends EngineObject {
 
         // Player vs Obstacles
         this.obstacles.forEach(obs => {
-            if (checkCol(this.player, obs)) {
+            if (checkCol(this.player.collider, obs.getComponent('CircleCollider'))) {
                 // Simple push back
                 const dx = this.player.x - obs.x;
                 const dy = this.player.y - obs.y;
                 const dist = Math.sqrt(dx*dx + dy*dy);
-                const overlap = (this.player.r + obs.r) - dist;
+                const overlap = (this.player.collider.radius + obs.getComponent('CircleCollider').radius) - dist;
                 if (dist > 0) {
                     this.player.x += (dx/dist) * overlap;
                     this.player.y += (dy/dist) * overlap;
@@ -298,7 +303,7 @@ class Game extends EngineObject {
         this.bullets = this.bullets.filter(b => {
             if (!b.active) return false;
             for (const obs of this.obstacles) {
-                if (checkCol(b, obs)) return false;
+                if (checkCol(b.collider, obs.getComponent('CircleCollider'))) return false;
             }
             return true;
         });
@@ -310,11 +315,11 @@ class Game extends EngineObject {
             
             // Enemy vs Obstacles (Simple avoidance/slide)
             this.obstacles.forEach(obs => {
-                if (checkCol(e, obs)) {
+                if (checkCol(e.collider, obs.getComponent('CircleCollider'))) {
                     const dx = e.x - obs.x;
                     const dy = e.y - obs.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
-                    const overlap = (e.r + obs.r) - dist;
+                    const overlap = (e.collider.radius + obs.getComponent('CircleCollider').radius) - dist;
                     if (dist > 0) {
                         e.x += (dx/dist) * overlap;
                         e.y += (dy/dist) * overlap;
@@ -322,7 +327,7 @@ class Game extends EngineObject {
                 }
             });
 
-            if (checkCol(this.player, e)) {
+            if (checkCol(this.player.collider, e.collider)) {
                 this.player.hp -= 0.5;
                 if (this.player.hp <= 0) {
                     this.gameOver();
@@ -330,7 +335,7 @@ class Game extends EngineObject {
             }
 
             this.bullets.forEach(b => {
-                if (b.active && checkCol(b, e)) {
+                if (b.active && checkCol(b.collider, e.collider)) {
                     // Check if already hit this enemy
                     if (b.hitList.includes(e.id)) return;
                     
@@ -357,7 +362,7 @@ class Game extends EngineObject {
         this.enemies = this.enemies.filter(e => e.active);
 
         this.loots.forEach(l => {
-            if (checkCol(this.player, l)) {
+            if (checkCol(this.player.collider, l.collider)) {
                 l.active = false;
                 if (l.type === 'exp') {
                     const leveledUp = this.player.gainExp(l.value);
@@ -507,13 +512,7 @@ class Game extends EngineObject {
 
         if (this.state === 'PLAYING') {
             // Draw Obstacles
-            this.ctx.fillStyle = '#555';
-            this.obstacles.forEach(obs => {
-                this.ctx.beginPath();
-                this.ctx.arc(obs.x, obs.y, obs.r, 0, Math.PI*2);
-                this.ctx.fill();
-                this.ctx.stroke();
-            });
+            this.obstacles.forEach(obs => obs.draw(this.ctx));
 
             this.loots.forEach(l => l.draw(this.ctx));
             this.enemies.forEach(e => e.draw(this.ctx));

@@ -16,6 +16,13 @@ class Enemy extends GameObject {
         this.color = isBoss ? '#d32f2f' : '#f44336'; // 红色系
         this.active = true;
         this.damage = isBoss ? 20 : 5;
+        
+        // Add Renderer
+        this.addComponent(new StaticRenderer(this.color, this.r * 2, this.r * 2, 'rect'));
+        
+        // Add Collider
+        this.collider = new CircleCollider(this.r);
+        this.addComponent(this.collider);
     }
 
     update(target) {
@@ -27,15 +34,15 @@ class Enemy extends GameObject {
 
     draw(ctx) {
         super.draw(ctx);
-        ctx.fillStyle = this.color;
-        // 简单的方形代表文件怪/经理
-        ctx.fillRect(this.x - this.r, this.y - this.r, this.r*2, this.r*2);
         
-        // 血条
+        // Draw Health Bar (UI) - Keep this custom for now as it's UI attached to object
+        ctx.save();
+        ctx.translate(this.x, this.y);
         const hpPct = this.hp / this.maxHp;
         ctx.fillStyle = 'red';
-        ctx.fillRect(this.x - this.r, this.y - this.r - 10, this.r*2, 5);
+        ctx.fillRect(-this.r, -this.r - 10, this.r*2, 5);
         ctx.fillStyle = '#0f0';
-        ctx.fillRect(this.x - this.r, this.y - this.r - 10, this.r*2 * hpPct, 5);
+        ctx.fillRect(-this.r, -this.r - 10, this.r*2 * hpPct, 5);
+        ctx.restore();
     }
 }

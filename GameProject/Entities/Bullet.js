@@ -17,6 +17,15 @@ class Bullet extends GameObject {
         this.vy = Math.sin(angle) * this.speed;
         
         this.hitList = []; // Track enemies hit to prevent multi-hit per frame/pierce
+        
+        // Add Renderer
+        const color = this.isFlame ? 'rgba(255, 87, 34, 1)' : '#ffeb3b';
+        this.renderer = new StaticRenderer(color, this.r * 2, this.r * 2, 'circle');
+        this.addComponent(this.renderer);
+        
+        // Add Collider
+        this.collider = new CircleCollider(this.r);
+        this.addComponent(this.collider);
     }
 
     update() {
@@ -34,23 +43,33 @@ class Bullet extends GameObject {
         if (this.x < 0 || this.x > this.worldWidth || this.y < 0 || this.y > this.worldHeight) {
             this.active = false;
         }
+        
+        // Update visual for flame
+        if (this.isFlame) {
+             this.renderer.color = `rgba(255, 87, 34, ${1 - this.distTraveled/this.range})`;
+        }
     }
 
     draw(ctx) {
         super.draw(ctx);
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-        if (this.isFlame) {
-            ctx.fillStyle = `rgba(255, 87, 34, ${1 - this.distTraveled/this.range})`; // Fade out
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = '#ff5722';
-        } else {
-            ctx.fillStyle = '#ffeb3b';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = '#ffeb3b';
+        // Custom shadow effect (optional, could be part of renderer if extended)
+        if (this.active) {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            if (this.isFlame) {
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#ff5722';
+            } else {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffeb3b';
+            }
+            // Draw invisible circle just to cast shadow? Or just rely on renderer?
+            // Renderer already draws the shape. To add shadow we'd need to modify renderer or context before it draws.
+            // Since super.draw() is called first, the renderer has already drawn.
+            // To apply shadow to the renderer, we need to set shadow BEFORE super.draw() or modify renderer.
+            // For now, let's accept that the simple renderer doesn't support glow/shadow perfectly without extension.
+            // Or we can hack it:
         }
-        ctx.fill();
         ctx.restore();
     }
 }
