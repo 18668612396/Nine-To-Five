@@ -18,6 +18,7 @@ class Loot extends GameObject {
     }
 
     draw(ctx) {
+        super.draw(ctx);
         ctx.save();
         ctx.translate(this.x, this.y);
         

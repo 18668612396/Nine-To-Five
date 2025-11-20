@@ -1,27 +1,37 @@
 class ParticleSystemManager extends EngineObject {
     constructor() {
         super('ParticleSystemManager');
-        this.systems = [];
+        this.systems = []; // Stores GameObjects
     }
 
     addSystem(config) {
+        const go = new GameObject('ParticleEffect', config.x || 0, config.y || 0);
+        
         const ps = new ParticleSystem(config);
-        this.systems.push(ps);
-        return ps;
+        go.addComponent(ps);
+        
+        const renderer = new ParticleSystemRenderer();
+        go.addComponent(renderer);
+        
+        this.systems.push(go);
+        return ps; // Return the component for reference if needed
     }
 
     update(dt) {
         for (let i = this.systems.length - 1; i >= 0; i--) {
-            const ps = this.systems[i];
-            ps.update(dt);
-            if (ps.isStopped) {
+            const go = this.systems[i];
+            go.update(dt);
+            
+            // Check if system is stopped (hacky access to component)
+            const ps = go.getComponent('ParticleSystem');
+            if (ps && ps.isStopped) {
                 this.systems.splice(i, 1);
             }
         }
     }
 
     draw(ctx) {
-        this.systems.forEach(ps => ps.draw(ctx));
+        this.systems.forEach(go => go.draw(ctx));
     }
     
     // Helper to create common effects

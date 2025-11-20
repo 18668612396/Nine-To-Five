@@ -19,12 +19,14 @@ class Enemy extends GameObject {
     }
 
     update(target) {
+        super.update(1/60);
         const angle = Math.atan2(target.y - this.y, target.x - this.x);
         this.x += Math.cos(angle) * this.speed;
         this.y += Math.sin(angle) * this.speed;
     }
 
     draw(ctx) {
+        super.draw(ctx);
         ctx.fillStyle = this.color;
         // 简单的方形代表文件怪/经理
         ctx.fillRect(this.x - this.r, this.y - this.r, this.r*2, this.r*2);

@@ -105,6 +105,7 @@ class Player extends GameObject {
     }
 
     update(input) {
+        super.update(1/60);
         // Reload Logic
         if (this.isReloading) {
             this.reloadTimer--;
@@ -180,6 +181,7 @@ class Player extends GameObject {
     }
 
     draw(ctx) {
+        super.draw(ctx);
         ctx.save();
         ctx.translate(this.x, this.y);
         

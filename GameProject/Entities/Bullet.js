@@ -20,6 +20,7 @@ class Bullet extends GameObject {
     }
 
     update() {
+        super.update(1/60);
         this.x += this.vx;
         this.y += this.vy;
         this.distTraveled += this.speed;
@@ -36,6 +37,7 @@ class Bullet extends GameObject {
     }
 
     draw(ctx) {
+        super.draw(ctx);
         ctx.save();
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);

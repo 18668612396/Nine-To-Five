@@ -1,7 +1,6 @@
-class ParticleSystem extends GameObject {
+class ParticleSystem extends Component {
     constructor(config) {
-        super('ParticleSystem', config.x || 0, config.y || 0);
-        this.active = true;
+        super('ParticleSystem');
         this.particles = [];
         
         // Main Module
@@ -52,33 +51,34 @@ class ParticleSystem extends GameObject {
     }
 
     update(dt) {
-        if (this.active) {
-            this.time += dt;
-            
-            // Handle Loop / End
-            if (this.time >= this.duration) {
-                if (this.looping) {
-                    this.time = 0;
-                    this.burstsTriggered.clear();
-                    this.checkBursts(0);
-                } else {
-                    this.active = false; // Stop emitting
-                }
-            }
+        // If attached to a GameObject, use its active state
+        if (this.gameObject && !this.gameObject.active) return;
 
-            // Handle Bursts
-            if (this.active) {
-                this.checkBursts(this.time);
+        this.time += dt;
+        
+        // Handle Loop / End
+        if (this.time >= this.duration) {
+            if (this.looping) {
+                this.time = 0;
+                this.burstsTriggered.clear();
+                this.checkBursts(0);
+            } else {
+                // Stop emitting, but don't deactivate component yet as particles need to live out
             }
+        }
 
-            // Handle Continuous Emission
-            if (this.active && this.emission.rateOverTime > 0) {
-                const interval = 1.0 / this.emission.rateOverTime;
-                this.emitTimer += dt;
-                while (this.emitTimer >= interval) {
-                    this.emit(1);
-                    this.emitTimer -= interval;
-                }
+        // Handle Bursts
+        if (this.time < this.duration || this.looping) {
+            this.checkBursts(this.time);
+        }
+
+        // Handle Continuous Emission
+        if ((this.time < this.duration || this.looping) && this.emission.rateOverTime > 0) {
+            const interval = 1.0 / this.emission.rateOverTime;
+            this.emitTimer += dt;
+            while (this.emitTimer >= interval) {
+                this.emit(1);
+                this.emitTimer -= interval;
             }
         }
 
@@ -95,8 +95,12 @@ class ParticleSystem extends GameObject {
         }
 
         // Check if system is completely finished (no particles left and not emitting)
-        if (!this.active && activeCount === 0) {
+        if (!this.looping && this.time >= this.duration && activeCount === 0) {
             this.isStopped = true;
+            // Optionally destroy the game object if it was just for this effect
+            if (this.gameObject && this.gameObject.name === 'ParticleEffect') {
+                this.gameObject.active = false;
+            }
         }
     }
 
@@ -110,6 +114,8 @@ class ParticleSystem extends GameObject {
     }
 
     emit(count) {
+        const transform = this.gameObject ? this.gameObject.transform : { x: 0, y: 0 };
+        
         for (let i = 0; i < count; i++) {
             const angle = this.shape.angle + (Math.random() - 0.5) * this.shape.arc;
             const speed = this.randomRange(this.startSpeed.min, this.startSpeed.max);
@@ -117,8 +123,8 @@ class ParticleSystem extends GameObject {
             const size = this.randomRange(this.startSize.min, this.startSize.max);
 
             const pConfig = {
-                x: this.x,
-                y: this.y,
+                x: transform.x,
+                y: transform.y,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed,
                 life: life,
@@ -133,9 +139,5 @@ class ParticleSystem extends GameObject {
 
     randomRange(min, max) {
         return min + Math.random() * (max - min);
-    }
-
-    draw(ctx) {
-        this.particles.forEach(p => p.draw(ctx));
     }
 }
