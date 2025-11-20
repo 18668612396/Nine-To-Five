@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>办公室法师猫 RPG</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="uiLayer">
+            <!-- 主城 UI -->
+            <div id="townUI" class="full-screen-ui">
+                <div class="game-title">喵办公：准时下班生存战</div>
+                
+                <div class="hero-preview">
+                    <div class="hero-avatar">🐱</div>
+                    <div class="hero-stats">Lv.1 实习生猫</div>
+                </div>
+
+                <div class="menu-bar bottom-left">
+                    <button id="btnOpenTalents" class="btn btn-menu">天赋</button>
+                    <button id="btnOpenInventory" class="btn btn-menu">背包</button>
+                </div>
+
+                <div class="menu-bar bottom-right">
+                    <button id="btnOpenLevelSelect" class="btn btn-start">打卡上班 ▶</button>
+                </div>
+
+                <button id="btnOpenSettings" class="btn btn-icon top-right">⚙️</button>
+            </div>
+
+            <!-- 天赋树 UI -->
+            <div id="talentUI" class="popup-ui">
+                <h2>🐱 职场生存技能</h2>
+                <div class="talent-grid">
+                    <div class="talent-node" data-id="hp">
+                        <div class="icon">❤️</div>
+                        <div class="name">九命猫</div>
+                        <div class="desc">最大生命值 +10</div>
+                    </div>
+                    <div class="talent-node" data-id="atk">
+                        <div class="icon">⚔️</div>
+                        <div class="name">利爪打磨</div>
+                        <div class="desc">攻击力 +2</div>
+                    </div>
+                    <div class="talent-node" data-id="spd">
+                        <div class="icon">⚡</div>
+                        <div class="name">肉球肉垫</div>
+                        <div class="desc">移动速度 +10%</div>
+                    </div>
+                </div>
+                <button id="btnCloseTalents" class="btn btn-back">返回工位</button>
+            </div>
+
+            <!-- 背包 UI -->
+            <div id="inventoryUI" class="popup-ui">
+                <h2>🎒 办公用品背包</h2>
+                <div class="equip-slots">
+                    <div class="slot" data-type="weapon">武器</div>
+                    <div class="slot" data-type="armor">工牌</div>
+                    <div class="slot" data-type="accessory">咖啡</div>
+                </div>
+                <div class="inventory-grid">
+                    <!-- 动态生成格子 -->
+                    <div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div>
+                    <div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div>
+                    <div class="inv-slot"></div><div class="inv-slot"></div><div class="inv-slot"></div>
+                </div>
+                <button id="btnCloseInventory" class="btn btn-back">返回工位</button>
+            </div>
+
+            <!-- 关卡选择 UI -->
+            <div id="levelSelectUI">
+                <h2>选择你要挑战的工作日</h2>
+                <div id="levelList" class="level-grid">
+                    <!-- 动态生成 -->
+                </div>
+                <button id="btnBackToTown" class="btn" style="background:#666; margin-top:20px;">返回工位</button>
+            </div>
+
+            <!-- 设置 UI -->
+            <div id="settingsUI" class="popup-ui">
+                <h2>⚙️ 游戏设置</h2>
+                <div class="settings-group">
+                    <h3>数据管理</h3>
+                    <p style="color:#aaa; font-size:12px;">清除数据后无法恢复，请谨慎操作</p>
+                    <button id="btnClearTalents" class="btn btn-danger">清除天赋树</button>
+                    <button id="btnClearInventory" class="btn btn-danger">清除背包</button>
+                    <button id="btnClearLevels" class="btn btn-danger">重置关卡进度</button>
+                </div>
+                <button id="btnCloseSettings" class="btn btn-back">返回</button>
+            </div>
+
+            <!-- 暂停菜单 -->
+            <div id="pauseMenu" class="popup-ui" style="display:none; z-index: 200;">
+                <h2>⏸️ 摸鱼休息中...</h2>
+                <div class="menu-buttons">
+                    <button id="btnResume" class="btn">继续工作</button>
+                    <button id="btnPauseBackToTown" class="btn btn-danger">放弃加班 (回城)</button>
+                    <button id="btnOpenGM" class="btn" style="background:#9c27b0;">GM 指令</button>
+                </div>
+            </div>
+
+            <!-- GM 面板 -->
+            <div id="gmPanel" class="popup-ui" style="display:none; z-index: 210; left: 70%;">
+                <h2>🛠️ GM 控制台</h2>
+                <div class="settings-group">
+                    <button id="btnGmWin" class="btn">直接通关</button>
+                    <button id="btnGmGodMode" class="btn" style="background:#f44336;">无敌模式: OFF</button>
+                    <div style="margin-top:10px;">
+                        <input type="number" id="inputGmLevel" placeholder="关卡数" style="padding:5px; width:60px;">
+                        <button id="btnGmUnlockLevels" class="btn" style="padding:5px 10px; font-size:14px;">解锁关卡</button>
+                    </div>
+                </div>
+                <button id="btnCloseGM" class="btn btn-back">关闭</button>
+            </div>
+
+            <!-- 游戏结束 UI -->
+            <div id="gameOverUI" class="popup-ui" style="display:none; z-index: 220; border-color: #f44336;">
+                <h2 style="color: #f44336; font-size: 36px;">加班惨剧</h2>
+                <p style="font-size: 18px; margin: 20px 0;">你被抓去无偿加班了...</p>
+                <div class="menu-buttons">
+                    <button id="btnGameOverBack" class="btn btn-danger">忍气吞声 (返回工位)</button>
+                </div>
+            </div>
+
+            <!-- 胜利 UI -->
+            <div id="victoryUI" class="popup-ui" style="display:none; z-index: 220; border-color: #ffeb3b;">
+                <h2 style="color: #ffeb3b; font-size: 36px;">准时下班！</h2>
+                <p style="font-size: 18px; margin: 20px 0;">恭喜你击败了部门经理，成功捍卫了下班时间！</p>
+                <div class="menu-buttons">
+                    <button id="btnVictoryBack" class="btn" style="background: #4caf50;">打卡回家 (返回工位)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 战斗 HUD -->
+        <div id="hud">
+            <div style="color:white; font-weight:bold;">HP: <span id="hpText">100/100</span></div>
+            <div class="bar-container"><div id="hpBar" class="bar-fill"></div></div>
+            
+            <div style="color:white; font-weight:bold; margin-top:10px;">下班倒计时</div>
+            <div class="bar-container"><div id="progBar" class="bar-fill"></div></div>
+            
+            <div id="bossLabel">⚠️ 部门经理 (BOSS) 出现了! ⚠️</div>
+        </div>
+
+        <div id="lootMsg">获得装备：猫薄荷法杖 (攻击力 +5)</div>
+    </div>
+
+    <!-- Core & Utils -->
+    <script src="js/core/Utils.js"></script>
+    <script src="js/items/Item.js"></script>
+    
+    <!-- Entities -->
+    <script src="js/entities/Player.js"></script>
+    <script src="js/entities/Bullet.js"></script>
+    <script src="js/entities/Enemy.js"></script>
+    <script src="js/entities/Loot.js"></script>
+    
+    <!-- UI & Game Logic -->
+    <script src="js/ui/UIManager.js"></script>
+    <script src="js/core/GMManager.js"></script>
+    <script src="js/core/Game.js"></script>
+    
+    <!-- Entry Point -->
+    <script src="js/main.js"></script>
+</body>
+</html>
