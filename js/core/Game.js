@@ -5,6 +5,7 @@ class Game {
         this.container = document.getElementById('gameContainer');
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
+        this.ctx.imageSmoothingEnabled = false; // 设置纹理采样为 Point (最近邻)
         
         // Fixed resolution
         this.designWidth = 1280;
@@ -24,8 +25,8 @@ class Game {
         this.input = { keys: {} };
         
         this.level = 1;
-        this.progress = 0;
-        this.maxProgress = 100;
+        this.survivalTime = 0;
+        this.maxSurvivalTime = 600; // 10 minutes in seconds
         this.bossSpawned = false;
 
         // Persistent Data
@@ -59,12 +60,40 @@ class Game {
         // Initialize player
         this.player = new Player(this.worldWidth, this.worldHeight);
 
+        // Card Manager
+        this.cardManager = new CardManager();
+
+        // Particle System Manager
+        this.particleSystemManager = new ParticleSystemManager();
+
+        // TEST: Follow Player Particle System
+        this.testPs = this.particleSystemManager.addSystem({
+            x: 0, y: 0,
+            duration: 1.0,
+            looping: true,
+            startLifetime: { min: 0.5, max: 1.0 },
+            startSpeed: { min: 3, max: 6 },
+            startSize: { min: 3, max: 6 },
+            startColor: [0, 1, 0.5, 0.8], // Teal/Green
+            emission: {
+                rateOverTime: 0,
+                bursts: [
+                    { time: 0, count: 10 }
+                ]
+            },
+            shape: {
+                angle: 0,
+                arc: Math.PI * 2
+            }
+        });
+
         // GM Manager
         this.gmManager = new GMManager(this);
 
         // Pause Listener
         window.addEventListener('keydown', e => {
-            if (e.key === 'Escape') {
+            // console.log('Key pressed:', e.key, e.code, this.state);
+            if (e.key === 'Escape' || e.code === 'Escape') {
                 if (this.state === 'PLAYING') {
                     this.togglePause(true);
                 } else if (this.state === 'PAUSED') {
@@ -136,7 +165,7 @@ class Game {
         this.enemies = [];
         this.loots = [];
         this.obstacles = [];
-        this.progress = 0;
+        this.survivalTime = 0;
         this.bossSpawned = false;
         
         // Generate Obstacles
@@ -152,7 +181,7 @@ class Game {
             this.obstacles.push({x, y, r});
         }
 
-        this.uiManager.update(this.player, this.progress, this.maxProgress);
+        this.uiManager.update(this.player, this.survivalTime, this.maxSurvivalTime);
     }
 
     shoot(tx, ty) {
@@ -209,6 +238,12 @@ class Game {
         if (this.state !== 'PLAYING') return;
 
         this.player.update(this.input);
+
+        // TEST: Update particle system position
+        if (this.testPs) {
+            this.testPs.x = this.player.x;
+            this.testPs.y = this.player.y;
+        }
 
         // Player vs Obstacles
         this.obstacles.forEach(obs => {
@@ -301,6 +336,9 @@ class Game {
                     b.hitList.push(e.id);
                     e.hp -= b.damage; // Use bullet damage
                     
+                    // Hit Effect
+                    this.particleSystemManager.createHitEffect(b.x, b.y);
+
                     // Handle Pierce
                     if (b.pierce > 0) {
                         b.pierce--;
@@ -320,33 +358,49 @@ class Game {
         this.loots.forEach(l => {
             if (checkCol(this.player, l)) {
                 l.active = false;
-                this.player.damage += 2;
-                this.uiManager.showLootMsg("获得装备：攻击力 +2 !");
+                if (l.type === 'exp') {
+                    const leveledUp = this.player.gainExp(l.value);
+                    if (leveledUp) {
+                        this.triggerLevelUp();
+                    }
+                } else {
+                    this.player.damage += 2;
+                    this.uiManager.showLootMsg("获得装备：攻击力 +2 !");
+                }
             }
         });
         this.loots = this.loots.filter(l => l.active);
 
-        if (!this.bossSpawned && this.progress >= this.maxProgress) {
+        // Update Particles
+        this.particleSystemManager.update(1/60);
+
+        // Update Timer
+        this.survivalTime += 1/60; // Assuming 60 FPS
+        if (!this.bossSpawned && this.survivalTime >= this.maxSurvivalTime) {
             this.spawnBoss();
         }
 
-        this.uiManager.update(this.player, this.progress, this.maxProgress);
+        this.uiManager.update(this.player, this.survivalTime, this.maxSurvivalTime);
     }
 
     handleKill(enemy) {
+        // Death Effect
+        // Convert hex color to 0-1 rgba if needed, but for now let's just use yellow/red
+        // Or parse enemy.color. For simplicity, hardcode explosion color based on enemy type or just generic
+        this.particleSystemManager.createExplosion(enemy.x, enemy.y, [1, 0, 0, 1]);
+
         if (enemy.isBoss) {
             this.victory();
             return;
         }
 
-        if (!this.bossSpawned) {
-            this.progress += 10;
-            if (this.progress > this.maxProgress) this.progress = this.maxProgress;
-        }
-
         if (Math.random() < 0.3) {
-            this.loots.push(new Loot(enemy.x, enemy.y));
+            // 30% chance for item loot (currently just damage boost)
+            // this.loots.push(new Loot(enemy.x, enemy.y, 'item'));
         }
+        
+        // Always drop EXP
+        this.loots.push(new Loot(enemy.x, enemy.y, 'exp', 20)); // 20 EXP per kill
     }
 
     loadData() {
@@ -418,6 +472,15 @@ class Game {
         this.uiManager.showVictory();
     }
 
+    triggerLevelUp() {
+        this.state = 'LEVEL_UP';
+        const choices = this.cardManager.getChoices(3);
+        this.uiManager.showLevelUp(this.player.level, choices, (card) => {
+            card.apply(this);
+            this.state = 'PLAYING';
+        });
+    }
+
     draw() {
         this.ctx.fillStyle = '#333';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -455,6 +518,8 @@ class Game {
             this.enemies.forEach(e => e.draw(this.ctx));
             this.bullets.forEach(b => b.draw(this.ctx));
             this.player.draw(this.ctx);
+            
+            this.particleSystemManager.draw(this.ctx);
         }
 
         this.ctx.restore();

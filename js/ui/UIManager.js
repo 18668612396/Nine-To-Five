@@ -48,6 +48,15 @@ class UIManager {
         this.victoryUI = document.getElementById('victoryUI');
         this.btnVictoryBack = document.getElementById('btnVictoryBack');
 
+        // Level Up UI
+        this.levelUpUI = document.getElementById('levelUpUI');
+        this.cardContainer = document.getElementById('cardContainer');
+        this.lvlUpLevel = document.getElementById('lvlUpLevel');
+        this.expBar = document.getElementById('expBar');
+        this.expText = document.getElementById('expText');
+        this.timerLabel = document.getElementById('timerLabel');
+        this.btnHudSettings = document.getElementById('btnHudSettings');
+
         this.initListeners();
     }
 
@@ -81,6 +90,13 @@ class UIManager {
 
         if (this.btnGameOverBack) this.btnGameOverBack.addEventListener('click', () => this.game.backToTown());
         if (this.btnVictoryBack) this.btnVictoryBack.addEventListener('click', () => this.game.backToTown());
+
+        // HUD Settings Button
+        if (this.btnHudSettings) {
+            this.btnHudSettings.addEventListener('click', () => {
+                this.game.togglePause(true);
+            });
+        }
     }
 
     showTown() {
@@ -167,6 +183,54 @@ class UIManager {
         this.victoryUI.style.display = 'none';
     }
 
+    showLevelUp(level, cards, onSelect) {
+        this.levelUpUI.style.display = 'block';
+        this.lvlUpLevel.innerText = level;
+        this.cardContainer.innerHTML = '';
+
+        cards.forEach(card => {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card-choice';
+            cardEl.style.cssText = `
+                background: #333; 
+                border: 2px solid #fff; 
+                border-radius: 10px; 
+                padding: 20px; 
+                width: 200px; 
+                cursor: pointer; 
+                text-align: center;
+                transition: transform 0.2s;
+            `;
+            cardEl.onmouseover = () => cardEl.style.transform = 'scale(1.05)';
+            cardEl.onmouseout = () => cardEl.style.transform = 'scale(1)';
+
+            // Rarity Color
+            let borderColor = '#fff';
+            if (card.rarity === 'rare') borderColor = '#4fc3f7';
+            if (card.rarity === 'epic') borderColor = '#9c27b0';
+            if (card.rarity === 'legendary') borderColor = '#ffeb3b';
+            cardEl.style.borderColor = borderColor;
+
+            cardEl.innerHTML = `
+                <div style="font-size: 48px; margin-bottom: 10px;">${card.icon}</div>
+                <h3 style="color: ${borderColor}; margin-bottom: 10px;">${card.name}</h3>
+                <p style="font-size: 14px; color: #ccc;">${card.description}</p>
+                <div style="margin-top: 10px; font-size: 12px; color: #888;">${card.rarity.toUpperCase()}</div>
+            `;
+
+            cardEl.onclick = () => {
+                onSelect(card);
+                this.levelUpUI.style.display = 'none';
+            };
+
+            this.cardContainer.appendChild(cardEl);
+        });
+    }
+
+    hideLevelUp() {
+        this.levelUpUI.style.display = 'none';
+    }
+
     updateLevelList() {
         this.levelList.innerHTML = '';
         // Generate buttons for levels. Let's say we show maxLevel + 2 locked levels for preview
@@ -188,13 +252,24 @@ class UIManager {
         }
     }
 
-    update(player, progress, maxProgress) {
+    update(player, time, maxTime) {
         if (this.hpBar && player) {
             this.hpBar.style.width = (player.hp / player.maxHp * 100) + '%';
             this.hpText.innerText = Math.floor(player.hp) + '/' + player.maxHp;
+            
+            if (this.expBar) {
+                this.expBar.style.width = (player.exp / player.maxExp * 100) + '%';
+                this.expText.innerText = Math.floor(player.exp) + '/' + player.maxExp;
+            }
         }
         if (this.progBar) {
-            this.progBar.style.width = (progress / maxProgress * 100) + '%';
+            this.progBar.style.width = (time / maxTime * 100) + '%';
+        }
+        if (this.timerLabel) {
+            const remaining = Math.max(0, maxTime - time);
+            const m = Math.floor(remaining / 60);
+            const s = Math.floor(remaining % 60);
+            this.timerLabel.innerText = `距离下班: ${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         }
     }
 }
