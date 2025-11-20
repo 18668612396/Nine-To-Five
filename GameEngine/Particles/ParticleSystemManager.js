@@ -1,5 +1,6 @@
-class ParticleSystemManager {
+class ParticleSystemManager extends EngineObject {
     constructor() {
+        super('ParticleSystemManager');
         this.systems = [];
     }
 

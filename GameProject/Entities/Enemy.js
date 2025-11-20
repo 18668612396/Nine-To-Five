@@ -1,10 +1,13 @@
 // import { rand } from '../core/Utils.js';
 
-class Enemy {
+class Enemy extends GameObject {
     constructor(x, y, isBoss = false) {
-        this.id = Math.random().toString(36).substr(2, 9); // Unique ID
-        this.x = x;
-        this.y = y;
+        super(isBoss ? 'Boss' : 'Enemy', x, y);
+        // this.id is already set by EngineObject, but existing code uses string ID.
+        // We can keep using string ID or migrate. Let's keep string ID for safety if used elsewhere as string.
+        // Actually, let's override it or just let it be.
+        this.id = Math.random().toString(36).substr(2, 9); 
+        
         this.isBoss = isBoss;
         this.r = isBoss ? 60 : 15;
         this.hp = isBoss ? 500 : 30;

@@ -1,7 +1,8 @@
 // Imports removed for non-module support
 
-class Game {
+class Game extends EngineObject {
     constructor() {
+        super('GameManager');
         this.container = document.getElementById('gameContainer');
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');

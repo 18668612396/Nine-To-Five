@@ -1,7 +1,6 @@
-class Player {
+class Player extends GameObject {
     constructor(worldWidth, worldHeight) {
-        this.x = worldWidth / 2;
-        this.y = worldHeight / 2;
+        super('Player', worldWidth / 2, worldHeight / 2);
         this.r = 20; // 半径
         this.color = '#fff'; // 白猫
         this.worldWidth = worldWidth;

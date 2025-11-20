@@ -1,5 +1,6 @@
-class UIManager {
+class UIManager extends EngineObject {
     constructor(game) {
+        super('UIManager');
         this.game = game;
         
         // Cache DOM elements

@@ -165,35 +165,37 @@
         <div id="lootMsg">获得装备：猫薄荷法杖 (攻击力 +5)</div>
     </div>
 
-    <!-- Core & Utils -->
-    <script src="js/core/Utils.js"></script>
-    <script src="js/items/Item.js"></script>
+    <!-- Game Engine -->
+    <script src="../GameEngine/Core/EngineObject.js"></script>
+    <script src="../GameEngine/Core/GameObject.js"></script>
+    <script src="../GameEngine/Utils/Utils.js"></script>
+    <script src="../GameEngine/Particles/Particle.js"></script>
+    <script src="../GameEngine/Particles/ParticleSystem.js"></script>
+    <script src="../GameEngine/Particles/ParticleSystemManager.js"></script>
+
+    <!-- Game Project -->
+    <script src="Items/Item.js"></script>
     
     <!-- Entities -->
-    <script src="js/entities/Player.js"></script>
-    <script src="js/entities/Bullet.js"></script>
-    <script src="js/entities/Enemy.js"></script>
-    <script src="js/entities/Loot.js"></script>
+    <script src="Entities/Player.js"></script>
+    <script src="Entities/Bullet.js"></script>
+    <script src="Entities/Enemy.js"></script>
+    <script src="Entities/Loot.js"></script>
     
     <!-- Cards -->
-    <script src="js/cards/Card.js"></script>
-    <script src="js/cards/impl/AttackUp.js"></script>
-    <script src="js/cards/impl/SpeedUp.js"></script>
-    <script src="js/cards/impl/Heal.js"></script>
-    <script src="js/cards/impl/MultiShot.js"></script>
-    <script src="js/cards/CardManager.js"></script>
-
-    <!-- Particles -->
-    <script src="js/particles/Particle.js"></script>
-    <script src="js/particles/ParticleSystem.js"></script>
-    <script src="js/particles/ParticleSystemManager.js"></script>
+    <script src="Cards/Card.js"></script>
+    <script src="Cards/impl/AttackUp.js"></script>
+    <script src="Cards/impl/SpeedUp.js"></script>
+    <script src="Cards/impl/Heal.js"></script>
+    <script src="Cards/impl/MultiShot.js"></script>
+    <script src="Cards/CardManager.js"></script>
 
     <!-- UI & Game Logic -->
-    <script src="js/ui/UIManager.js"></script>
-    <script src="js/core/GMManager.js"></script>
-    <script src="js/core/Game.js"></script>
+    <script src="UI/UIManager.js"></script>
+    <script src="Core/GMManager.js"></script>
+    <script src="Core/Game.js"></script>
     
     <!-- Entry Point -->
-    <script src="js/main.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>

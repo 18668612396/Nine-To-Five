@@ -1,11 +1,10 @@
-class ParticleSystem {
+class ParticleSystem extends GameObject {
     constructor(config) {
+        super('ParticleSystem', config.x || 0, config.y || 0);
         this.active = true;
         this.particles = [];
         
         // Main Module
-        this.x = config.x || 0;
-        this.y = config.y || 0;
         this.duration = config.duration || 1.0;
         this.looping = config.looping !== undefined ? config.looping : false;
         this.startDelay = config.startDelay || 0;

@@ -1,7 +1,6 @@
-class Loot {
+class Loot extends GameObject {
     constructor(x, y, type = 'exp', value = 10) {
-        this.x = x;
-        this.y = y;
+        super('Loot', x, y);
         this.r = 8;
         this.active = true;
         this.type = type; // 'exp', 'item'

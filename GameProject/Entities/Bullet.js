@@ -1,7 +1,6 @@
-class Bullet {
+class Bullet extends GameObject {
     constructor(x, y, angle, stats, worldWidth, worldHeight) {
-        this.x = x;
-        this.y = y;
+        super('Bullet', x, y);
         this.r = stats.isFlame ? 10 : 6;
         this.speed = stats.bulletSpeed || 12;
         this.damage = stats.damage || 10;
