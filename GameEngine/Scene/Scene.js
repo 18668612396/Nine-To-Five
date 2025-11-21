@@ -116,7 +116,12 @@ class Scene {
 
                     const comp = new CompClass();
                     if (compData.properties) {
-                        Object.assign(comp, compData.properties);
+                        // If component has onLoad method, use it
+                        if (typeof comp.onLoad === 'function') {
+                            comp.onLoad(compData.properties);
+                        } else {
+                            Object.assign(comp, compData.properties);
+                        }
                     }
                     obj.addComponent(comp);
                 }

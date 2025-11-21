@@ -10,6 +10,7 @@
                 {
                     "type": "CanvasRenderer",
                     "properties": {
+                        "sortingOrder": -100,
                         "elements": [
                             {
                                 "type": "rect",
@@ -20,6 +21,35 @@
                                 "color": "#333"
                             }
                         ]
+                    }
+                }
+            ]
+        },
+        {
+            "type": "GameObject",
+            "name": "Player",
+            "x": 1250,
+            "y": 1250,
+            "components": [
+                {
+                    "type": "Player",
+                    "properties": {
+                        "worldWidth": 2500,
+                        "worldHeight": 2500,
+                        "speed": 1
+                    }
+                },
+                {
+                    "type": "RigidBody",
+                    "properties": {
+                        "mass": 1,
+                        "drag": 5
+                    }
+                },
+                {
+                    "type": "CircleCollider",
+                    "properties": {
+                        "radius": 20
                     }
                 }
             ]

@@ -89,6 +89,17 @@ class CanvasRenderer extends Renderer {
                 const h = el.height || el.image.height;
                 ctx.drawImage(el.image, 0, 0, w, h);
             }
+        } else if (el.type === 'circle') {
+            ctx.fillStyle = el.color || '#fff';
+            ctx.beginPath();
+            ctx.arc(0, 0, el.radius || 10, 0, Math.PI * 2);
+            ctx.fill();
+            if (el.stroke) {
+                ctx.strokeStyle = el.strokeColor || '#000';
+                ctx.lineWidth = el.lineWidth || 1;
+                ctx.stroke();
+            }
+
         }
 
         ctx.restore();

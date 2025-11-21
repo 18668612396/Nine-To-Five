@@ -102,6 +102,11 @@ class UIManager extends EngineObject {
         }
     }
 
+    handleButtonClick(action) {
+        // Deprecated: Logic moved to Command components
+        console.warn("UIManager.handleButtonClick is deprecated. Use Command components instead.");
+    }
+
     showTown() {
         // this.townUI.style.display = 'none'; // Removed
         // this.townUI.classList.remove('blurred'); // Removed
@@ -116,11 +121,17 @@ class UIManager extends EngineObject {
     }
 
     showLevelSelect() {
+        console.log("UIManager: showLevelSelect executing");
         // this.townUI.style.display = 'block'; // Removed
         // this.townUI.classList.add('blurred'); // Removed
         
         this.updateLevelList();
-        this.levelSelectUI.style.display = 'block';
+        if (this.levelSelectUI) {
+            this.levelSelectUI.style.display = 'block';
+            console.log("UIManager: levelSelectUI display set to block");
+        } else {
+            console.error("UIManager: levelSelectUI element not found!");
+        }
     }
 
     showSettings() {

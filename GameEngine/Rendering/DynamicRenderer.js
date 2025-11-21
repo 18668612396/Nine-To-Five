@@ -33,6 +33,7 @@ class DynamicRenderer extends Renderer {
         
         this.currentFrame = 0;
         this.timer = 0;
+        this.isPlaying = true;
         
         this.animations = {};
         this.currentAnim = null;
@@ -43,15 +44,26 @@ class DynamicRenderer extends Renderer {
     }
 
     play(name) {
+        if (name === undefined) {
+            // Resume or start default loop
+            this.isPlaying = true;
+            return;
+        }
         if (this.currentAnim !== name && this.animations[name]) {
             this.currentAnim = name;
             this.currentFrame = 0;
             this.timer = 0;
+            this.isPlaying = true;
         }
+    }
+
+    stop() {
+        this.isPlaying = false;
     }
 
     update(dt) {
         if (!this.loaded) return;
+        if (this.isPlaying === false) return;
         
         // If in frames mode and no animation set, just loop through all frames
         if (this.mode === 'frames' && !this.currentAnim) {

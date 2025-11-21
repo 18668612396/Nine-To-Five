@@ -23,7 +23,10 @@ class Game extends EngineObject {
         this.bullets = [];
         this.enemies = [];
         this.loots = [];
-        this.input = { keys: {} };
+        
+        // Input Manager
+        this.inputManager = new InputManager(this.canvas);
+        this.input = this.inputManager; // Backward compatibility
         
         this.level = 1;
         this.survivalTime = 0;
@@ -43,9 +46,6 @@ class Game extends EngineObject {
         this.sceneManager = new SceneManager(this);
         this.uiManager = new UIManager(this);
         
-        // Initialize player (Persistent)
-        this.player = new Player(this.worldWidth, this.worldHeight);
-
         // Card Manager
         this.cardManager = new CardManager();
 
@@ -57,21 +57,6 @@ class Game extends EngineObject {
 
         this.resize();
         window.addEventListener('resize', () => this.resize());
-
-        // Input listeners
-        window.addEventListener('keydown', e => this.input.keys[e.key] = true);
-        window.addEventListener('keyup', e => this.input.keys[e.key] = false);
-
-        // Pause Listener
-        window.addEventListener('keydown', e => {
-            if (e.key === 'Escape' || e.code === 'Escape') {
-                if (this.state === 'PLAYING') {
-                    this.togglePause(true);
-                } else if (this.state === 'PAUSED') {
-                    this.togglePause(false);
-                }
-            }
-        });
 
         // Start in Town
         this.backToTown();
@@ -123,7 +108,7 @@ class Game extends EngineObject {
         this.state = 'TOWN';
         resourceManager.load('assets/scenes/main.scene').then(scene => {
             console.log("Loaded Main Scene:", scene);
-            this.sceneManager.loadScene(scene);
+            this.sceneManager.loadScene(scene, LoadSceneMode.Single);
             this.uiManager.showTown();
         }).catch(e => console.error("Failed to load main scene:", e));
     }
@@ -132,24 +117,38 @@ class Game extends EngineObject {
         this.level = lvl;
         this.state = 'PLAYING';
         
+        console.log("Starting level " + lvl);
+        console.log("LoadSceneMode:", window.LoadSceneMode);
+
         resourceManager.load('assets/scenes/fighting.scene').then(scene => {
-            this.sceneManager.loadScene(scene);
+            console.log("Loaded fighting scene", scene);
+            // Force mode 0 (Single) to ensure unload
+            this.sceneManager.loadScene(scene, 0);
             this.resetGame(); // This will populate the scene
             this.uiManager.showHUD();
+        }).catch(err => {
+            console.error("Failed to load fighting scene:", err);
         });
     }
 
     resetGame() {
-        const scene = this.sceneManager.currentScene;
+        const scene = this.sceneManager.activeScene;
         if (!scene) return;
+
+        // Find Player in Scene
+        const playerGO = scene.gameObjects.find(go => go.name === 'Player');
+        if (playerGO) {
+            this.playerGameObject = playerGO;
+            this.player = playerGO.getComponent('Player');
+        } else {
+            console.error("Player not found in scene!");
+            return;
+        }
 
         this.player.x = this.worldWidth/2;
         this.player.y = this.worldHeight/2;
         this.player.hp = this.player.maxHp;
         
-        // Add Player to Scene
-        scene.add(this.player);
-
         this.bullets = [];
         this.enemies = [];
         this.loots = [];
@@ -209,7 +208,7 @@ class Game extends EngineObject {
 
             const bullet = new Bullet(this.player.x, this.player.y, angle, weapon, this.worldWidth, this.worldHeight);
             this.bullets.push(bullet);
-            this.sceneManager.currentScene.add(bullet); // Add to Scene
+            this.sceneManager.activeScene.add(bullet); // Add to Scene
         }
     }
 
@@ -223,9 +222,13 @@ class Game extends EngineObject {
             ex = Math.random() * this.worldWidth;
             ey = Math.random() * this.worldHeight;
             
-            const enemy = new Enemy(ex, ey);
-            this.enemies.push(enemy);
-            this.sceneManager.currentScene.add(enemy); // Add to Scene
+            const enemyGO = new GameObject('Enemy');
+            const enemyComp = new Enemy();
+            enemyComp.onLoad({ x: ex, y: ey, isBoss: false });
+            enemyGO.addComponent(enemyComp);
+            
+            this.enemies.push(enemyComp);
+            this.sceneManager.activeScene.add(enemyGO); // Add to Scene
         }
     }
 
@@ -233,9 +236,13 @@ class Game extends EngineObject {
         this.bossSpawned = true;
         // Clear existing enemies? Maybe not
         // this.enemies = []; 
-        const boss = new Enemy(this.player.x + 400, this.player.y, true);
-        this.enemies.push(boss); 
-        this.sceneManager.currentScene.add(boss); // Add to Scene
+        const bossGO = new GameObject('Boss');
+        const bossComp = new Enemy();
+        bossComp.onLoad({ x: this.player.x + 400, y: this.player.y, isBoss: true });
+        bossGO.addComponent(bossComp);
+        
+        this.enemies.push(bossComp); 
+        this.sceneManager.activeScene.add(bossGO); // Add to Scene
         this.uiManager.showBossLabel();
     }
 
@@ -317,11 +324,83 @@ class Game extends EngineObject {
         });
     }
 
+    checkCollisions() {
+        // Bullets vs Enemies
+        for (let i = this.bullets.length - 1; i >= 0; i--) {
+            const bullet = this.bullets[i];
+            if (!bullet.active) {
+                this.bullets.splice(i, 1);
+                if (this.sceneManager.activeScene) this.sceneManager.activeScene.remove(bullet);
+                continue;
+            }
+
+            for (let j = this.enemies.length - 1; j >= 0; j--) {
+                const enemy = this.enemies[j];
+                if (!enemy.gameObject || !enemy.collider) continue;
+
+                if (bullet.collider && bullet.collider.checkCollision(enemy.collider)) {
+                    enemy.hp -= bullet.damage;
+                    
+                    if (bullet.pierce > 0) {
+                        if (!bullet.hitList.includes(enemy)) {
+                            bullet.hitList.push(enemy);
+                            bullet.pierce--;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        bullet.active = false;
+                    }
+
+                    if (enemy.hp <= 0) {
+                        this.handleKill(enemy);
+                        this.enemies.splice(j, 1);
+                        if (this.sceneManager.activeScene) this.sceneManager.activeScene.remove(enemy.gameObject);
+                    }
+
+                    if (!bullet.active) break;
+                }
+            }
+        }
+
+        // Player vs Loot
+        for (let i = this.loots.length - 1; i >= 0; i--) {
+            const loot = this.loots[i];
+            if (this.player && this.player.collider && loot.collider) {
+                if (this.player.collider.checkCollision(loot.collider)) {
+                    if (loot.type === 'exp') {
+                        this.player.gainExp(loot.value);
+                    }
+                    this.loots.splice(i, 1);
+                    if (this.sceneManager.activeScene) this.sceneManager.activeScene.remove(loot);
+                }
+            }
+        }
+    }
+
     update() {
+        // Global Input
+        if (this.inputManager.getKeyDown('Escape')) {
+            if (this.state === 'PLAYING') {
+                this.togglePause(true);
+            } else if (this.state === 'PAUSED') {
+                this.togglePause(false);
+            }
+        }
+
+        if (this.state === 'TOWN') {
+            this.sceneManager.update(1/60);
+            this.camera.x = 0;
+            this.camera.y = 0;
+            return;
+        }
+
         if (this.state !== 'PLAYING') return;
 
         // Update Scene (Updates all GameObjects)
         this.sceneManager.update(1/60);
+
+        if (!this.player) return;
 
         // Camera Follow
         const targetX = this.player.x - this.canvas.width / 2;
@@ -337,6 +416,8 @@ class Game extends EngineObject {
         // Update Particles
         this.particleSystemManager.update(1/60);
 
+        this.checkCollisions();
+
         this.uiManager.update(this.player, this.survivalTime, this.maxSurvivalTime);
     }
 
@@ -345,8 +426,8 @@ class Game extends EngineObject {
         this.particleSystemManager.createExplosion(enemy.x, enemy.y, [1, 0, 0, 1]);
 
         // Remove from Scene
-        if (this.sceneManager.currentScene) {
-            this.sceneManager.currentScene.remove(enemy);
+        if (this.sceneManager.activeScene) {
+            this.sceneManager.activeScene.remove(enemy.gameObject || enemy);
         }
 
         if (enemy.isBoss) {
@@ -362,8 +443,8 @@ class Game extends EngineObject {
         // Always drop EXP
         const loot = new Loot(enemy.x, enemy.y, 'exp', 20);
         this.loots.push(loot);
-        if (this.sceneManager.currentScene) {
-            this.sceneManager.currentScene.add(loot);
+        if (this.sceneManager.activeScene) {
+            this.sceneManager.activeScene.add(loot);
         }
     }
 
@@ -391,6 +472,7 @@ class Game extends EngineObject {
     loop() {
         this.update();
         this.draw();
+        this.inputManager.update();
         requestAnimationFrame(this.loop);
     }
 }
