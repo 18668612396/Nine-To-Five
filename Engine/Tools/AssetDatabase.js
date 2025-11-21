@@ -16,14 +16,15 @@ const ASSET_MAP_PATH = path.join(LIBRARY_DIR, 'AssetMap.json');
 // Now Engine is at ../../Engine
 const ENGINE_DIR = path.join(__dirname, '..'); 
 
-// Helper to generate GUID
+// Helper to generate GUID (Unsigned)
 function generateGUID() {
-    return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const uuid = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    return uuid.replace(/-/g, '');
 }
 
 const assetMap = {};
 
-function processDirectory(dir, rootDir, prefix) {
+function processDirectory(dir) {
     if (!fs.existsSync(dir)) return;
     const files = fs.readdirSync(dir);
 
@@ -32,7 +33,7 @@ function processDirectory(dir, rootDir, prefix) {
         const stat = fs.statSync(fullPath);
 
         if (stat.isDirectory()) {
-            processDirectory(fullPath, rootDir, prefix);
+            processDirectory(fullPath);
         } else {
             // Skip .meta files and Tools
             if (file.endsWith('.meta') || fullPath.includes('Tools')) return;
@@ -74,18 +75,26 @@ function processDirectory(dir, rootDir, prefix) {
     });
 }
 
-console.log("Scanning Project Assets...");
-processDirectory(ASSETS_DIR);
+// Command line argument support
+const targetDir = process.argv[2];
 
-console.log("Scanning Project Packages...");
-processDirectory(PACKAGES_DIR);
+if (targetDir) {
+    console.log(`Scanning target directory: ${targetDir}`);
+    // Resolve path relative to cwd if not absolute
+    const resolvePath = path.isAbsolute(targetDir) ? targetDir : path.resolve(process.cwd(), targetDir);
+    processDirectory(resolvePath);
+    console.log("Done generating metas for target directory. (AssetMap not updated)");
+} else {
+    console.log("Scanning Project Assets...");
+    processDirectory(ASSETS_DIR);
 
-console.log("Scanning Engine...");
-processDirectory(ENGINE_DIR);
+    console.log("Scanning Project Packages...");
+    processDirectory(PACKAGES_DIR);
 
-console.log("Writing AssetMap...");
-if (!fs.existsSync(LIBRARY_DIR)) {
-    fs.mkdirSync(LIBRARY_DIR, { recursive: true });
+    console.log("Writing AssetMap...");
+    if (!fs.existsSync(LIBRARY_DIR)) {
+        fs.mkdirSync(LIBRARY_DIR, { recursive: true });
+    }
+    fs.writeFileSync(ASSET_MAP_PATH, JSON.stringify(assetMap, null, 4));
+    console.log("Done. AssetMap saved to " + ASSET_MAP_PATH);
 }
-fs.writeFileSync(ASSET_MAP_PATH, JSON.stringify(assetMap, null, 4));
-console.log("Done. AssetMap saved to " + ASSET_MAP_PATH);

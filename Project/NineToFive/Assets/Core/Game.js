@@ -107,7 +107,7 @@ class Game extends EngineObject {
     backToTown() {
         this.state = 'TOWN';
         // Load Main Scene using GUID
-        resourceManager.load('898eed6b-2620-4a9c-b037-90ec74b3c7cd').then(scene => {
+        resourceManager.load('898eed6b26204a9cb03790ec74b3c7cd').then(scene => {
             console.log("Loaded Main Scene:", scene);
             this.sceneManager.loadScene(scene, LoadSceneMode.Single);
             this.uiManager.showTown();
@@ -122,7 +122,7 @@ class Game extends EngineObject {
         console.log("LoadSceneMode:", window.LoadSceneMode);
 
         // Load Fighting Scene using GUID
-        resourceManager.load('7cfb61de-e1d1-45b4-8eb9-28514b64b18c').then(scene => {
+        resourceManager.load('7cfb61dee1d145b48eb928514b64b18c').then(scene => {
             console.log("Loaded fighting scene", scene);
             // Force mode 0 (Single) to ensure unload
             this.sceneManager.loadScene(scene, 0);
