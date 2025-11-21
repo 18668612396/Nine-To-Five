@@ -85,6 +85,19 @@ class Transform extends Component {
             childTransform.parent = null;
         }
     }
+
+    setParent(parentTransform) {
+        if (this.parent === parentTransform) return;
+        
+        if (this.parent) {
+            this.parent.removeChild(this);
+        }
+        
+        this.parent = parentTransform;
+        if (parentTransform) {
+            parentTransform.children.push(this);
+        }
+    }
 }
 
 window.Transform = Transform;

@@ -30,6 +30,16 @@ class Scene extends Asset {
     }
 
     draw(ctx) {
+        // Use Main Camera if available
+        const camera = window.Camera && window.Camera.main;
+        
+        if (camera) {
+            camera.apply(ctx);
+        } else {
+            // Fallback clear if no camera
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        }
+
         // Filter visible objects
         const renderList = this.gameObjects.filter(obj => obj.active);
         
@@ -65,6 +75,10 @@ class Scene extends Asset {
 
         for (const obj of renderList) {
             obj.draw(ctx);
+        }
+
+        if (camera) {
+            camera.reset(ctx);
         }
     }
 

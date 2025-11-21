@@ -11,6 +11,7 @@
         "../../Engine/Physics/CircleCollider.js",
         "../../Engine/Physics/RigidBody.js",
         "../../Engine/Rendering/Renderer.js",
+        "../../Engine/Rendering/Camera.js",
         "../../Engine/Rendering/StaticRenderer.js",
         "../../Engine/Rendering/DynamicRenderer.js",
         "../../Engine/Rendering/CanvasRenderer.js",

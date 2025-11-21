@@ -18,46 +18,55 @@ class Prefab extends Asset {
     /**
      * Static helper to instantiate from JSON data directly
      * @param {Object} data - The JSON data of the GameObject
-     * @param {Vector2} position - Optional position override
+     * @param {Vector2} position - Optional position override (World Position)
      * @param {GameObject} parent - Optional parent
      */
     static instantiateData(data, position = null, parent = null) {
+        // Deep clone data to prevent shared references
+        const clonedData = JSON.parse(JSON.stringify(data));
+
         // Create GameObject
-        // If data has a 'type' field, try to instantiate that specific class
-        // Otherwise use generic GameObject
         let obj;
-        if (data.type && window[data.type]) {
-            const ClassRef = window[data.type];
-            obj = new ClassRef(data.name || 'GameObject');
+        if (clonedData.type && window[clonedData.type]) {
+            const ClassRef = window[clonedData.type];
+            obj = new ClassRef(clonedData.name || 'GameObject');
         } else {
-            obj = new GameObject(data.name || 'GameObject');
+            obj = new GameObject(clonedData.name || 'GameObject');
         }
 
         // Set Properties
-        if (data.properties) {
-            Object.assign(obj, data.properties);
+        if (clonedData.properties) {
+            Object.assign(obj, clonedData.properties);
         }
 
-        // Override Position if provided
+        // Set Parent first (so setting world position works correctly if we had full matrix math)
+        if (parent) {
+            obj.transform.setParent(parent.transform);
+        }
+
+        // Apply Transform
+        // 1. Apply Prefab Transform (Local)
+        if (clonedData.transform) {
+            if (clonedData.transform.position) {
+                obj.transform.localPosition.x = clonedData.transform.position.x;
+                obj.transform.localPosition.y = clonedData.transform.position.y;
+            }
+            if (clonedData.transform.rotation !== undefined) obj.transform.localRotation = clonedData.transform.rotation;
+            if (clonedData.transform.scale) {
+                obj.transform.localScale.x = clonedData.transform.scale.x;
+                obj.transform.localScale.y = clonedData.transform.scale.y;
+            }
+        }
+
+        // 2. Override with provided Position (World)
         if (position) {
-            obj.transform.position.x = position.x;
-            obj.transform.position.y = position.y;
-        } else if (data.transform) {
-            // If transform data is explicitly saved
-            if (data.transform.position) {
-                obj.transform.position.x = data.transform.position.x;
-                obj.transform.position.y = data.transform.position.y;
-            }
-            if (data.transform.rotation !== undefined) obj.transform.rotation = data.transform.rotation;
-            if (data.transform.scale) {
-                obj.transform.scale.x = data.transform.scale.x;
-                obj.transform.scale.y = data.transform.scale.y;
-            }
+            obj.transform.x = position.x;
+            obj.transform.y = position.y;
         }
 
         // Add Components
-        if (Array.isArray(data.components)) {
-            for (const compData of data.components) {
+        if (Array.isArray(clonedData.components)) {
+            for (const compData of clonedData.components) {
                 const CompClass = window[compData.type];
                 if (!CompClass) {
                     console.warn(`Prefab: Component '${compData.type}' not found.`);
@@ -77,19 +86,15 @@ class Prefab extends Asset {
             }
         }
 
-        // Set Parent
-        if (parent) {
-            obj.transform.setParent(parent.transform);
-        }
-
         // Add to active scene automatically if we have one
         if (window.game && window.game.sceneManager && window.game.sceneManager.activeScene) {
             window.game.sceneManager.activeScene.add(obj);
         }
 
         // Handle Children
-        if (Array.isArray(data.children)) {
-            for (const childData of data.children) {
+        if (Array.isArray(clonedData.children)) {
+            for (const childData of clonedData.children) {
+                // Children are instantiated relative to this object
                 Prefab.instantiateData(childData, null, obj);
             }
         }
