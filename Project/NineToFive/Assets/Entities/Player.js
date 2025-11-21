@@ -49,37 +49,13 @@ class Player extends GameBehaviour {
     }
 
     start() {
-        // Setup RigidBody
+        // Get Components (Assumed to be added via Prefab)
         this.rb = this.gameObject.getComponent('RigidBody');
-        if (!this.rb) {
-            this.rb = new RigidBody();
-            this.rb.mass = 1;
-            this.rb.drag = 5;
-            this.gameObject.addComponent(this.rb);
-        }
-
-        // Setup Collider
         this.collider = this.gameObject.getComponent('CircleCollider');
-        if (!this.collider) {
-            this.collider = new CircleCollider(this.r);
-            this.gameObject.addComponent(this.collider);
-        }
+        this.spriteRenderer = this.gameObject.getComponent('SpriteRenderer');
+        this.animator = this.gameObject.getComponent('Animator');
 
-        // Setup Renderers
-        this.setupRenderers();
-
-        this.recalcStats();
-        this.ammo = this.maxAmmo;
-    }
-
-    // Proxy Transform properties for compatibility
-    get x() { return this.gameObject ? this.gameObject.transform.x : 0; }
-    set x(v) { if (this.gameObject) this.gameObject.transform.x = v; }
-    get y() { return this.gameObject ? this.gameObject.transform.y : 0; }
-    set y(v) { if (this.gameObject) this.gameObject.transform.y = v; }
-
-    setupRenderers() {
-        // Shadow
+        // Create Shadow (Dynamic for now)
         const shadow = new CanvasRenderer((ctx) => {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.beginPath();
@@ -90,21 +66,15 @@ class Player extends GameBehaviour {
         shadow.sortingOrder = -1;
         this.gameObject.addComponent(shadow);
 
-        // Sprite Animation
-        const sprites = [];
-        const basePath = 'Assets/assets/actors/players/xiaokui/xiaokui01/run/xiaokui01_0';
-        for(let i=1; i<=4; i++) {
-            const img = new Image();
-            img.src = `${basePath}${i}.png`;
-            sprites.push(img);
-        }
-        
-        this.animator = new DynamicRenderer(sprites, 8);
-        this.animator.width = this.r * 4;
-        this.animator.height = this.r * 4;
-        this.animator.sortingOrder = 10; // Ensure player is above background
-        this.gameObject.addComponent(this.animator);
+        this.recalcStats();
+        this.ammo = this.maxAmmo;
     }
+
+    // Proxy Transform properties for compatibility
+    get x() { return this.gameObject ? this.gameObject.transform.x : 0; }
+    set x(v) { if (this.gameObject) this.gameObject.transform.x = v; }
+    get y() { return this.gameObject ? this.gameObject.transform.y : 0; }
+    set y(v) { if (this.gameObject) this.gameObject.transform.y = v; }
 
     recalcStats() {
         // Reset to base

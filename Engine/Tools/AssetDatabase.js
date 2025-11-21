@@ -32,45 +32,47 @@ function processDirectory(dir) {
         const fullPath = path.join(dir, file);
         const stat = fs.statSync(fullPath);
 
+        // Skip .meta files and Tools folder itself
+        if (file.endsWith('.meta') || fullPath.includes('Tools')) return;
+
+        // Process File OR Directory
+        const metaPath = fullPath + '.meta';
+        let guid;
+
+        if (fs.existsSync(metaPath)) {
+            // Read existing meta
+            try {
+                const metaContent = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+                guid = metaContent.guid;
+            } catch (e) {
+                console.error(`Error reading meta for ${file}:`, e);
+            }
+        }
+
+        if (!guid) {
+            // Generate new meta
+            guid = generateGUID();
+            const metaContent = {
+                guid: guid,
+                timestamp: Date.now()
+            };
+            fs.writeFileSync(metaPath, JSON.stringify(metaContent, null, 4));
+            console.log(`Generated meta for ${file}: ${guid}`);
+        }
+
+        // Add to Asset Map
+        // Path should be relative to the "Game Root" (where index.html is)
+        // index.html is at Project/NineToFive/
+        
+        let relativePath = path.relative(PROJECT_ROOT, fullPath);
+        // Normalize path separators to forward slashes for web
+        relativePath = relativePath.split(path.sep).join('/');
+        
+        assetMap[guid] = relativePath;
+
+        // If it's a directory, recurse into it
         if (stat.isDirectory()) {
             processDirectory(fullPath);
-        } else {
-            // Skip .meta files and Tools
-            if (file.endsWith('.meta') || fullPath.includes('Tools')) return;
-
-            const metaPath = fullPath + '.meta';
-            let guid;
-
-            if (fs.existsSync(metaPath)) {
-                // Read existing meta
-                try {
-                    const metaContent = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-                    guid = metaContent.guid;
-                } catch (e) {
-                    console.error(`Error reading meta for ${file}:`, e);
-                }
-            }
-
-            if (!guid) {
-                // Generate new meta
-                guid = generateGUID();
-                const metaContent = {
-                    guid: guid,
-                    timestamp: Date.now()
-                };
-                fs.writeFileSync(metaPath, JSON.stringify(metaContent, null, 4));
-                console.log(`Generated meta for ${file}: ${guid}`);
-            }
-
-            // Add to Asset Map
-            // Path should be relative to the "Game Root" (where index.html is)
-            // index.html is at Project/NineToFive/
-            
-            let relativePath = path.relative(PROJECT_ROOT, fullPath);
-            // Normalize path separators to forward slashes for web
-            relativePath = relativePath.split(path.sep).join('/');
-            
-            assetMap[guid] = relativePath;
         }
     });
 }

@@ -8,6 +8,8 @@ class ResourceManager {
         this.registerLoader('.json', this.loadJson.bind(this));
         this.registerLoader('.scene', this.loadScene.bind(this));
         this.registerLoader('.prefab', this.loadPrefab.bind(this));
+        this.registerLoader('.anim', this.loadAnimationClip.bind(this));
+        this.registerLoader('.controller', this.loadAnimatorController.bind(this));
         this.registerLoader('.png', this.loadImage.bind(this));
         this.registerLoader('.jpg', this.loadImage.bind(this));
         this.registerLoader('.txt', this.loadText.bind(this));
@@ -151,7 +153,7 @@ class ResourceManager {
 
         // Assuming Scene class is available globally or imported
         if (typeof Scene !== 'undefined' && Scene.fromJSON) {
-            return Scene.fromJSON(data);
+            return await Scene.fromJSON(data);
         } else {
             return data; // Return raw data if Scene class not found
         }
@@ -165,6 +167,28 @@ class ResourceManager {
         }
 
         return new Prefab(data);
+    }
+
+    async loadAnimationClip(url) {
+        const { header, data } = await this.loadAssetWithHeader(url);
+        
+        if (header.AssetType && header.AssetType !== 'AnimationClip') {
+            console.warn(`ResourceManager: AssetType mismatch. Expected 'AnimationClip', got '${header.AssetType}'`);
+        }
+
+        const clip = new AnimationClip(data);
+        await clip.loadFrames();
+        return clip;
+    }
+
+    async loadAnimatorController(url) {
+        const { header, data } = await this.loadAssetWithHeader(url);
+        
+        if (header.AssetType && header.AssetType !== 'AnimatorController') {
+            console.warn(`ResourceManager: AssetType mismatch. Expected 'AnimatorController', got '${header.AssetType}'`);
+        }
+
+        return new AnimatorController(data);
     }
 
     loadImage(url) {

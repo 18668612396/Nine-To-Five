@@ -86,10 +86,36 @@ class Scene extends Asset {
      * Load a scene from a JSON object
      * @param {Object} json 
      */
-    static fromJSON(json) {
+    static async fromJSON(json) {
         const scene = new Scene(json.name || 'Untitled Scene');
         
-        const instantiateObject = (objData, parent = null) => {
+        const instantiateObject = async (objData, parent = null) => {
+            // Handle Prefab Reference
+            if (objData.prefab) {
+                if (window.resourceManager) {
+                    try {
+                        const prefab = await window.resourceManager.load(objData.prefab);
+                        if (prefab && prefab.instantiate) {
+                            const obj = prefab.instantiate();
+                            
+                            // Apply Scene Overrides
+                            if (objData.name) obj.name = objData.name;
+                            if (objData.x !== undefined) obj.transform.x = objData.x;
+                            if (objData.y !== undefined) obj.transform.y = objData.y;
+                            
+                            if (parent) {
+                                parent.transform.setChild(obj.transform);
+                            }
+                            scene.add(obj);
+                            return obj;
+                        }
+                    } catch (e) {
+                        console.error(`SceneLoader: Failed to load prefab '${objData.prefab}'`, e);
+                    }
+                }
+                return null;
+            }
+
             const type = objData.type || 'GameObject';
             
             // Try to find the class in global scope
@@ -152,19 +178,19 @@ class Scene extends Asset {
             // Handle Children
             if (Array.isArray(objData.children)) {
                 for (const childData of objData.children) {
-                    instantiateObject(childData, obj);
+                    await instantiateObject(childData, obj);
                 }
             }
 
             return obj;
         };
 
-        if (Array.isArray(json.objects)) {
+        if (json.objects) {
             for (const objData of json.objects) {
-                instantiateObject(objData);
+                await instantiateObject(objData);
             }
         }
-
+        
         return scene;
     }
 }

@@ -28,33 +28,10 @@ Version: 1
             ]
         },
         {
-            "type": "GameObject",
+            "prefab": "625482e00ab441d7942719e7401c34f5",
             "name": "Player",
             "x": 1250,
-            "y": 1250,
-            "components": [
-                {
-                    "type": "Player",
-                    "properties": {
-                        "worldWidth": 2500,
-                        "worldHeight": 2500,
-                        "speed": 1
-                    }
-                },
-                {
-                    "type": "RigidBody",
-                    "properties": {
-                        "mass": 1,
-                        "drag": 5
-                    }
-                },
-                {
-                    "type": "CircleCollider",
-                    "properties": {
-                        "radius": 20
-                    }
-                }
-            ]
+            "y": 1250
         }
     ]
 }

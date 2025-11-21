@@ -1,0 +1,44 @@
+AssetType: Prefab
+Version: 1
+{
+    "name": "Player",
+    "type": "GameObject",
+    "transform": {
+        "position": { "x": 0, "y": 0 },
+        "scale": { "x": 1, "y": 1 },
+        "rotation": 0
+    },
+    "components": [
+        {
+            "type": "RigidBody",
+            "properties": {
+                "mass": 1,
+                "drag": 5
+            }
+        },
+        {
+            "type": "CircleCollider",
+            "properties": {
+                "radius": 20
+            }
+        },
+        {
+            "type": "SpriteRenderer",
+            "properties": {
+                "width": 80,
+                "height": 80,
+                "sortingOrder": 10
+            }
+        },
+        {
+            "type": "Animator",
+            "properties": {
+                "controllerPath": "2194a6cd8f3c43ff90752a32a4dac095"
+            }
+        },
+        {
+            "type": "Player",
+            "properties": {}
+        }
+    ]
+}

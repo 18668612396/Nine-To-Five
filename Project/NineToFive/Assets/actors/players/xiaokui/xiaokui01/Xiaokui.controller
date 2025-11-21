@@ -1,0 +1,10 @@
+AssetType: AnimatorController
+Version: 1.0
+---
+{
+    "name": "Xiaokui_Controller",
+    "defaultClip": "Run",
+    "clips": [
+        { "name": "Run", "guid": "da11604078a0416e8b9e16e578a72785" }
+    ]
+}

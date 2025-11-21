@@ -1,0 +1,14 @@
+AssetType: AnimationClip
+Version: 1.0
+---
+{
+    "name": "Xiaokui_Run",
+    "frameRate": 1,
+    "loop": true,
+    "frames": [
+        "7441fcf582894fa3b966fb2d2c90d636",
+        "75d0314655764867827385a82366a4e1",
+        "92d7f8347fc342e29943a1228d569f79",
+        "d56344a876024b5881d4103891862c28"
+    ]
+}

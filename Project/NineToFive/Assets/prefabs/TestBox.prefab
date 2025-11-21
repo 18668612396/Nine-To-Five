@@ -15,7 +15,7 @@ Version: 1
     },
     "components": [
         {
-            "type": "StaticRenderer",
+            "type": "ShapeRenderer",
             "properties": {
                 "width": 50,
                 "height": 50,
