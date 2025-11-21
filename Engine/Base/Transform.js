@@ -12,18 +12,23 @@ class Transform extends Component {
     // Getters for World Position
     get x() {
         if (this.parent) {
-            // Simple 2D matrix multiplication simplified
-            // WorldX = ParentWorldX + (LocalX * cos(ParentRot) - LocalY * sin(ParentRot)) * ParentScaleX
-            // For now, let's assume no rotation/scale inheritance for simplicity, or implement full matrix later.
-            // Let's implement basic position inheritance first.
-            return this.parent.x + this.localPosition.x; 
+            // Apply parent scale to local position offset
+            // WorldX = ParentWorldX + (LocalX * ParentScaleX)
+            // Note: Still ignoring rotation for simplicity as requested
+            return this.parent.x + (this.localPosition.x * this.parent.scale.x); 
         }
         return this.localPosition.x;
     }
 
     set x(value) {
         if (this.parent) {
-            this.localPosition.x = value - this.parent.x;
+            // Inverse operation: LocalX = (WorldX - ParentWorldX) / ParentScaleX
+            const pScaleX = this.parent.scale.x;
+            if (pScaleX !== 0) {
+                this.localPosition.x = (value - this.parent.x) / pScaleX;
+            } else {
+                this.localPosition.x = 0;
+            }
         } else {
             this.localPosition.x = value;
         }
@@ -31,14 +36,19 @@ class Transform extends Component {
 
     get y() {
         if (this.parent) {
-            return this.parent.y + this.localPosition.y;
+            return this.parent.y + (this.localPosition.y * this.parent.scale.y);
         }
         return this.localPosition.y;
     }
 
     set y(value) {
         if (this.parent) {
-            this.localPosition.y = value - this.parent.y;
+            const pScaleY = this.parent.scale.y;
+            if (pScaleY !== 0) {
+                this.localPosition.y = (value - this.parent.y) / pScaleY;
+            } else {
+                this.localPosition.y = 0;
+            }
         } else {
             this.localPosition.y = value;
         }

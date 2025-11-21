@@ -40,7 +40,8 @@ Version: 1
         {
             "type": "Player",
             "properties": {
-                "speed": 1.0
+                "speed": 1.0,
+                "weaponPrefab": "Assets/prefabs/Weapon_Rifle.prefab"
             }
         }
     ]

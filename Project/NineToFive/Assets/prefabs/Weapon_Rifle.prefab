@@ -1,0 +1,29 @@
+AssetType: Prefab
+Version: 1
+{
+    "name": "Weapon_Rifle",
+    "type": "GameObject",
+    "transform": {
+        "position": { "x": 0, "y": 10 },
+        "scale": { "x": 1, "y": 1 },
+        "rotation": 0
+    },
+    "components": [
+        {
+            "type": "CanvasRenderer",
+            "properties": {
+                "sortingOrder": 11,
+                "elements": [
+                    {
+                        "type": "rect",
+                        "x": 0,
+                        "y": 0,
+                        "width": 40,
+                        "height": 8,
+                        "color": "#666666"
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -53,15 +53,24 @@ class CanvasRenderer extends Renderer {
                 // This is a simplification. Ideally we map each element type to a command.
                 // For now, let's assume elements are simple rects/texts
                 if (el.type === 'rect') {
-                    // RenderPipeline draws rects centered, but el.x/y are usually top-left relative to object
-                    // We need to calculate the center position in world space
-                    const worldLeft = t.x + (el.x || 0);
-                    const worldTop = t.y + (el.y || 0);
+                    // Calculate World Position of the Element's Center
+                    // WorldCenter = WorldPivot + (LocalOffset + HalfSize) * WorldScale
+                    // Note: We need to rotate the offset vector if rotation exists, but let's handle scale first.
+                    
+                    const scaleX = t.scale.x;
+                    const scaleY = t.scale.y;
+                    
+                    const localCenterX = (el.x || 0) + el.width / 2;
+                    const localCenterY = (el.y || 0) + el.height / 2;
+
+                    // Simple scale application (ignoring rotation of the offset vector for now)
+                    const worldX = t.x + localCenterX * scaleX;
+                    const worldY = t.y + localCenterY * scaleY;
                     
                     pipeline.submit({
                         type: 'RECT',
-                        x: worldLeft + el.width / 2,
-                        y: worldTop + el.height / 2,
+                        x: worldX,
+                        y: worldY,
                         width: el.width,
                         height: el.height,
                         color: el.color,

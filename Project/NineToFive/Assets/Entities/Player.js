@@ -46,6 +46,7 @@ class Player extends GameBehaviour {
         if (props.worldWidth) this.worldWidth = props.worldWidth;
         if (props.worldHeight) this.worldHeight = props.worldHeight;
         if (props.speed) this.baseStats.speed = props.speed;
+        if (props.weaponPrefab) this.weaponPrefabPath = props.weaponPrefab;
     }
 
     start() {
@@ -68,6 +69,17 @@ class Player extends GameBehaviour {
 
         this.recalcStats();
         this.ammo = this.maxAmmo;
+
+        // Load Weapon Prefab if defined
+        if (this.weaponPrefabPath) {
+            window.resourceManager.load(this.weaponPrefabPath).then(prefab => {
+                if (prefab && prefab instanceof window.Prefab) {
+                    const weaponGO = prefab.instantiate(null, this.gameObject);
+                    this.weaponGO = weaponGO;
+                    console.log("Weapon instantiated:", weaponGO);
+                }
+            }).catch(err => console.error("Failed to load weapon prefab:", err));
+        }
     }
 
     // Proxy Transform properties for compatibility
@@ -151,8 +163,12 @@ class Player extends GameBehaviour {
         this.y = Math.max(this.r, Math.min(this.worldHeight - this.r, this.y));
 
         // Update Animation Logic
-        if (input.getKey('a')) this.spriteRenderer.flipX = true;
-        if (input.getKey('d')) this.spriteRenderer.flipX = false;
+        if (input.getKey('a')) {
+            this.gameObject.transform.localScale.x = -1;
+        }
+        if (input.getKey('d')) {
+            this.gameObject.transform.localScale.x = 1;
+        }
 
         const isMoving = moveX !== 0 || moveY !== 0;
         if (isMoving) {
