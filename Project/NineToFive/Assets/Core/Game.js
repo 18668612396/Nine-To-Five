@@ -388,6 +388,35 @@ class Game extends EngineObject {
             }
         }
 
+        // Debug: Print Hierarchy
+        if (this.inputManager.getKeyDown('h')) {
+            console.log("=== Scene Hierarchy ===");
+            const printNode = (go, depth) => {
+                const indent = "  ".repeat(depth);
+                console.log(`${indent}- ${go.name} [${go.constructor.name}] (Active: ${go.active})`);
+                // Print Components
+                go.components.forEach(c => {
+                    console.log(`${indent}  * ${c.name}`);
+                });
+                // Print Children
+                go.transform.children.forEach(childTrans => {
+                    if (childTrans.gameObject) {
+                        printNode(childTrans.gameObject, depth + 1);
+                    }
+                });
+            };
+
+            if (this.sceneManager.activeScene) {
+                // Find root objects (objects without parent)
+                this.sceneManager.activeScene.gameObjects.forEach(go => {
+                    if (!go.transform.parent) {
+                        printNode(go, 0);
+                    }
+                });
+            }
+            console.log("=======================");
+        }
+
         if (this.state === 'TOWN') {
             this.sceneManager.update(1/60);
             // Reset Camera if exists

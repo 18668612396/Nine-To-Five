@@ -1,0 +1,29 @@
+AssetType: Prefab
+Version: 1
+{
+    "name": "Shadow",
+    "type": "GameObject",
+    "transform": {
+        "position": { "x": 0, "y": 40 },
+        "scale": { "x": 1, "y": 1 },
+        "rotation": 0
+    },
+    "components": [
+        {
+            "type": "CanvasRenderer",
+            "properties": {
+                "sortingOrder": -1,
+                "elements": [
+                    {
+                        "type": "circle",
+                        "x": 0,
+                        "y": 55,
+                        "radius": 30,
+                        "color": "rgba(255, 0, 0, 0.5)",
+                        "scaleY": 0.5
+                    }
+                ]
+            }
+        }
+    ]
+}

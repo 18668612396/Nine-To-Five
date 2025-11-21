@@ -45,5 +45,8 @@
     "d42afae37c324e0e8f796c789743f587": "Assets/UI/Commands/OpenLevelSelectCommand.js",
     "43f835d10f8a461e85737603fbb146f1": "Assets/UI/Commands/OpenSettingsCommand.js",
     "9a8744c9a7ce4be38156c3d733f35ee7": "Assets/UI/Commands/OpenTalentsCommand.js",
-    "b1b7a028a7e14d22aee486a854134d40": "Assets/UI/UIManager.js"
+    "b1b7a028a7e14d22aee486a854134d40": "Assets/UI/UIManager.js",
+    "9265d82ca4f44ba6b5cc059191bf4b8d": "Assets/Entities/ActorShadow.js",
+    "f2fd4ad503a74346af6dd9620994c7c7": "Assets/prefabs/Weapon_Rifle.prefab",
+    "07006758b1a94a33abcedcaab940df3a": "Assets/prefabs/Shadow.prefab"
 }

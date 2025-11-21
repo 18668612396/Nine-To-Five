@@ -47,6 +47,7 @@ class Player extends GameBehaviour {
         if (props.worldHeight) this.worldHeight = props.worldHeight;
         if (props.speed) this.baseStats.speed = props.speed;
         if (props.weaponPrefab) this.weaponPrefabPath = props.weaponPrefab;
+        if (props.shadowPrefab) this.shadowPrefabPath = props.shadowPrefab;
     }
 
     start() {
@@ -56,16 +57,16 @@ class Player extends GameBehaviour {
         this.spriteRenderer = this.gameObject.getComponent('SpriteRenderer');
         this.animator = this.gameObject.getComponent('Animator');
 
-        // Create Shadow (Dynamic for now)
-        const shadow = new CanvasRenderer((ctx) => {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.beginPath();
-            ctx.ellipse(0, 0, this.r, this.r * 0.5, 0, 0, Math.PI * 2);
-            ctx.fill();
-        });
-        shadow.offsetY = this.r * 2 - 5;
-        shadow.sortingOrder = -1;
-        this.gameObject.addComponent(shadow);
+        // Load Shadow Prefab if defined
+        if (this.shadowPrefabPath) {
+            window.resourceManager.load(this.shadowPrefabPath).then(prefab => {
+                if (prefab && prefab instanceof window.Prefab) {
+                    const shadowGO = prefab.instantiate(null, this.gameObject);
+                    // Optional: Override properties if needed, or trust the prefab
+                    // shadowGO.transform.localPosition.y = this.r * 2 - 5; 
+                }
+            }).catch(err => console.error("Failed to load shadow prefab:", err));
+        }
 
         this.recalcStats();
         this.ammo = this.maxAmmo;

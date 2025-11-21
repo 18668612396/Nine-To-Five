@@ -5,6 +5,7 @@
         "Assets/UI/Commands/OpenInventoryCommand.js",
         "Assets/UI/Commands/OpenSettingsCommand.js",
         "Assets/Items/Item.js",
+        // "Assets/Entities/ActorShadow.js", // Removed as we use CanvasRenderer directly
         "Assets/Entities/Player.js",
         "Assets/Entities/Bullet.js",
         "Assets/Entities/Enemy.js",

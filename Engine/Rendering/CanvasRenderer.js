@@ -79,6 +79,51 @@ class CanvasRenderer extends Renderer {
                         sortingOrder: this.sortingOrder,
                         y: t.y
                     });
+                } else if (el.type === 'circle') {
+                    const scaleX = t.scale.x;
+                    const scaleY = t.scale.y;
+                    
+                    // Apply scale to offset
+                    const worldX = t.x + (el.x || 0) * scaleX;
+                    const worldY = t.y + (el.y || 0) * scaleY;
+
+                    // For ellipse effect (shadow), we might need non-uniform scale
+                    // But RenderPipeline.drawCircle only supports uniform radius.
+                    // If we want flattened circle (ellipse), we need a new command or use CUSTOM.
+                    // Or we can use RECT with rounded corners? No.
+                    // Let's use CUSTOM for now if it's an ellipse, OR add ELLIPSE command.
+                    // But wait, RenderPipeline has drawCircle.
+                    
+                    // If scaleY is provided in element, we can't easily pass it to drawCircle unless we add scale support there.
+                    // Let's use CUSTOM for complex shapes or add ELLIPSE support.
+                    // Actually, let's just use drawCircle for now and ignore flattening, OR implement ELLIPSE.
+                    
+                    // Let's implement ELLIPSE in RenderPipeline later. For now, let's use CUSTOM callback for this specific shadow style?
+                    // No, we want data-driven.
+                    
+                    // Let's submit a CUSTOM command that draws an ellipse
+                    pipeline.submit({
+                        type: 'CUSTOM',
+                        callback: (ctx) => {
+                            ctx.fillStyle = el.color;
+                            ctx.beginPath();
+                            // Apply element specific scale (e.g. for flattening shadow)
+                            const r = el.radius;
+                            const sy = el.scaleY || 1.0;
+                            ctx.ellipse(0, 0, r, r * sy, 0, 0, Math.PI * 2);
+                            ctx.fill();
+                        },
+                        gameObject: this.gameObject,
+                        x: worldX,
+                        y: worldY,
+                        rotation: t.rotation,
+                        scaleX: 1, // We handle scale in callback or world pos
+                        scaleY: 1,
+                        offsetX: 0,
+                        offsetY: 0,
+                        sortingOrder: this.sortingOrder,
+                        y: t.y
+                    });
                 }
                 // ... other types
             }
