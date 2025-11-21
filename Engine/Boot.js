@@ -31,8 +31,7 @@
         "../../Engine/Resources/ResourceManager.js",
         "../../Engine/Utils/Utils.js",
         "../../Engine/Particles/Particle.js",
-        "../../Engine/Particles/ParticleSystem.js",
-        "../../Engine/Particles/ParticleSystemManager.js"
+        "../../Engine/Particles/ParticleSystem.js"
     ];
 
     function loadScript(index) {

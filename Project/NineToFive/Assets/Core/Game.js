@@ -49,9 +49,6 @@ class Game extends EngineObject {
         // Card Manager
         this.cardManager = new CardManager();
 
-        // Particle System Manager
-        this.particleSystemManager = new ParticleSystemManager();
-
         // GM Manager
         this.gmManager = new GMManager(this);
 
@@ -473,17 +470,13 @@ class Game extends EngineObject {
             this.cameraGO.transform.y += (targetY - this.cameraGO.transform.y) * 0.1;
         }
 
-        // Update Particles
-        this.particleSystemManager.update(1/60);
-
         this.checkCollisions();
 
         this.uiManager.update(this.player, this.survivalTime, this.maxSurvivalTime);
     }
 
     handleKill(enemy) {
-        // Death Effect
-        this.particleSystemManager.createExplosion(enemy.x, enemy.y, [1, 0, 0, 1]);
+        // Death Effect is now handled by Enemy.js die() method
 
         // Remove from Scene
         if (this.sceneManager.activeScene) {
@@ -551,13 +544,6 @@ class Game extends EngineObject {
             // Let's use reset() if available, or manual restore.
             window.Camera.main.reset(this.ctx);
         }
-
-        // Draw Particles (Legacy/Global)
-        // Ideally these should be in the pipeline too
-        this.ctx.save();
-        if (window.Camera && window.Camera.main) window.Camera.main.apply(this.ctx);
-        this.particleSystemManager.draw(this.ctx);
-        this.ctx.restore();
 
         // Draw World Borders (Debug/Visual)
         this.ctx.save();
