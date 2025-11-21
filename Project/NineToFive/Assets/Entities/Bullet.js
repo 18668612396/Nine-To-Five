@@ -41,17 +41,70 @@ class Bullet extends GameObject {
 
         // Range check
         if (this.distTraveled >= this.range) {
-            this.active = false;
+            this.destroy();
+            return;
         }
 
         // Out of bounds
         if (this.x < 0 || this.x > this.worldWidth || this.y < 0 || this.y > this.worldHeight) {
-            this.active = false;
+            this.destroy();
+            return;
         }
         
         // Update visual for flame
         if (this.isFlame) {
              this.renderer.color = `rgba(255, 87, 34, ${1 - this.distTraveled/this.range})`;
+        }
+
+        // Collision Detection
+        this.checkCollisions();
+    }
+
+    checkCollisions() {
+        if (!window.enemyManager) return;
+
+        // Use activeEnemies list
+        const enemies = window.enemyManager.activeEnemies || [];
+        
+        for (const enemyGO of enemies) {
+            if (!enemyGO.active || enemyGO.destroyed) continue;
+            
+            // Check if already hit this frame/pierce (simple check)
+            if (this.hitList.includes(enemyGO)) continue;
+
+            // Simple Circle Collision
+            // Assuming enemy has radius ~15-20. Let's use sum of radii.
+            // Bullet r is this.r
+            // Enemy r... we can get from collider or hardcode/estimate.
+            // Let's try to get collider.
+            let enemyR = 20;
+            const collider = enemyGO.getComponent('CircleCollider');
+            if (collider) enemyR = collider.radius;
+
+            const dx = this.x - enemyGO.transform.x;
+            const dy = this.y - enemyGO.transform.y;
+            const distSq = dx*dx + dy*dy;
+            const minDist = this.r + enemyR;
+
+            if (distSq < minDist * minDist) {
+                // Hit!
+                const enemyScript = enemyGO.getComponent('Enemy');
+                if (enemyScript) {
+                    enemyScript.takeDamage(this.damage);
+                    
+                    // Visual effect?
+                    // TODO: Spawn hit particle
+                }
+
+                this.hitList.push(enemyGO);
+                
+                if (this.pierce > 0) {
+                    this.pierce--;
+                } else {
+                    this.destroy();
+                    break; // Stop checking other enemies if destroyed
+                }
+            }
         }
     }
 

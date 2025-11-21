@@ -88,13 +88,13 @@ class Enemy extends GameBehaviour {
     }
 
     die() {
-        // Return to pool via Manager
-        if (window.enemyManager) {
-            window.enemyManager.returnEnemy(this.gameObject);
-        } else {
-            // Fallback destroy
-            this.gameObject.active = false;
+        // Spawn Loot
+        if (window.lootManager) {
+            window.lootManager.spawnLoot(this.gameObject.transform.x, this.gameObject.transform.y, 'exp', this.expValue);
         }
+
+        // Destroy self
+        this.gameObject.destroy();
     }
 }
 

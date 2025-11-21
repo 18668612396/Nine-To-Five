@@ -28,6 +28,15 @@ Version: 1
                     "type": "EnemyManager"
                 }
             ]
+        },
+        {
+            "type": "GameObject",
+            "name": "LootManager",
+            "components": [
+                {
+                    "type": "LootManager"
+                }
+            ]
         }
     ]
 }

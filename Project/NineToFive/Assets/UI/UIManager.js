@@ -62,6 +62,70 @@ class UIManager extends EngineObject {
         this.initListeners();
     }
 
+    updateExpBar(exp, maxExp, level) {
+        if (this.expBar) {
+            const pct = Math.min(100, (exp / maxExp) * 100);
+            this.expBar.style.width = `${pct}%`;
+        }
+        if (this.expText) {
+            this.expText.innerText = `${Math.floor(exp)}/${Math.floor(maxExp)}`;
+        }
+    }
+
+    showLevelUp(level) {
+        if (this.levelUpUI) {
+            this.levelUpUI.style.display = 'block';
+            if (this.lvlUpLevel) this.lvlUpLevel.innerText = level;
+            
+            // Generate Cards
+            this.generateLevelUpCards();
+        }
+    }
+
+    generateLevelUpCards() {
+        if (!this.cardContainer) return;
+        this.cardContainer.innerHTML = ''; // Clear old cards
+        
+        const cardManager = new CardManager(); // Or use global instance if available
+        const choices = cardManager.getChoices(3);
+        
+        choices.forEach(card => {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card';
+            cardEl.style.cssText = `
+                width: 200px; height: 280px; background: #333; border: 2px solid #ffd700;
+                border-radius: 10px; padding: 15px; cursor: pointer; transition: transform 0.2s;
+                display: flex; flex-direction: column; align-items: center; text-align: center;
+            `;
+            cardEl.onmouseover = () => cardEl.style.transform = 'scale(1.05)';
+            cardEl.onmouseout = () => cardEl.style.transform = 'scale(1)';
+            
+            cardEl.innerHTML = `
+                <div style="font-size: 40px; margin-bottom: 10px;">${card.icon || '🃏'}</div>
+                <h3 style="color: #ffd700; margin-bottom: 10px;">${card.name}</h3>
+                <p style="color: #ccc; font-size: 14px; flex-grow: 1;">${card.description}</p>
+                <div style="font-size: 12px; color: #888;">${card.rarity || 'Common'}</div>
+            `;
+            
+            cardEl.onclick = () => {
+                this.selectCard(card);
+            };
+            
+            this.cardContainer.appendChild(cardEl);
+        });
+    }
+
+    selectCard(card) {
+        console.log("Selected Card:", card.name);
+        if (this.game.player) {
+            card.apply(this.game.player);
+        }
+        
+        // Hide UI and Resume
+        if (this.levelUpUI) this.levelUpUI.style.display = 'none';
+        this.game.togglePause(false);
+    }
+
     initListeners() {
         // Town UI Listeners Removed
         // if (this.btnOpenLevelSelect) this.btnOpenLevelSelect.addEventListener('click', () => this.showLevelSelect());

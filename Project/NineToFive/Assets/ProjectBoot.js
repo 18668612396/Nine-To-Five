@@ -12,6 +12,7 @@
         "Assets/Entities/EnemyManager.js",
         "Assets/Entities/GridBackground.js",
         "Assets/Entities/Loot.js",
+        "Assets/Entities/LootManager.js",
         "Assets/Cards/Card.js",
         "Assets/Cards/impl/AttackUp.js",
         "Assets/Cards/impl/SpeedUp.js",

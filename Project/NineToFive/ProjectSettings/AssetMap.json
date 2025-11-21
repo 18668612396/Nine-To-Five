@@ -55,5 +55,6 @@
     "07006758b1a94a33abcedcaab940df3a": "Assets/prefabs/Shadow.prefab",
     "34112fa27d384daeb390a75f16a426e2": "Assets/prefabs/Enemy.prefab",
     "707f87f02e4f4439ae878b3e48136afe": "Assets/Entities/EnemyManager.js",
+    "9b49f083b600414db708c58bc932d701": "Assets/Entities/LootManager.js",
     "1da467ca092b4f1c9b413d8b76fc8f39": "Assets/Entities/GridBackground.js"
 }

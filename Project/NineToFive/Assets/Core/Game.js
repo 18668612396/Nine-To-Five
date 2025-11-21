@@ -378,6 +378,16 @@ class Game extends EngineObject {
         }
     }
 
+    onLevelUp(level) {
+        console.log(`Level Up! New Level: ${level}`);
+        this.togglePause(true);
+        
+        // Show Level Up UI
+        if (this.uiManager) {
+            this.uiManager.showLevelUp(level);
+        }
+    }
+
     update() {
         // Global Input
         if (this.inputManager.getKeyDown('Escape')) {

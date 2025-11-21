@@ -89,6 +89,34 @@ class Player extends GameBehaviour {
     get y() { return this.gameObject ? this.gameObject.transform.y : 0; }
     set y(v) { if (this.gameObject) this.gameObject.transform.y = v; }
 
+    gainExp(amount) {
+        this.exp += amount;
+        if (this.exp >= this.maxExp) {
+            this.levelUp();
+        }
+        
+        // Update UI (Assuming UIManager handles this via event or direct call)
+        if (window.game && window.game.uiManager) {
+            window.game.uiManager.updateExpBar(this.exp, this.maxExp, this.level);
+        }
+    }
+
+    levelUp() {
+        this.level++;
+        this.exp -= this.maxExp;
+        this.maxExp = Math.floor(this.maxExp * 1.2); // Increase requirement by 20%
+        
+        // Trigger Level Up Event
+        if (window.game) {
+            window.game.onLevelUp(this.level);
+        }
+        
+        // Check if we have enough exp for another level
+        if (this.exp >= this.maxExp) {
+            this.levelUp();
+        }
+    }
+
     recalcStats() {
         // Reset to base
         this.maxHp = this.baseStats.hp;
@@ -163,19 +191,108 @@ class Player extends GameBehaviour {
         this.x = Math.max(this.r, Math.min(this.worldWidth - this.r, this.x));
         this.y = Math.max(this.r, Math.min(this.worldHeight - this.r, this.y));
 
-        // Update Animation Logic
-        if (input.getKey('a')) {
-            this.gameObject.transform.localScale.x = -1;
-        }
-        if (input.getKey('d')) {
-            this.gameObject.transform.localScale.x = 1;
-        }
-
         const isMoving = moveX !== 0 || moveY !== 0;
         if (isMoving) {
             if (this.animator.play) this.animator.play('Run');
         } else {
             if (this.animator.stop) this.animator.stop();
+        }
+
+        // --- Combat Logic ---
+        this.handleCombat(input);
+    }
+
+    findNearestEnemy() {
+        if (!window.enemyManager) return null;
+        let nearest = null;
+        let minDistSq = Infinity;
+        const rangeSq = 800 * 800; // Max detection range
+        
+        // Use activeEnemies list
+        const enemies = window.enemyManager.activeEnemies || [];
+
+        for (const enemy of enemies) {
+            if (!enemy.active || enemy.destroyed) continue;
+            
+            const dx = enemy.transform.x - this.x;
+            const dy = enemy.transform.y - this.y;
+            const distSq = dx*dx + dy*dy;
+            
+            if (distSq < rangeSq && distSq < minDistSq) {
+                minDistSq = distSq;
+                nearest = enemy;
+            }
+        }
+        return nearest;
+    }
+
+    handleCombat(input) {
+        const enemy = this.findNearestEnemy();
+        let angle = 0;
+        let hasTarget = false;
+
+        if (enemy) {
+            hasTarget = true;
+            // Aim at enemy
+            const dx = enemy.transform.x - this.x;
+            const dy = enemy.transform.y - this.y;
+            angle = Math.atan2(dy, dx);
+            
+            // Face Enemy
+            const isLeft = dx < 0;
+            this.gameObject.transform.localScale.x = isLeft ? -1 : 1;
+            
+            // Auto Fire
+            if (this.fireTimer <= 0 && !this.isReloading) {
+                if (this.ammo > 0) {
+                    this.fire(angle);
+                } else {
+                    this.startReload();
+                }
+            }
+        } else {
+            // No enemy, face movement direction
+            if (input.getKey('a')) {
+                this.gameObject.transform.localScale.x = -1;
+                angle = Math.PI;
+            } else if (input.getKey('d')) {
+                this.gameObject.transform.localScale.x = 1;
+                angle = 0;
+            } else {
+                // Keep facing direction
+                angle = this.gameObject.transform.localScale.x > 0 ? 0 : Math.PI;
+            }
+        }
+
+        // Rotate Weapon
+        if (this.weaponGO) {
+            // Flip weapon if aiming left
+            const isLeft = Math.abs(angle) > Math.PI / 2;
+            this.weaponGO.transform.scale.y = isLeft ? -1 : 1;
+            this.weaponGO.transform.rotation = angle;
+            
+            // Adjust weapon position relative to player (orbit)
+            const orbitRadius = 20;
+            this.weaponGO.transform.x = this.x + Math.cos(angle) * orbitRadius;
+            this.weaponGO.transform.y = this.y + Math.sin(angle) * orbitRadius;
+        }
+    }
+
+    fire(angle) {
+        this.fireTimer = 60 / this.fireRate; // Frames between shots
+        this.consumeAmmo();
+
+        // Spawn Bullet
+        // Muzzle offset (approximate)
+        const muzzleDist = 40;
+        const spawnX = this.x + Math.cos(angle) * muzzleDist;
+        const spawnY = this.y + Math.sin(angle) * muzzleDist;
+
+        const bullet = new Bullet(spawnX, spawnY, angle, this.equipment.weapon || {}, this.worldWidth, this.worldHeight);
+        
+        // Add to scene
+        if (window.game && window.game.sceneManager && window.game.sceneManager.activeScene) {
+            window.game.sceneManager.activeScene.add(bullet);
         }
     }
 
