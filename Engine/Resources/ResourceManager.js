@@ -7,6 +7,7 @@ class ResourceManager {
         // Register default loaders
         this.registerLoader('.json', this.loadJson.bind(this));
         this.registerLoader('.scene', this.loadScene.bind(this));
+        this.registerLoader('.prefab', this.loadPrefab.bind(this));
         this.registerLoader('.png', this.loadImage.bind(this));
         this.registerLoader('.jpg', this.loadImage.bind(this));
         this.registerLoader('.txt', this.loadText.bind(this));
@@ -101,15 +102,69 @@ class ResourceManager {
         return await response.json();
     }
 
+    async loadAssetWithHeader(url) {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const text = await response.text();
+
+        // Find the start of the JSON content
+        const firstBrace = text.indexOf('{');
+        
+        // If no brace found, or it looks like a pure JSON file (starts with {), try parsing as JSON directly
+        // This handles legacy files or files without headers gracefully-ish
+        if (firstBrace === 0) {
+            return { header: {}, data: JSON.parse(text) };
+        }
+
+        if (firstBrace === -1) {
+             throw new Error("Invalid asset format: No JSON content found.");
+        }
+
+        const headerText = text.substring(0, firstBrace);
+        const jsonText = text.substring(firstBrace);
+
+        const header = {};
+        headerText.split('\n').forEach(line => {
+            const parts = line.split(':');
+            if (parts.length >= 2) {
+                const key = parts[0].trim();
+                const value = parts.slice(1).join(':').trim();
+                if (key) header[key] = value;
+            }
+        });
+
+        try {
+            const data = JSON.parse(jsonText);
+            return { header, data };
+        } catch (e) {
+            console.error("Failed to parse JSON body:", e);
+            throw e;
+        }
+    }
+
     async loadScene(url) {
-        // .scene files are JSON files describing the scene
-        const json = await this.loadJson(url);
+        const { header, data } = await this.loadAssetWithHeader(url);
+        
+        if (header.AssetType && header.AssetType !== 'Scene') {
+            console.warn(`ResourceManager: AssetType mismatch. Expected 'Scene', got '${header.AssetType}'`);
+        }
+
         // Assuming Scene class is available globally or imported
         if (typeof Scene !== 'undefined' && Scene.fromJSON) {
-            return Scene.fromJSON(json);
+            return Scene.fromJSON(data);
         } else {
-            return json; // Return raw data if Scene class not found
+            return data; // Return raw data if Scene class not found
         }
+    }
+
+    async loadPrefab(url) {
+        const { header, data } = await this.loadAssetWithHeader(url);
+        
+        if (header.AssetType && header.AssetType !== 'Prefab') {
+            console.warn(`ResourceManager: AssetType mismatch. Expected 'Prefab', got '${header.AssetType}'`);
+        }
+
+        return new Prefab(data);
     }
 
     loadImage(url) {

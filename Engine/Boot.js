@@ -1,6 +1,7 @@
 (function() {
     const engineScripts = [
         "../../Engine/Base/EngineObject.js",
+        "../../Engine/Base/Asset.js",
         "../../Engine/Base/Component.js",
         "../../Engine/Input/InputManager.js",
         "../../Engine/UI/Button.js",
@@ -19,6 +20,7 @@
         "../../Engine/Base/GameObject.js",
         "../../Engine/Scene/Scene.js",
         "../../Engine/Scene/SceneManager.js",
+        "../../Engine/Resources/Prefab.js",
         "../../Engine/Resources/ResourceManager.js",
         "../../Engine/Utils/Utils.js",
         "../../Engine/Particles/Particle.js",

@@ -1,3 +1,5 @@
+AssetType: Scene
+Version: 1
 {
     "name": "MainScene",
     "objects": [

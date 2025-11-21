@@ -1,6 +1,6 @@
-class Scene {
+class Scene extends Asset {
     constructor(name) {
-        this.name = name;
+        super(name);
         this.gameObjects = [];
         this.isLoaded = false;
     }
