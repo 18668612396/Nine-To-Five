@@ -390,27 +390,39 @@ class Game extends EngineObject {
 
         // Debug: Print Hierarchy
         if (this.inputManager.getKeyDown('h')) {
-            console.log("=== Scene Hierarchy ===");
-            const printNode = (go, depth) => {
-                const indent = "  ".repeat(depth);
-                console.log(`${indent}- ${go.name} [${go.constructor.name}] (Active: ${go.active})`);
-                // Print Components
-                go.components.forEach(c => {
-                    console.log(`${indent}  * ${c.name}`);
-                });
-                // Print Children
-                go.transform.children.forEach(childTrans => {
-                    if (childTrans.gameObject) {
-                        printNode(childTrans.gameObject, depth + 1);
-                    }
-                });
+            console.log("%c=== Scene Hierarchy ===", "color: cyan; font-weight: bold; font-size: 14px;");
+            
+            const printNode = (go) => {
+                const style = go.active ? "color: #e0e0e0; font-weight: bold;" : "color: #888;";
+                // Use groupCollapsed to keep it tidy, or group to see everything
+                console.groupCollapsed(`%c📦 ${go.name} [${go.constructor.name}]`, style);
+                
+                // Components
+                if (go.components && go.components.length > 0) {
+                    console.log("%c🧩 Components:", "color: #aaa; font-size: 10px; font-weight: bold;");
+                    go.components.forEach(c => {
+                        // c.name is usually the class name or set name
+                        console.log(`%c   • ${c.name || c.constructor.name}`, "color: #81c784;");
+                    });
+                }
+                
+                // Children
+                if (go.transform.children && go.transform.children.length > 0) {
+                    console.log("%c👶 Children:", "color: #aaa; font-size: 10px; font-weight: bold;");
+                    go.transform.children.forEach(childTrans => {
+                        if (childTrans.gameObject) {
+                            printNode(childTrans.gameObject);
+                        }
+                    });
+                }
+                console.groupEnd();
             };
 
             if (this.sceneManager.activeScene) {
                 // Find root objects (objects without parent)
                 this.sceneManager.activeScene.gameObjects.forEach(go => {
                     if (!go.transform.parent) {
-                        printNode(go, 0);
+                        printNode(go);
                     }
                 });
             }

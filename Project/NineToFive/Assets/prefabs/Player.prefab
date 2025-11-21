@@ -40,7 +40,7 @@ Version: 1
         {
             "type": "Player",
             "properties": {
-                "speed": 1.0,
+                "speed": 0.5,
                 "weaponPrefab": "f2fd4ad503a74346af6dd9620994c7c7",
                 "shadowPrefab": "07006758b1a94a33abcedcaab940df3a"
             }

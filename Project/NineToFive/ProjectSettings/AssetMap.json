@@ -50,5 +50,10 @@
     "573a8421-d628-4a8a-94b1-aa9fe495bfe6": "Packages/GameEngine/Scene/Scene.js",
     "237c3f1d-534e-461a-903f-9ec2ef396a74": "Packages/GameEngine/Scene/SceneManager.js",
     "5fc27bf5-20f3-4431-8b35-ba97c02b2a1a": "Packages/GameEngine/UI/Button.js",
-    "ec992f44-435f-4781-a703-4940ae85c971": "Packages/GameEngine/Utils/Utils.js"
+    "ec992f44-435f-4781-a703-4940ae85c971": "Packages/GameEngine/Utils/Utils.js",
+    "707f87f0-2e4f-4439-ae87-8b3e48136afe": "Assets/Entities/EnemyManager.js",
+    "07006758b1a94a33abcedcaab940df3a": "Assets/prefabs/Shadow.prefab",
+    "34112fa27d384daeb390a75f16a426e2": "Assets/prefabs/Enemy.prefab",
+    "707f87f02e4f4439ae878b3e48136afe": "Assets/Entities/EnemyManager.js",
+    "1da467ca092b4f1c9b413d8b76fc8f39": "Assets/Entities/GridBackground.js"
 }

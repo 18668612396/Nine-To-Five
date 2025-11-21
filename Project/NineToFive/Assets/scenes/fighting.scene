@@ -10,20 +10,7 @@ Version: 1
             "y": 1250,
             "components": [
                 {
-                    "type": "CanvasRenderer",
-                    "properties": {
-                        "sortingOrder": -100,
-                        "elements": [
-                            {
-                                "type": "rect",
-                                "x": -1250,
-                                "y": -1250,
-                                "width": 2500,
-                                "height": 2500,
-                                "color": "#333"
-                            }
-                        ]
-                    }
+                    "type": "GridBackground"
                 }
             ]
         },
@@ -32,6 +19,15 @@ Version: 1
             "name": "Player",
             "x": 1250,
             "y": 1250
+        },
+        {
+            "type": "GameObject",
+            "name": "EnemyManager",
+            "components": [
+                {
+                    "type": "EnemyManager"
+                }
+            ]
         }
     ]
 }

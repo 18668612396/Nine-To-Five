@@ -9,6 +9,8 @@
         "Assets/Entities/Player.js",
         "Assets/Entities/Bullet.js",
         "Assets/Entities/Enemy.js",
+        "Assets/Entities/EnemyManager.js",
+        "Assets/Entities/GridBackground.js",
         "Assets/Entities/Loot.js",
         "Assets/Cards/Card.js",
         "Assets/Cards/impl/AttackUp.js",

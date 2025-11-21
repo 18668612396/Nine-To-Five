@@ -1,0 +1,37 @@
+AssetType: Prefab
+{
+    "name": "Enemy",
+    "transform": {
+        "position": { "x": 0, "y": 0 },
+        "scale": { "x": 1, "y": 1 }
+    },
+    "components": [
+        {
+            "type": "CanvasRenderer",
+            "properties": {
+                "elements": [
+                    {
+                        "type": "circle",
+                        "x": 0,
+                        "y": 0,
+                        "radius": 20,
+                        "color": "black"
+                    }
+                ],
+                "sortingOrder": 5
+            }
+        },
+        {
+            "type": "CircleCollider",
+            "properties": {
+                "radius": 20
+            }
+        },
+        {
+            "type": "Enemy",
+            "properties": {
+                "type": "Minion"
+            }
+        }
+    ]
+}

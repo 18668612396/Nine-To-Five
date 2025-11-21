@@ -48,5 +48,8 @@
     "b1b7a028a7e14d22aee486a854134d40": "Assets/UI/UIManager.js",
     "9265d82ca4f44ba6b5cc059191bf4b8d": "Assets/Entities/ActorShadow.js",
     "f2fd4ad503a74346af6dd9620994c7c7": "Assets/prefabs/Weapon_Rifle.prefab",
-    "07006758b1a94a33abcedcaab940df3a": "Assets/prefabs/Shadow.prefab"
+    "07006758b1a94a33abcedcaab940df3a": "Assets/prefabs/Shadow.prefab",
+    "34112fa27d384daeb390a75f16a426e2": "Assets/prefabs/Enemy.prefab",
+    "707f87f02e4f4439ae878b3e48136afe": "Assets/Entities/EnemyManager.js",
+    "1da467ca092b4f1c9b413d8b76fc8f39": "Assets/Entities/GridBackground.js"
 }

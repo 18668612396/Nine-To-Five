@@ -3,77 +3,99 @@
 class Enemy extends GameBehaviour {
     constructor() {
         super('Enemy');
-        this.id = Math.random().toString(36).substr(2, 9);
-        this.active = true;
-        this._initialPos = { x: 0, y: 0 };
+        this.type = 'Minion'; // Minion, Elite, Boss
+        this.hp = 10;
+        this.maxHp = 10;
+        this.damage = 10;
+        this.speed = 2;
+        this.expValue = 10;
+        this.target = null;
     }
 
-    // Proxy Transform properties
-    get x() { return this.gameObject ? this.gameObject.transform.x : this._initialPos.x; }
-    set x(v) { 
-        if (this.gameObject) this.gameObject.transform.x = v; 
-        else this._initialPos.x = v;
-    }
-
-    get y() { return this.gameObject ? this.gameObject.transform.y : this._initialPos.y; }
-    set y(v) { 
-        if (this.gameObject) this.gameObject.transform.y = v; 
-        else this._initialPos.y = v;
-    }
-
-    onLoad(props) {
-        this.isBoss = props.isBoss || false;
-        this.r = this.isBoss ? 60 : 15;
-        this.hp = this.isBoss ? 500 : 30;
-        this.maxHp = this.hp;
-        this.speed = this.isBoss ? 1.5 : rand(2, 4);
-        this.color = this.isBoss ? '#d32f2f' : '#f44336'; // 红色系
-        this.damage = this.isBoss ? 20 : 5;
-
-        // Set initial position
-        if (props.x !== undefined) this.x = props.x;
-        if (props.y !== undefined) this.y = props.y;
+    /**
+     * Initialize enemy state when spawned from pool
+     */
+    init(x, y, type = 'Minion') {
+        this.gameObject.transform.x = x;
+        this.gameObject.transform.y = y;
+        this.type = type;
+        
+        // Config based on type
+        switch(type) {
+            case 'Boss':
+                this.maxHp = 500;
+                this.speed = 1.5;
+                this.damage = 20;
+                this.gameObject.transform.localScale = { x: 3, y: 3 };
+                break;
+            case 'Elite':
+                this.maxHp = 50;
+                this.speed = 2.5;
+                this.damage = 15;
+                this.gameObject.transform.localScale = { x: 1.5, y: 1.5 };
+                break;
+            default: // Minion
+                this.maxHp = 10;
+                this.speed = 2;
+                this.damage = 5;
+                this.gameObject.transform.localScale = { x: 1, y: 1 };
+                break;
+        }
+        
+        this.hp = this.maxHp;
+        this.gameObject.active = true;
     }
 
     start() {
-        // Apply initial position if set before gameObject was assigned
-        if (this._initialPos.x !== 0 || this._initialPos.y !== 0) {
-             // If gameObject was already set during onLoad (via setter), this is redundant but harmless.
-             // If onLoad was called before addComponent, the setter updated _initialPos.
-             // Now we apply it to the transform.
-             this.gameObject.transform.x = this._initialPos.x;
-             this.gameObject.transform.y = this._initialPos.y;
+        // Find player as target
+        if (window.game && window.game.player) {
+            this.target = window.game.player;
         }
-
-        // Add Renderer
-        this.gameObject.addComponent(new CanvasRenderer((ctx) => {
-            ctx.fillStyle = this.color;
-            ctx.fillRect(-this.r, -this.r, this.r * 2, this.r * 2);
-
-            // Draw Health Bar (UI)
-            const hpPct = this.hp / this.maxHp;
-            ctx.fillStyle = 'red';
-            ctx.fillRect(-this.r, -this.r - 10, this.r*2, 5);
-            ctx.fillStyle = '#0f0';
-            ctx.fillRect(-this.r, -this.r - 10, this.r*2 * hpPct, 5);
-        }));
-        
-        // Add Collider
-        this.collider = new CircleCollider(this.r);
-        this.gameObject.addComponent(this.collider);
     }
 
     update(dt) {
-        if (!window.game || !window.game.player) return;
-        
-        const target = window.game.player;
-        const angle = Math.atan2(target.y - this.y, target.x - this.x);
-        this.x += Math.cos(angle) * this.speed;
-        this.y += Math.sin(angle) * this.speed;
+        if (!this.target) {
+            if (window.game && window.game.player) {
+                this.target = window.game.player;
+            }
+            return;
+        }
+
+        // Simple Pathfinding: Move towards player
+        const tx = this.target.x;
+        const ty = this.target.y;
+        const mx = this.gameObject.transform.x;
+        const my = this.gameObject.transform.y;
+
+        const dx = tx - mx;
+        const dy = ty - my;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if (dist > 0) {
+            const moveX = (dx / dist) * this.speed;
+            const moveY = (dy / dist) * this.speed;
+            
+            this.gameObject.transform.x += moveX;
+            this.gameObject.transform.y += moveY;
+        }
     }
 
-    get x() { return this.gameObject ? this.gameObject.transform.x : 0; }
-    set x(val) { if (this.gameObject) this.gameObject.transform.x = val; }
-    get y() { return this.gameObject ? this.gameObject.transform.y : 0; }
-    set y(val) { if (this.gameObject) this.gameObject.transform.y = val; }
+    takeDamage(amount) {
+        this.hp -= amount;
+        if (this.hp <= 0) {
+            this.die();
+        }
+    }
+
+    die() {
+        // Return to pool via Manager
+        if (window.enemyManager) {
+            window.enemyManager.returnEnemy(this.gameObject);
+        } else {
+            // Fallback destroy
+            this.gameObject.active = false;
+        }
+    }
 }
+
+window.Enemy = Enemy;
