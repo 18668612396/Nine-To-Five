@@ -75,59 +75,74 @@ class Scene {
     static fromJSON(json) {
         const scene = new Scene(json.name || 'Untitled Scene');
         
-        if (Array.isArray(json.objects)) {
-            for (const objData of json.objects) {
-                const type = objData.type || 'GameObject';
-                
-                // Try to find the class in global scope
-                const ClassRef = window[type];
-                if (!ClassRef) {
-                    console.warn(`SceneLoader: Class '${type}' not found.`);
-                    continue;
-                }
+        const instantiateObject = (objData, parent = null) => {
+            const type = objData.type || 'GameObject';
+            
+            // Try to find the class in global scope
+            const ClassRef = window[type];
+            if (!ClassRef) {
+                console.warn(`SceneLoader: Class '${type}' not found.`);
+                return null;
+            }
 
-                // Instantiate
-                // We assume a standard constructor or handle specific ones
-                let obj;
+            let obj;
+            try {
                 if (type === 'GameObject') {
                     obj = new GameObject(objData.name || 'GameObject', objData.x || 0, objData.y || 0);
                 } else {
-                    // For custom classes, we might need a factory or assume no-arg constructor + property setting
-                    // Or assume they follow (x, y) pattern if they are entities
-                    try {
-                        obj = new ClassRef();
-                        if (objData.x !== undefined) obj.x = objData.x;
-                        if (objData.y !== undefined) obj.y = objData.y;
-                        if (objData.name) obj.name = objData.name;
-                    } catch (e) {
-                        console.error(`SceneLoader: Failed to instantiate ${type}`, e);
+                    obj = new ClassRef();
+                    if (objData.x !== undefined) obj.x = objData.x;
+                    if (objData.y !== undefined) obj.y = objData.y;
+                    if (objData.name) obj.name = objData.name;
+                }
+            } catch (e) {
+                console.error(`SceneLoader: Failed to instantiate ${type}`, e);
+                return null;
+            }
+
+            // Set Properties
+            if (objData.properties) {
+                Object.assign(obj, objData.properties);
+            }
+
+            // Add Components
+            if (Array.isArray(objData.components)) {
+                for (const compData of objData.components) {
+                    const CompClass = window[compData.type];
+                    if (!CompClass) {
+                        console.warn(`SceneLoader: Component '${compData.type}' not found.`);
                         continue;
                     }
-                }
 
-                // Set Properties
-                if (objData.properties) {
-                    Object.assign(obj, objData.properties);
-                }
-
-                // Add Components
-                if (Array.isArray(objData.components)) {
-                    for (const compData of objData.components) {
-                        const CompClass = window[compData.type];
-                        if (!CompClass) {
-                            console.warn(`SceneLoader: Component '${compData.type}' not found.`);
-                            continue;
-                        }
-
-                        const comp = new CompClass();
-                        if (compData.properties) {
-                            Object.assign(comp, compData.properties);
-                        }
-                        obj.addComponent(comp);
+                    const comp = new CompClass();
+                    if (compData.properties) {
+                        Object.assign(comp, compData.properties);
                     }
+                    obj.addComponent(comp);
                 }
+            }
 
-                scene.add(obj);
+            // Set Parent
+            if (parent) {
+                parent.transform.setChild(obj.transform);
+            }
+            
+            // Always add to scene for flat update/draw list
+            scene.add(obj);
+
+            // Handle Children
+            if (Array.isArray(objData.children)) {
+                for (const childData of objData.children) {
+                    instantiateObject(childData, obj);
+                }
+            }
+
+            return obj;
+        };
+
+        if (Array.isArray(json.objects)) {
+            for (const objData of json.objects) {
+                instantiateObject(objData);
             }
         }
 
