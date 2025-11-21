@@ -1,0 +1,45 @@
+{
+    "name": "TestScene",
+    "objects": [
+        {
+            "type": "GameObject",
+            "name": "Background",
+            "x": 0,
+            "y": 0,
+            "components": [
+                {
+                    "type": "StaticRenderer",
+                    "properties": {
+                        "color": "#222",
+                        "width": 2500,
+                        "height": 2500
+                    }
+                }
+            ]
+        },
+        {
+            "type": "GameObject",
+            "name": "Obstacle_Center",
+            "x": 600,
+            "y": 400,
+            "components": [
+                {
+                    "type": "StaticRenderer",
+                    "properties": {
+                        "color": "#888",
+                        "width": 100,
+                        "height": 100,
+                        "shape": "rect"
+                    }
+                },
+                {
+                    "type": "Collider",
+                    "properties": {
+                        "width": 100,
+                        "height": 100
+                    }
+                }
+            ]
+        }
+    ]
+}

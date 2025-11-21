@@ -22,29 +22,37 @@ class StaticRenderer extends Renderer {
         if (!this.visible) return;
         
         const t = this.gameObject.transform;
+        if (!t) return;
+
         ctx.save();
-        ctx.translate(t.x + this.offsetX, t.y + this.offsetY);
-        ctx.rotate(t.rotation);
-        ctx.scale(t.scale.x, t.scale.y);
+        try {
+            ctx.translate(t.x + this.offsetX, t.y + this.offsetY);
+            ctx.rotate(t.rotation);
+            ctx.scale(t.scale.x, t.scale.y);
 
-        if (this.image && this.image.complete) {
-            // If width/height not specified, use image natural size
-            const w = this.width || this.image.width;
-            const h = this.height || this.image.height;
-            ctx.drawImage(this.image, -w/2, -h/2, w, h);
-        } else if (this.color) {
-            ctx.fillStyle = this.color;
-            ctx.beginPath();
-            if (this.shape === 'circle') {
-                ctx.arc(0, 0, this.width / 2, 0, Math.PI * 2);
-            } else if (this.shape === 'ellipse') {
-                ctx.ellipse(0, 0, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
-            } else {
-                ctx.rect(-this.width/2, -this.height/2, this.width, this.height);
+            if (this.image && this.image.complete && this.image.naturalWidth > 0) {
+                // If width/height not specified, use image natural size
+                const w = this.width || this.image.width;
+                const h = this.height || this.image.height;
+                if (w > 0 && h > 0) {
+                    ctx.drawImage(this.image, -w/2, -h/2, w, h);
+                }
+            } else if (this.color) {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                if (this.shape === 'circle') {
+                    ctx.arc(0, 0, this.width / 2, 0, Math.PI * 2);
+                } else if (this.shape === 'ellipse') {
+                    ctx.ellipse(0, 0, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
+                } else {
+                    ctx.rect(-this.width/2, -this.height/2, this.width, this.height);
+                }
+                ctx.fill();
             }
-            ctx.fill();
+        } catch (e) {
+            console.error("StaticRenderer draw error:", e);
+        } finally {
+            ctx.restore();
         }
-
-        ctx.restore();
     }
 }

@@ -35,21 +35,38 @@ class DynamicRenderer extends Renderer {
         if (!this.visible || this.sprites.length === 0) return;
 
         const t = this.gameObject.transform;
-        const img = this.sprites[this.currentFrame];
+        if (!t) return;
+
+        let img = this.sprites[this.currentFrame];
         
-        if (!img || !img.complete) return;
+        // Fix flickering: if current frame is not ready, try to find a ready frame
+        if (!img || !img.complete || img.naturalWidth === 0) {
+            const readyImg = this.sprites.find(s => s && s.complete && s.naturalWidth > 0);
+            if (readyImg) {
+                img = readyImg;
+            } else {
+                return;
+            }
+        }
 
         const w = this.width || img.width;
         const h = this.height || img.height;
 
+        // Safety check
+        if (!Number.isFinite(w) || !Number.isFinite(h) || w === 0 || h === 0) return;
+
         ctx.save();
-        ctx.translate(t.x + this.offsetX, t.y + this.offsetY);
-        ctx.rotate(t.rotation);
-        ctx.scale(this.flipX ? -t.scale.x : t.scale.x, t.scale.y);
+        try {
+            ctx.translate(t.x + this.offsetX, t.y + this.offsetY);
+            ctx.rotate(t.rotation);
+            ctx.scale(this.flipX ? -t.scale.x : t.scale.x, t.scale.y);
 
-        ctx.drawImage(img, -w/2, -h/2, w, h);
-
-        ctx.restore();
+            ctx.drawImage(img, -w/2, -h/2, w, h);
+        } catch (e) {
+            console.error("DynamicRenderer draw error:", e);
+        } finally {
+            ctx.restore();
+        }
     }
     
     play() { this.isPlaying = true; }

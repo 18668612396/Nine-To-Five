@@ -46,25 +46,29 @@ class Particle {
         if (!this.active) return;
 
         ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation);
-        
-        // Calculate final alpha
-        const finalAlpha = this.color[3] * this.alpha;
-        ctx.globalAlpha = finalAlpha;
-
-        if (this.texture && this.texture.complete) {
-            ctx.drawImage(this.texture, -this.size / 2, -this.size / 2, this.size, this.size);
-        } else {
-            // Convert 0-1 color to 0-255 for Canvas
-            const r = Math.floor(this.color[0] * 255);
-            const g = Math.floor(this.color[1] * 255);
-            const b = Math.floor(this.color[2] * 255);
+        try {
+            ctx.translate(this.x, this.y);
+            ctx.rotate(this.rotation);
             
-            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1)`; // Alpha handled by globalAlpha
-            ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
-        }
+            // Calculate final alpha
+            const finalAlpha = this.color[3] * this.alpha;
+            ctx.globalAlpha = finalAlpha;
 
-        ctx.restore();
+            if (this.texture && this.texture.complete && this.texture.naturalWidth > 0) {
+                ctx.drawImage(this.texture, -this.size / 2, -this.size / 2, this.size, this.size);
+            } else {
+                // Convert 0-1 color to 0-255 for Canvas
+                const r = Math.floor(this.color[0] * 255);
+                const g = Math.floor(this.color[1] * 255);
+                const b = Math.floor(this.color[2] * 255);
+                
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1)`; // Alpha handled by globalAlpha
+                ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+            }
+        } catch (e) {
+            console.error("Particle draw error:", e);
+        } finally {
+            ctx.restore();
+        }
     }
 }

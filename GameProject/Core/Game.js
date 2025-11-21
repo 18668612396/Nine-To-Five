@@ -511,14 +511,20 @@ class Game extends EngineObject {
         this.ctx.strokeRect(0, 0, this.worldWidth, this.worldHeight);
 
         if (this.state === 'PLAYING') {
-            // Draw Obstacles
-            this.obstacles.forEach(obs => obs.draw(this.ctx));
+            // Y-Sort Rendering: Sort objects by Y coordinate to handle occlusion correctly
+            const renderList = [
+                ...this.obstacles,
+                ...this.loots,
+                ...this.enemies,
+                this.player
+            ];
 
-            this.loots.forEach(l => l.draw(this.ctx));
-            this.enemies.forEach(e => e.draw(this.ctx));
+            renderList.sort((a, b) => a.y - b.y);
+
+            renderList.forEach(obj => obj.draw(this.ctx));
+
+            // Bullets and Particles are usually drawn on top
             this.bullets.forEach(b => b.draw(this.ctx));
-            this.player.draw(this.ctx);
-            
             this.particleSystemManager.draw(this.ctx);
         }
 
