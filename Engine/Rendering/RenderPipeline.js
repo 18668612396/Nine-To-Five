@@ -32,9 +32,9 @@ class RenderPipeline {
      */
     endFrame() {
         // Debug: Log queue size occasionally
-        if (Math.random() < 0.01) {
-            console.log(`RenderPipeline: Processing ${this._renderQueue.length} commands.`);
-        }
+        // if (Math.random() < 0.01) {
+        //     console.log(`RenderPipeline: Processing ${this._renderQueue.length} commands.`);
+        // }
 
         // Sort by sorting order
         this._renderQueue.sort((a, b) => {

@@ -12,6 +12,9 @@ class GridBackground extends GameBehaviour {
             renderer = new CanvasRenderer();
             this.gameObject.addComponent(renderer);
         }
+        
+        // Ensure background is drawn first
+        renderer.sortingOrder = -1000;
 
         // Custom draw callback for efficient grid rendering
         renderer.drawCallback = (ctx) => {

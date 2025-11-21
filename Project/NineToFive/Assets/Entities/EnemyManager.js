@@ -5,17 +5,22 @@ class EnemyManager extends GameBehaviour {
         this.spawnTimer = 0;
         this.spawnInterval = 60; // Frames
         this.enemyPrefab = null;
+        this.deathEffectPrefab = null;
         window.enemyManager = this;
     }
 
     start() {
-        // Create Container for Enemies
-        this.enemiesContainer = new GameObject('Enemies');
-        if (window.game && window.game.sceneManager && window.game.sceneManager.activeScene) {
-            window.game.sceneManager.activeScene.add(this.enemiesContainer);
-        }
-
         this.loadPrefab();
+    }
+
+    getContainer() {
+        if (!this.enemiesContainer || this.enemiesContainer.destroyed) {
+            this.enemiesContainer = new GameObject('Enemies');
+            if (window.game && window.game.sceneManager && window.game.sceneManager.activeScene) {
+                window.game.sceneManager.activeScene.add(this.enemiesContainer);
+            }
+        }
+        return this.enemiesContainer;
     }
 
     async loadPrefab() {
@@ -26,6 +31,22 @@ class EnemyManager extends GameBehaviour {
             console.log("EnemyManager: Prefab loaded.");
         } catch (e) {
             console.error("EnemyManager: Failed to load prefab.", e);
+        }
+
+        // Load Death Effect Prefab
+        try {
+            this.deathEffectPrefab = await window.resourceManager.load('Assets/prefabs/EnemyDeathEffect.prefab');
+            console.log("EnemyManager: Death Effect Prefab loaded.");
+        } catch (e) {
+            console.error("EnemyManager: Failed to load death effect prefab.", e);
+        }
+    }
+
+    spawnDeathEffect(x, y) {
+        if (this.deathEffectPrefab) {
+            // Pass position to instantiate so particles spawn at correct location
+            const effectGO = this.deathEffectPrefab.instantiate({ x: x, y: y });
+            // Effect handles its own destruction via ParticleSystem duration
         }
     }
 
@@ -50,7 +71,8 @@ class EnemyManager extends GameBehaviour {
         if (!this.enemyPrefab) return;
 
         // Instantiate under the container
-        const enemyGO = this.enemyPrefab.instantiate(null, this.enemiesContainer);
+        const container = this.getContainer();
+        const enemyGO = this.enemyPrefab.instantiate(null, container);
         
         // Determine spawn position (random edge of screen)
         // Assuming 800x600 resolution for now

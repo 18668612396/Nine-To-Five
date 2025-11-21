@@ -93,6 +93,11 @@ class Enemy extends GameBehaviour {
             window.lootManager.spawnLoot(this.gameObject.transform.x, this.gameObject.transform.y, 'exp', this.expValue);
         }
 
+        // Spawn Death Effect
+        if (window.enemyManager) {
+            window.enemyManager.spawnDeathEffect(this.gameObject.transform.x, this.gameObject.transform.y);
+        }
+
         // Destroy self
         this.gameObject.destroy();
     }

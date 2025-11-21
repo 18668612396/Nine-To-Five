@@ -6,20 +6,23 @@ class LootManager extends GameBehaviour {
         window.lootManager = this;
     }
 
-    start() {
-        // Create Container for Loot
-        this.lootContainer = new GameObject('LootContainer');
-        if (window.game && window.game.sceneManager && window.game.sceneManager.activeScene) {
-            window.game.sceneManager.activeScene.add(this.lootContainer);
+    getContainer() {
+        if (!this.lootContainer || this.lootContainer.destroyed) {
+            this.lootContainer = new GameObject('LootContainer');
+            if (window.game && window.game.sceneManager && window.game.sceneManager.activeScene) {
+                window.game.sceneManager.activeScene.add(this.lootContainer);
+            }
         }
+        return this.lootContainer;
     }
 
     spawnLoot(x, y, type = 'exp', value = 10) {
         const go = new GameObject('Loot');
         
         // Set Parent
-        if (this.lootContainer) {
-            go.transform.setParent(this.lootContainer.transform);
+        const container = this.getContainer();
+        if (container) {
+            go.transform.setParent(container.transform);
         }
 
         const lootScript = new Loot();

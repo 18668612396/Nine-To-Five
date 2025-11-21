@@ -1,0 +1,37 @@
+{
+    "name": "EnemyDeathEffect",
+    "type": "GameObject",
+    "components": [
+        {
+            "type": "Transform",
+            "properties": {
+                "localPosition": { "x": 0, "y": 0 }
+            }
+        },
+        {
+            "type": "ParticleSystem",
+            "properties": {
+                "duration": 1.0,
+                "looping": false,
+                "destroyOnStop": true,
+                "startLifetime": { "min": 0.5, "max": 1.0 },
+                "startSpeed": { "min": 2, "max": 6 },
+                "startSize": { "min": 4, "max": 10 },
+                "startColor": [1, 0.2, 0.2, 1],
+                "emission": {
+                    "rateOverTime": 0,
+                    "bursts": [
+                        { "time": 0, "count": 20 }
+                    ]
+                },
+                "shape": {
+                    "angle": 0,
+                    "arc": 6.28318
+                }
+            }
+        },
+        {
+            "type": "ParticleSystemRenderer"
+        }
+    ]
+}

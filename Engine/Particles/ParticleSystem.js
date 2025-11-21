@@ -1,5 +1,5 @@
 class ParticleSystem extends Component {
-    constructor(config) {
+    constructor(config = {}) {
         super('ParticleSystem');
         this.particles = [];
         
@@ -12,6 +12,7 @@ class ParticleSystem extends Component {
         this.startSize = config.startSize || { min: 5, max: 10 };
         this.startColor = config.startColor || [1, 1, 1, 1]; // [r,g,b,a] 0-1
         this.texture = config.texture || null;
+        this.destroyOnStop = config.destroyOnStop !== undefined ? config.destroyOnStop : false;
 
         // Emission Module
         this.emission = {
@@ -93,12 +94,17 @@ class ParticleSystem extends Component {
                 this.particles.splice(i, 1);
             }
         }
+        
+        // Debug Log
+        // if (activeCount > 0) console.log(`ParticleSystem: ${activeCount} active particles`);
 
         // Check if system is completely finished (no particles left and not emitting)
         if (!this.looping && this.time >= this.duration && activeCount === 0) {
             this.isStopped = true;
             // Optionally destroy the game object if it was just for this effect
-            if (this.gameObject && this.gameObject.name === 'ParticleEffect') {
+            if (this.destroyOnStop && this.gameObject) {
+                this.gameObject.destroy();
+            } else if (this.gameObject && this.gameObject.name === 'ParticleEffect') {
                 this.gameObject.active = false;
             }
         }
@@ -137,7 +143,17 @@ class ParticleSystem extends Component {
         }
     }
 
+    draw(ctx) {
+        for (const p of this.particles) {
+            if (p.active) {
+                p.draw(ctx);
+            }
+        }
+    }
+
     randomRange(min, max) {
         return min + Math.random() * (max - min);
     }
 }
+
+window.ParticleSystem = ParticleSystem;
