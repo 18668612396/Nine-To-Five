@@ -4,7 +4,7 @@ class UIManager extends EngineObject {
         this.game = game;
         
         // Cache DOM elements
-        this.townUI = document.getElementById('townUI');
+        // this.townUI = document.getElementById('townUI'); // Removed
         this.levelSelectUI = document.getElementById('levelSelectUI');
         this.talentUI = document.getElementById('talentUI');
         this.inventoryUI = document.getElementById('inventoryUI');
@@ -18,15 +18,16 @@ class UIManager extends EngineObject {
         this.lootMsg = document.getElementById('lootMsg');
 
         // Buttons
-        this.btnOpenLevelSelect = document.getElementById('btnOpenLevelSelect');
+        // Town UI Buttons Removed
+        // this.btnOpenLevelSelect = document.getElementById('btnOpenLevelSelect');
         this.btnBackToTown = document.getElementById('btnBackToTown');
         
-        this.btnOpenTalents = document.getElementById('btnOpenTalents');
-        this.btnOpenInventory = document.getElementById('btnOpenInventory');
+        // this.btnOpenTalents = document.getElementById('btnOpenTalents');
+        // this.btnOpenInventory = document.getElementById('btnOpenInventory');
         this.btnCloseTalents = document.getElementById('btnCloseTalents');
         this.btnCloseInventory = document.getElementById('btnCloseInventory');
 
-        this.btnOpenSettings = document.getElementById('btnOpenSettings');
+        // this.btnOpenSettings = document.getElementById('btnOpenSettings');
         this.btnCloseSettings = document.getElementById('btnCloseSettings');
         this.btnClearTalents = document.getElementById('btnClearTalents');
         this.btnClearInventory = document.getElementById('btnClearInventory');
@@ -62,15 +63,16 @@ class UIManager extends EngineObject {
     }
 
     initListeners() {
-        if (this.btnOpenLevelSelect) this.btnOpenLevelSelect.addEventListener('click', () => this.showLevelSelect());
+        // Town UI Listeners Removed
+        // if (this.btnOpenLevelSelect) this.btnOpenLevelSelect.addEventListener('click', () => this.showLevelSelect());
         if (this.btnBackToTown) this.btnBackToTown.addEventListener('click', () => this.showTown());
 
-        if (this.btnOpenTalents) this.btnOpenTalents.addEventListener('click', () => this.showTalents());
-        if (this.btnOpenInventory) this.btnOpenInventory.addEventListener('click', () => this.showInventory());
+        // if (this.btnOpenTalents) this.btnOpenTalents.addEventListener('click', () => this.showTalents());
+        // if (this.btnOpenInventory) this.btnOpenInventory.addEventListener('click', () => this.showInventory());
         if (this.btnCloseTalents) this.btnCloseTalents.addEventListener('click', () => this.showTown());
         if (this.btnCloseInventory) this.btnCloseInventory.addEventListener('click', () => this.showTown());
 
-        if (this.btnOpenSettings) this.btnOpenSettings.addEventListener('click', () => this.showSettings());
+        // if (this.btnOpenSettings) this.btnOpenSettings.addEventListener('click', () => this.showSettings());
         if (this.btnCloseSettings) this.btnCloseSettings.addEventListener('click', () => this.showTown());
         
         if (this.btnClearTalents) this.btnClearTalents.addEventListener('click', () => this.game.clearData('talents'));
@@ -101,9 +103,8 @@ class UIManager extends EngineObject {
     }
 
     showTown() {
-        // this.townUI.style.display = 'block'; // Disable DOM UI for Town
-        this.townUI.style.display = 'none'; // Hide DOM UI
-        this.townUI.classList.remove('blurred');
+        // this.townUI.style.display = 'none'; // Removed
+        // this.townUI.classList.remove('blurred'); // Removed
         
         this.levelSelectUI.style.display = 'none';
         this.talentUI.style.display = 'none';
@@ -115,33 +116,33 @@ class UIManager extends EngineObject {
     }
 
     showLevelSelect() {
-        this.townUI.style.display = 'block';
-        this.townUI.classList.add('blurred');
+        // this.townUI.style.display = 'block'; // Removed
+        // this.townUI.classList.add('blurred'); // Removed
         
         this.updateLevelList();
         this.levelSelectUI.style.display = 'block';
     }
 
     showSettings() {
-        this.townUI.style.display = 'block';
-        this.townUI.classList.add('blurred');
+        // this.townUI.style.display = 'block'; // Removed
+        // this.townUI.classList.add('blurred'); // Removed
         this.settingsUI.style.display = 'block';
     }
 
     showTalents() {
-        this.townUI.style.display = 'block';
-        this.townUI.classList.add('blurred');
+        // this.townUI.style.display = 'block'; // Removed
+        // this.townUI.classList.add('blurred'); // Removed
         this.talentUI.style.display = 'block';
     }
 
     showInventory() {
-        this.townUI.style.display = 'block';
-        this.townUI.classList.add('blurred');
+        // this.townUI.style.display = 'block'; // Removed
+        // this.townUI.classList.add('blurred'); // Removed
         this.inventoryUI.style.display = 'block';
     }
 
     showHUD() {
-        this.townUI.style.display = 'none';
+        // this.townUI.style.display = 'none'; // Removed
         this.levelSelectUI.style.display = 'none';
         this.talentUI.style.display = 'none';
         this.inventoryUI.style.display = 'none';

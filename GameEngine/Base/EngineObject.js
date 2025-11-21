@@ -10,3 +10,5 @@ class EngineObject {
         return `${this.name} (${this.id})`;
     }
 }
+
+window.EngineObject = EngineObject;

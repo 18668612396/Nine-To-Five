@@ -10,26 +10,8 @@
         <canvas id="gameCanvas"></canvas>
 
         <div id="uiLayer">
-            <!-- 主城 UI -->
-            <div id="townUI" class="full-screen-ui">
-                <div class="game-title">喵办公：准时下班生存战</div>
-                
-                <div class="hero-preview">
-                    <div class="hero-avatar">🐱</div>
-                    <div class="hero-stats">Lv.1 实习生猫</div>
-                </div>
-
-                <div class="menu-bar bottom-left">
-                    <button id="btnOpenTalents" class="btn btn-menu">天赋</button>
-                    <button id="btnOpenInventory" class="btn btn-menu">背包</button>
-                </div>
-
-                <div class="menu-bar bottom-right">
-                    <button id="btnOpenLevelSelect" class="btn btn-start">打卡上班 ▶</button>
-                </div>
-
-                <button id="btnOpenSettings" class="btn btn-icon top-right">⚙️</button>
-            </div>
+            <!-- 主城 UI (已移除，由 MainScene 接管) -->
+            <!-- <div id="townUI"> ... </div> -->
 
             <!-- 天赋树 UI -->
             <div id="talentUI" class="popup-ui">
@@ -166,20 +148,21 @@
     </div>
 
     <!-- Game Engine -->
-    <script src="../GameEngine/Core/EngineObject.js"></script>
-    <script src="../GameEngine/Core/Component.js"></script>
-    <script src="../GameEngine/Core/Transform.js"></script>
-    <script src="../GameEngine/Core/Collider.js"></script>
-    <script src="../GameEngine/Core/CircleCollider.js"></script>
-    <script src="../GameEngine/Core/Renderer.js"></script>
-    <script src="../GameEngine/Core/StaticRenderer.js"></script>
-    <script src="../GameEngine/Core/DynamicRenderer.js"></script>
-    <script src="../GameEngine/Core/CanvasRenderer.js"></script>
-    <script src="../GameEngine/Core/ParticleSystemRenderer.js"></script>
-    <script src="../GameEngine/Core/GameObject.js"></script>
-    <script src="../GameEngine/Core/Scene.js"></script>
-    <script src="../GameEngine/Core/SceneManager.js"></script>
-    <script src="../GameEngine/Core/ResourceManager.js"></script>
+    <script src="../GameEngine/Base/EngineObject.js"></script>
+    <script src="../GameEngine/Base/Component.js"></script>
+    <script src="../GameEngine/Base/GameBehaviour.js"></script>
+    <script src="../GameEngine/Base/Transform.js"></script>
+    <script src="../GameEngine/Physics/Collider.js"></script>
+    <script src="../GameEngine/Physics/CircleCollider.js"></script>
+    <script src="../GameEngine/Rendering/Renderer.js"></script>
+    <script src="../GameEngine/Rendering/StaticRenderer.js"></script>
+    <script src="../GameEngine/Rendering/DynamicRenderer.js"></script>
+    <script src="../GameEngine/Rendering/CanvasRenderer.js"></script>
+    <script src="../GameEngine/Rendering/ParticleSystemRenderer.js"></script>
+    <script src="../GameEngine/Base/GameObject.js"></script>
+    <script src="../GameEngine/Scene/Scene.js"></script>
+    <script src="../GameEngine/Scene/SceneManager.js"></script>
+    <script src="../GameEngine/Resources/ResourceManager.js"></script>
     <script src="../GameEngine/Utils/Utils.js"></script>
     <script src="../GameEngine/Particles/Particle.js"></script>
     <script src="../GameEngine/Particles/ParticleSystem.js"></script>

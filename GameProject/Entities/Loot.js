@@ -17,7 +17,16 @@ class Loot extends GameObject {
         this.floatOffset = Math.random() * Math.PI * 2;
         
         // Add Renderer
-        this.renderer = new StaticRenderer(this.color, this.r * 2, this.r * 2, this.type === 'exp' ? 'circle' : 'rect');
+        this.renderer = new CanvasRenderer((ctx) => {
+            ctx.fillStyle = this.color;
+            if (this.type === 'exp') {
+                ctx.beginPath();
+                ctx.arc(0, 0, this.r, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.fillRect(-this.r, -this.r, this.r * 2, this.r * 2);
+            }
+        });
         this.addComponent(this.renderer);
         
         // Add Collider

@@ -20,7 +20,12 @@ class Bullet extends GameObject {
         
         // Add Renderer
         const color = this.isFlame ? 'rgba(255, 87, 34, 1)' : '#ffeb3b';
-        this.renderer = new StaticRenderer(color, this.r * 2, this.r * 2, 'circle');
+        this.renderer = new CanvasRenderer((ctx) => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(0, 0, this.r, 0, Math.PI * 2);
+            ctx.fill();
+        });
         this.addComponent(this.renderer);
         
         // Add Collider

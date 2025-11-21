@@ -7,3 +7,5 @@ class Transform extends Component {
         this.scale = { x: 1, y: 1 };
     }
 }
+
+window.Transform = Transform;

@@ -48,6 +48,30 @@ class GameObject extends EngineObject {
         }
     }
 
+    setActive(value) {
+        if (this.active !== value) {
+            this.active = value;
+            // Notify components
+            for (const component of this.components) {
+                if (component.enabled) {
+                    if (this.active) {
+                        if (component.onEnable) component.onEnable();
+                    } else {
+                        if (component.onDisable) component.onDisable();
+                    }
+                }
+            }
+        }
+    }
+
+    destroy() {
+        // Notify components
+        for (const component of this.components) {
+            if (component.onDestroy) component.onDestroy();
+        }
+        this.destroyed = true; // Mark for removal by Scene
+    }
+
     draw(ctx) {
         if (!this.active) return;
         for (const component of this.components) {
@@ -57,3 +81,5 @@ class GameObject extends EngineObject {
         }
     }
 }
+
+window.GameObject = GameObject;

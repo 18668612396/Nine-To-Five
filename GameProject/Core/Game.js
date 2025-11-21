@@ -79,14 +79,6 @@ class Game extends EngineObject {
         // Start loop
         this.loop = this.loop.bind(this);
         requestAnimationFrame(this.loop);
-    }                    this.togglePause(false);
-                }
-            }
-        });
-
-        // Start loop
-        this.loop = this.loop.bind(this);
-        requestAnimationFrame(this.loop);
     }
 
     resize() {
@@ -130,9 +122,10 @@ class Game extends EngineObject {
     backToTown() {
         this.state = 'TOWN';
         resourceManager.load('assets/scenes/main.scene').then(scene => {
+            console.log("Loaded Main Scene:", scene);
             this.sceneManager.loadScene(scene);
             this.uiManager.showTown();
-        });
+        }).catch(e => console.error("Failed to load main scene:", e));
     }
 
     startLevel(lvl) {
@@ -177,7 +170,12 @@ class Game extends EngineObject {
             // Convert Obstacle to GameObject
             const obs = new GameObject('Obstacle', x, y);
             obs.r = r; // Keep for legacy or just use collider
-            obs.addComponent(new StaticRenderer('#555', r*2, r*2, 'circle'));
+            obs.addComponent(new CanvasRenderer((ctx) => {
+                ctx.fillStyle = '#555';
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fill();
+            }));
             obs.addComponent(new CircleCollider(r));
             
             this.obstacles.push(obs);
@@ -241,32 +239,89 @@ class Game extends EngineObject {
         this.uiManager.showBossLabel();
     }
 
+    loadData() {
+        const saved = localStorage.getItem('officeMageSave');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                this.maxLevel = data.maxLevel || 1;
+                this.metaData = data.metaData || {
+                    talents: { hp: 0, atk: 0, spd: 0 },
+                    inventory: [],
+                    gold: 0
+                };
+            } catch (e) {
+                console.error("Save file corrupted", e);
+            }
+        }
+    }
+
+    saveData() {
+        const data = {
+            maxLevel: this.maxLevel,
+            metaData: this.metaData
+        };
+        localStorage.setItem('officeMageSave', JSON.stringify(data));
+    }
+
+    clearData(type) {
+        if (type === 'talents') {
+            this.metaData.talents = { hp: 0, atk: 0, spd: 0 };
+            alert("天赋已重置");
+        } else if (type === 'inventory') {
+            this.metaData.inventory = [];
+            alert("背包已清空");
+        } else if (type === 'levels') {
+            this.maxLevel = 1;
+            alert("关卡进度已重置");
+        } else {
+            // Clear all
+            localStorage.removeItem('officeMageSave');
+            this.maxLevel = 1;
+            this.metaData = {
+                talents: { hp: 0, atk: 0, spd: 0 },
+                inventory: [],
+                gold: 0
+            };
+            alert("所有存档已清除");
+            this.backToTown();
+        }
+        this.saveData();
+    }
+
+    completeLevel() {
+        if (this.level === this.maxLevel) {
+            this.maxLevel++;
+        }
+        this.metaData.gold += 100 * this.level;
+        this.saveData();
+    }
+
+    gameOver() {
+        this.state = 'GAMEOVER';
+        this.uiManager.showGameOver();
+    }
+
+    victory() {
+        this.state = 'VICTORY';
+        this.completeLevel();
+        this.uiManager.showVictory();
+    }
+
+    triggerLevelUp() {
+        this.state = 'LEVEL_UP';
+        const choices = this.cardManager.getChoices(3);
+        this.uiManager.showLevelUp(this.player.level, choices, (card) => {
+            card.apply(this);
+            this.state = 'PLAYING';
+        });
+    }
+
     update() {
         if (this.state !== 'PLAYING') return;
 
         // Update Scene (Updates all GameObjects)
         this.sceneManager.update(1/60);
-
-        // TEST: Update particle system position
-        if (this.testPs) {
-            this.testPs.x = this.player.x;
-            this.testPs.y = this.player.y;
-        }
-
-        // Player vs Obstacles
-        this.obstacles.forEach(obs => {
-            if (checkCol(this.player.collider, obs.getComponent('CircleCollider'))) {
-                // Simple push back
-                const dx = this.player.x - obs.x;
-                const dy = this.player.y - obs.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                const overlap = (this.player.collider.radius + obs.getComponent('CircleCollider').radius) - dist;
-                if (dist > 0) {
-                    this.player.x += (dx/dist) * overlap;
-                    this.player.y += (dy/dist) * overlap;
-                }
-            }
-        });
 
         // Camera Follow
         const targetX = this.player.x - this.canvas.width / 2;
@@ -279,116 +334,8 @@ class Game extends EngineObject {
         this.camera.x = Math.max(0, Math.min(this.camera.x, this.worldWidth - this.canvas.width));
         this.camera.y = Math.max(0, Math.min(this.camera.y, this.worldHeight - this.canvas.height));
 
-        // Auto Shoot Logic
-        if (this.player.fireTimer <= 0) {
-            let nearest = null;
-            let minDist = Infinity;
-            for (const enemy of this.enemies) {
-                const dx = enemy.x - this.player.x;
-                const dy = enemy.y - this.player.y;
-                const dist = dx*dx + dy*dy;
-                // Only shoot if within range (e.g. screen size)
-                if (dist < 1000*1000 && dist < minDist) {
-                    minDist = dist;
-                    nearest = enemy;
-                }
-            }
-
-            if (nearest) {
-                this.shoot(nearest.x, nearest.y);
-                this.player.fireTimer = this.player.fireRate;
-            }
-        }
-
-        this.bullets.forEach(b => b.update());
-        // Bullet vs Obstacles
-        this.bullets = this.bullets.filter(b => {
-            if (!b.active) return false;
-            for (const obs of this.obstacles) {
-                if (checkCol(b.collider, obs.getComponent('CircleCollider'))) return false;
-            }
-            return true;
-        });
-
-        this.spawnEnemy();
-
-        this.enemies.forEach(e => {
-            e.update(this.player);
-            
-            // Enemy vs Obstacles (Simple avoidance/slide)
-            this.obstacles.forEach(obs => {
-                if (checkCol(e.collider, obs.getComponent('CircleCollider'))) {
-                    const dx = e.x - obs.x;
-                    const dy = e.y - obs.y;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-                    const overlap = (e.collider.radius + obs.getComponent('CircleCollider').radius) - dist;
-                    if (dist > 0) {
-                        e.x += (dx/dist) * overlap;
-                        e.y += (dy/dist) * overlap;
-                    }
-                }
-            });
-
-            if (checkCol(this.player.collider, e.collider)) {
-                this.player.hp -= 0.5;
-                if (this.player.hp <= 0) {
-                    this.gameOver();
-                }
-            }
-
-            this.bullets.forEach(b => {
-                if (b.active && checkCol(b.collider, e.collider)) {
-                    // Check if already hit this enemy
-                    if (b.hitList.includes(e.id)) return;
-                    
-                    b.hitList.push(e.id);
-                    e.hp -= b.damage; // Use bullet damage
-                    
-                    // Hit Effect
-                    this.particleSystemManager.createHitEffect(b.x, b.y);
-
-                    // Handle Pierce
-                    if (b.pierce > 0) {
-                        b.pierce--;
-                    } else {
-                        b.active = false;
-                    }
-
-                    if (e.hp <= 0) {
-                        e.active = false;
-                        this.handleKill(e);
-                    }
-                }
-            });
-        });
-        this.enemies = this.enemies.filter(e => e.active);
-
-        this.loots.forEach(l => {
-            if (checkCol(this.player.collider, l.collider)) {
-                l.active = false;
-                if (this.sceneManager.currentScene) this.sceneManager.currentScene.remove(l); // Remove from Scene
-                
-                if (l.type === 'exp') {
-                    const leveledUp = this.player.gainExp(l.value);
-                    if (leveledUp) {
-                        this.triggerLevelUp();
-                    }
-                } else {
-                    this.player.damage += 2;
-                    this.uiManager.showLootMsg("获得装备：攻击力 +2 !");
-                }
-            }
-        });
-        this.loots = this.loots.filter(l => l.active);
-
         // Update Particles
         this.particleSystemManager.update(1/60);
-
-        // Update Timer
-        this.survivalTime += 1/60; // Assuming 60 FPS
-        if (!this.bossSpawned && this.survivalTime >= this.maxSurvivalTime) {
-            this.spawnBoss();
-        }
 
         this.uiManager.update(this.player, this.survivalTime, this.maxSurvivalTime);
     }
@@ -419,8 +366,6 @@ class Game extends EngineObject {
             this.sceneManager.currentScene.add(loot);
         }
     }
-
-    // ...existing code...
 
     draw() {
         this.ctx.fillStyle = '#333';

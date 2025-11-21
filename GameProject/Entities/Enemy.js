@@ -18,7 +18,10 @@ class Enemy extends GameObject {
         this.damage = isBoss ? 20 : 5;
         
         // Add Renderer
-        this.addComponent(new StaticRenderer(this.color, this.r * 2, this.r * 2, 'rect'));
+        this.addComponent(new CanvasRenderer((ctx) => {
+            ctx.fillStyle = this.color;
+            ctx.fillRect(-this.r, -this.r, this.r * 2, this.r * 2);
+        }));
         
         // Add Collider
         this.collider = new CircleCollider(this.r);

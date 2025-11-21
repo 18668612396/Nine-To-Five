@@ -19,6 +19,9 @@ class Scene {
     }
 
     update(dt) {
+        // Remove destroyed objects
+        this.gameObjects = this.gameObjects.filter(obj => !obj.destroyed);
+
         // Iterate over a copy to allow modification during update
         const activeObjects = this.gameObjects.filter(obj => obj.active);
         for (const obj of activeObjects) {
@@ -27,12 +30,34 @@ class Scene {
     }
 
     draw(ctx) {
-        // Y-Sort for 2.5D effect
         // Filter visible objects
         const renderList = this.gameObjects.filter(obj => obj.active);
         
-        // Sort by Y coordinate
+        // Sort by sortingOrder then Y coordinate
         renderList.sort((a, b) => {
+            // Try to get Renderer component for sorting order
+            // Note: This assumes Renderer is available in global scope or imported
+            // Since we are in Scene.js, we might not have direct access to Renderer class if not global.
+            // But in this project structure, classes are global.
+            
+            let orderA = 0;
+            let orderB = 0;
+            
+            // We can't easily use instanceof Renderer if Renderer isn't defined yet or circular dependency.
+            // But we can check if the object has a component with sortingOrder property.
+            // Or just assume the first component with sortingOrder is the renderer.
+            
+            const findRenderer = (obj) => obj.components.find(c => c.sortingOrder !== undefined);
+            const rA = findRenderer(a);
+            const rB = findRenderer(b);
+            
+            if (rA) orderA = rA.sortingOrder;
+            if (rB) orderB = rB.sortingOrder;
+
+            if (orderA !== orderB) {
+                return orderA - orderB;
+            }
+
             const ay = a.transform ? a.transform.y : a.y;
             const by = b.transform ? b.transform.y : b.y;
             return ay - by;
@@ -109,3 +134,5 @@ class Scene {
         return scene;
     }
 }
+
+window.Scene = Scene;

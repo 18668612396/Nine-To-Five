@@ -8,11 +8,19 @@
             "y": 360,
             "components": [
                 {
-                    "type": "StaticRenderer",
+                    "type": "CanvasRenderer",
                     "properties": {
-                        "color": "#2c3e50",
-                        "width": 1280,
-                        "height": 720
+                        "sortingOrder": -10,
+                        "elements": [
+                            {
+                                "type": "rect",
+                                "x": -640,
+                                "y": -360,
+                                "width": 1280,
+                                "height": 720,
+                                "color": "#2c3e50"
+                            }
+                        ]
                     }
                 }
             ]
@@ -26,6 +34,7 @@
                 {
                     "type": "CanvasRenderer",
                     "properties": {
+                        "sortingOrder": 10,
                         "width": 1280,
                         "height": 720,
                         "elements": [

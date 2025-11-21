@@ -28,4 +28,13 @@ class SceneManager {
             this.currentScene.draw(ctx);
         }
     }
+
+    static async loadScene(path) {
+        const scene = await ResourceManager.loadScene(path);
+        if (scene) {
+            SceneManager.load(scene);
+        }
+    }
 }
+
+window.SceneManager = SceneManager;

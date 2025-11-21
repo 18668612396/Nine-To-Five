@@ -11,3 +11,5 @@ class Renderer extends Component {
         // Base draw method
     }
 }
+
+window.Renderer = Renderer;

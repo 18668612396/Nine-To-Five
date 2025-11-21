@@ -55,8 +55,14 @@ class Player extends GameObject {
 
     setupRenderers() {
         // Shadow
-        const shadow = new StaticRenderer('rgba(0, 0, 0, 0.5)', this.r * 2, this.r, 'ellipse');
+        const shadow = new CanvasRenderer((ctx) => {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, this.r, this.r * 0.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+        });
         shadow.offsetY = this.r * 2 - 5;
+        shadow.sortingOrder = -1;
         this.addComponent(shadow);
 
         // Sprite Animation

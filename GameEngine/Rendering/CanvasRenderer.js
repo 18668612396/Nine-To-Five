@@ -1,10 +1,8 @@
 class CanvasRenderer extends Renderer {
-    constructor(width, height) {
+    constructor(drawCallback) {
         super('CanvasRenderer');
-        this.width = width;
-        this.height = height;
-        this.elements = []; // UI Elements to draw
-        this.sortingOrder = 1000; // High sorting order to draw on top
+        this.drawCallback = drawCallback;
+        this.elements = [];
     }
 
     /**
@@ -20,29 +18,27 @@ class CanvasRenderer extends Renderer {
     }
 
     draw(ctx) {
-        if (!this.visible) return;
+        if (!this.gameObject || !this.gameObject.active) return;
 
-        // UI is usually drawn in screen space, ignoring camera transform
-        // But since Renderer.draw is called within world transform context in Scene.draw,
-        // we might need to reset transform or handle it differently.
-        // However, standard Renderer pattern assumes world space.
-        // If we want Screen Space UI, we should probably handle it in a separate pass or 
-        // use inverse camera transform.
-        
-        // For now, let's assume this renderer is attached to a GameObject that moves with the camera
-        // OR we simply reset the transform to draw in screen coordinates.
-        
         ctx.save();
+        const t = this.gameObject.transform;
+        ctx.translate(t.x, t.y);
+        ctx.rotate(t.rotation);
+        ctx.scale(t.scale.x, t.scale.y);
+        ctx.translate(this.offsetX, this.offsetY);
         
-        // Reset Transform to Identity to draw in Screen Space
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-        // Sort elements by z-index if needed, or just draw in order
-        
-        for (const el of this.elements) {
-            this.drawElement(ctx, el);
+        // Draw via callback
+        if (this.drawCallback) {
+            this.drawCallback(ctx, this.gameObject);
         }
 
+        // Draw elements list (from JSON scene)
+        if (this.elements && this.elements.length > 0) {
+            for (const el of this.elements) {
+                this.drawElement(ctx, el);
+            }
+        }
+        
         ctx.restore();
     }
 
@@ -110,3 +106,5 @@ class CanvasRenderer extends Renderer {
         ctx.closePath();
     }
 }
+
+window.CanvasRenderer = CanvasRenderer;

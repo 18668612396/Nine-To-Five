@@ -90,4 +90,5 @@ class ResourceManager {
 }
 
 // Export global instance
+window.ResourceManager = ResourceManager;
 window.resourceManager = new ResourceManager();
