@@ -1,0 +1,21 @@
+{
+    "name": "FightingScene",
+    "objects": [
+        {
+            "type": "GameObject",
+            "name": "WorldBoundary",
+            "x": 1250,
+            "y": 1250,
+            "components": [
+                {
+                    "type": "StaticRenderer",
+                    "properties": {
+                        "color": "#333",
+                        "width": 2500,
+                        "height": 2500
+                    }
+                }
+            ]
+        }
+    ]
+}

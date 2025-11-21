@@ -101,7 +101,8 @@ class UIManager extends EngineObject {
     }
 
     showTown() {
-        this.townUI.style.display = 'block';
+        // this.townUI.style.display = 'block'; // Disable DOM UI for Town
+        this.townUI.style.display = 'none'; // Hide DOM UI
         this.townUI.classList.remove('blurred');
         
         this.levelSelectUI.style.display = 'none';

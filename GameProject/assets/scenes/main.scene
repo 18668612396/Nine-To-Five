@@ -1,0 +1,164 @@
+{
+    "name": "MainScene",
+    "objects": [
+        {
+            "type": "GameObject",
+            "name": "TownBackground",
+            "x": 640,
+            "y": 360,
+            "components": [
+                {
+                    "type": "StaticRenderer",
+                    "properties": {
+                        "color": "#2c3e50",
+                        "width": 1280,
+                        "height": 720
+                    }
+                }
+            ]
+        },
+        {
+            "type": "GameObject",
+            "name": "MainMenuUI",
+            "x": 0,
+            "y": 0,
+            "components": [
+                {
+                    "type": "CanvasRenderer",
+                    "properties": {
+                        "width": 1280,
+                        "height": 720,
+                        "elements": [
+                            {
+                                "type": "text",
+                                "text": "喵办公：准时下班生存战",
+                                "x": 640,
+                                "y": 120,
+                                "font": "bold 60px Arial",
+                                "color": "#ffffff",
+                                "align": "center",
+                                "stroke": true,
+                                "strokeColor": "#333",
+                                "lineWidth": 5
+                            },
+                            {
+                                "type": "rect",
+                                "x": 590,
+                                "y": 250,
+                                "width": 100,
+                                "height": 100,
+                                "color": "rgba(255,255,255,0.1)",
+                                "cornerRadius": 50,
+                                "stroke": true,
+                                "strokeColor": "#fff",
+                                "lineWidth": 2
+                            },
+                            {
+                                "type": "text",
+                                "text": "🐱",
+                                "x": 640,
+                                "y": 300,
+                                "font": "60px Arial",
+                                "align": "center",
+                                "baseline": "middle"
+                            },
+                            {
+                                "type": "text",
+                                "text": "Lv.1 实习生猫",
+                                "x": 640,
+                                "y": 380,
+                                "font": "24px Arial",
+                                "color": "#ddd",
+                                "align": "center"
+                            },
+                            {
+                                "type": "rect",
+                                "x": 50,
+                                "y": 620,
+                                "width": 120,
+                                "height": 50,
+                                "color": "#4caf50",
+                                "cornerRadius": 8,
+                                "stroke": true,
+                                "strokeColor": "#fff",
+                                "lineWidth": 2
+                            },
+                            {
+                                "type": "text",
+                                "text": "天赋",
+                                "x": 110,
+                                "y": 645,
+                                "font": "bold 20px Arial",
+                                "color": "#fff",
+                                "align": "center",
+                                "baseline": "middle"
+                            },
+                            {
+                                "type": "rect",
+                                "x": 200,
+                                "y": 620,
+                                "width": 120,
+                                "height": 50,
+                                "color": "#2196f3",
+                                "cornerRadius": 8,
+                                "stroke": true,
+                                "strokeColor": "#fff",
+                                "lineWidth": 2
+                            },
+                            {
+                                "type": "text",
+                                "text": "背包",
+                                "x": 260,
+                                "y": 645,
+                                "font": "bold 20px Arial",
+                                "color": "#fff",
+                                "align": "center",
+                                "baseline": "middle"
+                            },
+                            {
+                                "type": "rect",
+                                "x": 1000,
+                                "y": 600,
+                                "width": 220,
+                                "height": 80,
+                                "color": "#ff9800",
+                                "cornerRadius": 10,
+                                "stroke": true,
+                                "strokeColor": "#fff",
+                                "lineWidth": 3
+                            },
+                            {
+                                "type": "text",
+                                "text": "打卡上班 ▶",
+                                "x": 1110,
+                                "y": 640,
+                                "font": "bold 32px Arial",
+                                "color": "#fff",
+                                "align": "center",
+                                "baseline": "middle"
+                            },
+                            {
+                                "type": "rect",
+                                "x": 1200,
+                                "y": 20,
+                                "width": 60,
+                                "height": 60,
+                                "color": "rgba(0,0,0,0.5)",
+                                "cornerRadius": 30
+                            },
+                            {
+                                "type": "text",
+                                "text": "⚙️",
+                                "x": 1230,
+                                "y": 50,
+                                "font": "30px Arial",
+                                "align": "center",
+                                "baseline": "middle"
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    ]
+}

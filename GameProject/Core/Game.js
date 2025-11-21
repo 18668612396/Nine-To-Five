@@ -40,25 +40,10 @@ class Game extends EngineObject {
         
         this.loadData();
 
+        this.sceneManager = new SceneManager(this);
         this.uiManager = new UIManager(this);
-        this.uiManager.showTown(); // Ensure UI is in correct state
-
-        this.resize();
-        window.addEventListener('resize', () => this.resize());
-
-        // Input listeners
-        window.addEventListener('keydown', e => this.input.keys[e.key] = true);
-        window.addEventListener('keyup', e => this.input.keys[e.key] = false);
-        // Auto-shoot implemented in update loop, mouse click removed
-        /*
-        window.addEventListener('mousedown', e => {
-            if (this.state === 'PLAYING') {
-                this.shoot(e.clientX, e.clientY);
-            }
-        });
-        */
-
-        // Initialize player
+        
+        // Initialize player (Persistent)
         this.player = new Player(this.worldWidth, this.worldHeight);
 
         // Card Manager
@@ -67,38 +52,34 @@ class Game extends EngineObject {
         // Particle System Manager
         this.particleSystemManager = new ParticleSystemManager();
 
-        // TEST: Follow Player Particle System
-        this.testPs = this.particleSystemManager.addSystem({
-            x: 0, y: 0,
-            duration: 1.0,
-            looping: true,
-            startLifetime: { min: 0.5, max: 1.0 },
-            startSpeed: { min: 3, max: 6 },
-            startSize: { min: 3, max: 6 },
-            startColor: [0, 1, 0.5, 0.8], // Teal/Green
-            emission: {
-                rateOverTime: 0,
-                bursts: [
-                    { time: 0, count: 10 }
-                ]
-            },
-            shape: {
-                angle: 0,
-                arc: Math.PI * 2
-            }
-        });
-
         // GM Manager
         this.gmManager = new GMManager(this);
 
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+
+        // Input listeners
+        window.addEventListener('keydown', e => this.input.keys[e.key] = true);
+        window.addEventListener('keyup', e => this.input.keys[e.key] = false);
+
         // Pause Listener
         window.addEventListener('keydown', e => {
-            // console.log('Key pressed:', e.key, e.code, this.state);
             if (e.key === 'Escape' || e.code === 'Escape') {
                 if (this.state === 'PLAYING') {
                     this.togglePause(true);
                 } else if (this.state === 'PAUSED') {
                     this.togglePause(false);
+                }
+            }
+        });
+
+        // Start in Town
+        this.backToTown();
+
+        // Start loop
+        this.loop = this.loop.bind(this);
+        requestAnimationFrame(this.loop);
+    }                    this.togglePause(false);
                 }
             }
         });
@@ -148,20 +129,34 @@ class Game extends EngineObject {
 
     backToTown() {
         this.state = 'TOWN';
-        this.uiManager.showTown();
+        resourceManager.load('assets/scenes/main.scene').then(scene => {
+            this.sceneManager.loadScene(scene);
+            this.uiManager.showTown();
+        });
     }
 
     startLevel(lvl) {
         this.level = lvl;
         this.state = 'PLAYING';
-        this.resetGame();
-        this.uiManager.showHUD();
+        
+        resourceManager.load('assets/scenes/fighting.scene').then(scene => {
+            this.sceneManager.loadScene(scene);
+            this.resetGame(); // This will populate the scene
+            this.uiManager.showHUD();
+        });
     }
 
     resetGame() {
+        const scene = this.sceneManager.currentScene;
+        if (!scene) return;
+
         this.player.x = this.worldWidth/2;
         this.player.y = this.worldHeight/2;
         this.player.hp = this.player.maxHp;
+        
+        // Add Player to Scene
+        scene.add(this.player);
+
         this.bullets = [];
         this.enemies = [];
         this.loots = [];
@@ -184,7 +179,9 @@ class Game extends EngineObject {
             obs.r = r; // Keep for legacy or just use collider
             obs.addComponent(new StaticRenderer('#555', r*2, r*2, 'circle'));
             obs.addComponent(new CircleCollider(r));
+            
             this.obstacles.push(obs);
+            scene.add(obs); // Add to Scene
         }
 
         this.uiManager.update(this.player, this.survivalTime, this.maxSurvivalTime);
@@ -203,20 +200,18 @@ class Game extends EngineObject {
 
         for (let i = 0; i < count; i++) {
             // Calculate spread
-            // If count > 1, spread evenly. If count == 1, random spread?
-            // Let's do random spread for all for simplicity, or even spread for shotgun
             let angle = baseAngle;
             if (count > 1) {
-                // Even spread
                 const startAngle = baseAngle - spread / 2;
                 const step = spread / (count - 1);
                 angle = startAngle + step * i;
             } else {
-                // Random spread
                 angle += (Math.random() - 0.5) * spread;
             }
 
-            this.bullets.push(new Bullet(this.player.x, this.player.y, angle, weapon, this.worldWidth, this.worldHeight));
+            const bullet = new Bullet(this.player.x, this.player.y, angle, weapon, this.worldWidth, this.worldHeight);
+            this.bullets.push(bullet);
+            this.sceneManager.currentScene.add(bullet); // Add to Scene
         }
     }
 
@@ -229,21 +224,28 @@ class Game extends EngineObject {
             // Simple random spawn for now
             ex = Math.random() * this.worldWidth;
             ey = Math.random() * this.worldHeight;
-            this.enemies.push(new Enemy(ex, ey));
+            
+            const enemy = new Enemy(ex, ey);
+            this.enemies.push(enemy);
+            this.sceneManager.currentScene.add(enemy); // Add to Scene
         }
     }
 
     spawnBoss() {
         this.bossSpawned = true;
-        this.enemies = []; 
-        this.enemies.push(new Enemy(this.player.x + 400, this.player.y, true)); // Spawn near player
+        // Clear existing enemies? Maybe not
+        // this.enemies = []; 
+        const boss = new Enemy(this.player.x + 400, this.player.y, true);
+        this.enemies.push(boss); 
+        this.sceneManager.currentScene.add(boss); // Add to Scene
         this.uiManager.showBossLabel();
     }
 
     update() {
         if (this.state !== 'PLAYING') return;
 
-        this.player.update(this.input);
+        // Update Scene (Updates all GameObjects)
+        this.sceneManager.update(1/60);
 
         // TEST: Update particle system position
         if (this.testPs) {
@@ -364,6 +366,8 @@ class Game extends EngineObject {
         this.loots.forEach(l => {
             if (checkCol(this.player.collider, l.collider)) {
                 l.active = false;
+                if (this.sceneManager.currentScene) this.sceneManager.currentScene.remove(l); // Remove from Scene
+                
                 if (l.type === 'exp') {
                     const leveledUp = this.player.gainExp(l.value);
                     if (leveledUp) {
@@ -391,9 +395,12 @@ class Game extends EngineObject {
 
     handleKill(enemy) {
         // Death Effect
-        // Convert hex color to 0-1 rgba if needed, but for now let's just use yellow/red
-        // Or parse enemy.color. For simplicity, hardcode explosion color based on enemy type or just generic
         this.particleSystemManager.createExplosion(enemy.x, enemy.y, [1, 0, 0, 1]);
+
+        // Remove from Scene
+        if (this.sceneManager.currentScene) {
+            this.sceneManager.currentScene.remove(enemy);
+        }
 
         if (enemy.isBoss) {
             this.victory();
@@ -406,86 +413,14 @@ class Game extends EngineObject {
         }
         
         // Always drop EXP
-        this.loots.push(new Loot(enemy.x, enemy.y, 'exp', 20)); // 20 EXP per kill
-    }
-
-    loadData() {
-        const saved = localStorage.getItem('officeMageSave');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                this.maxLevel = data.maxLevel || 1;
-                this.metaData = data.metaData || {
-                    talents: { hp: 0, atk: 0, spd: 0 },
-                    inventory: [],
-                    gold: 0
-                };
-            } catch (e) {
-                console.error("Save file corrupted", e);
-            }
+        const loot = new Loot(enemy.x, enemy.y, 'exp', 20);
+        this.loots.push(loot);
+        if (this.sceneManager.currentScene) {
+            this.sceneManager.currentScene.add(loot);
         }
     }
 
-    saveData() {
-        const data = {
-            maxLevel: this.maxLevel,
-            metaData: this.metaData
-        };
-        localStorage.setItem('officeMageSave', JSON.stringify(data));
-    }
-
-    clearData(type) {
-        if (type === 'talents') {
-            this.metaData.talents = { hp: 0, atk: 0, spd: 0 };
-            alert("天赋已重置");
-        } else if (type === 'inventory') {
-            this.metaData.inventory = [];
-            alert("背包已清空");
-        } else if (type === 'levels') {
-            this.maxLevel = 1;
-            alert("关卡进度已重置");
-        } else {
-            // Clear all
-            localStorage.removeItem('officeMageSave');
-            this.maxLevel = 1;
-            this.metaData = {
-                talents: { hp: 0, atk: 0, spd: 0 },
-                inventory: [],
-                gold: 0
-            };
-            alert("所有存档已清除");
-            this.backToTown();
-        }
-        this.saveData();
-    }
-
-    completeLevel() {
-        if (this.level === this.maxLevel) {
-            this.maxLevel++;
-        }
-        this.metaData.gold += 100 * this.level;
-        this.saveData();
-    }
-
-    gameOver() {
-        this.state = 'GAMEOVER';
-        this.uiManager.showGameOver();
-    }
-
-    victory() {
-        this.state = 'VICTORY';
-        this.completeLevel();
-        this.uiManager.showVictory();
-    }
-
-    triggerLevelUp() {
-        this.state = 'LEVEL_UP';
-        const choices = this.cardManager.getChoices(3);
-        this.uiManager.showLevelUp(this.player.level, choices, (card) => {
-            card.apply(this);
-            this.state = 'PLAYING';
-        });
-    }
+    // ...existing code...
 
     draw() {
         this.ctx.fillStyle = '#333';
@@ -494,39 +429,16 @@ class Game extends EngineObject {
         this.ctx.save();
         this.ctx.translate(-this.camera.x, -this.camera.y);
 
-        this.ctx.strokeStyle = '#444';
-        this.ctx.lineWidth = 1;
-        const gridSize = 50;
-        // Draw grid covering the whole world
-        for(let x=0; x<=this.worldWidth; x+=gridSize) { 
-            this.ctx.beginPath(); this.ctx.moveTo(x,0); this.ctx.lineTo(x,this.worldHeight); this.ctx.stroke(); 
-        }
-        for(let y=0; y<=this.worldHeight; y+=gridSize) { 
-            this.ctx.beginPath(); this.ctx.moveTo(0,y); this.ctx.lineTo(this.worldWidth,y); this.ctx.stroke(); 
-        }
+        // Draw Scene (Backgrounds, Objects, Entities)
+        this.sceneManager.draw(this.ctx);
 
-        // Draw World Borders
+        // Draw Particles on top
+        this.particleSystemManager.draw(this.ctx);
+
+        // Draw World Borders (Debug/Visual)
         this.ctx.strokeStyle = '#f00';
         this.ctx.lineWidth = 5;
         this.ctx.strokeRect(0, 0, this.worldWidth, this.worldHeight);
-
-        if (this.state === 'PLAYING') {
-            // Y-Sort Rendering: Sort objects by Y coordinate to handle occlusion correctly
-            const renderList = [
-                ...this.obstacles,
-                ...this.loots,
-                ...this.enemies,
-                this.player
-            ];
-
-            renderList.sort((a, b) => a.y - b.y);
-
-            renderList.forEach(obj => obj.draw(this.ctx));
-
-            // Bullets and Particles are usually drawn on top
-            this.bullets.forEach(b => b.draw(this.ctx));
-            this.particleSystemManager.draw(this.ctx);
-        }
 
         this.ctx.restore();
     }
