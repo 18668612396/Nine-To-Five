@@ -38,7 +38,9 @@ Version: 1
         },
         {
             "type": "Player",
-            "properties": {}
+            "properties": {
+                "speed": 1.0
+            }
         }
     ]
 }

@@ -151,15 +151,14 @@ class Player extends GameBehaviour {
         this.y = Math.max(this.r, Math.min(this.worldHeight - this.r, this.y));
 
         // Update Animation Logic
-        if (input.getKey('a')) this.animator.flipX = true;
-        if (input.getKey('d')) this.animator.flipX = false;
+        if (input.getKey('a')) this.spriteRenderer.flipX = true;
+        if (input.getKey('d')) this.spriteRenderer.flipX = false;
 
         const isMoving = moveX !== 0 || moveY !== 0;
         if (isMoving) {
-            if (this.animator.play) this.animator.play();
+            if (this.animator.play) this.animator.play('Run');
         } else {
             if (this.animator.stop) this.animator.stop();
-            this.animator.currentFrame = 0; // Reset to idle
         }
     }
 

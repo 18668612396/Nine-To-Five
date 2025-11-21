@@ -11,37 +11,36 @@ class ShapeRenderer extends Renderer {
         this.cornerRadius = 0;
     }
 
-    draw(ctx) {
+    render(pipeline) {
         if (!this.gameObject || !this.gameObject.active) return;
 
-        ctx.save();
         const t = this.gameObject.transform;
-        ctx.translate(t.x, t.y);
-        ctx.rotate(t.rotation);
-        ctx.scale(t.scale.x, t.scale.y);
-        ctx.translate(this.offsetX, this.offsetY);
-
-        ctx.fillStyle = this.color;
-        if (this.stroke) {
-            ctx.strokeStyle = this.strokeColor;
-            ctx.lineWidth = this.lineWidth;
-        }
-
-        ctx.beginPath();
+        
         if (this.type === 'rect') {
-            if (this.cornerRadius > 0) {
-                this.roundRect(ctx, -this.width/2, -this.height/2, this.width, this.height, this.cornerRadius);
-            } else {
-                ctx.rect(-this.width/2, -this.height/2, this.width, this.height);
-            }
+            pipeline.submit({
+                type: 'RECT',
+                x: t.x,
+                y: t.y,
+                width: this.width,
+                height: this.height,
+                color: this.color,
+                rotation: t.rotation,
+                opacity: 1.0, // TODO: Support opacity
+                sortingOrder: this.sortingOrder,
+                y: t.y
+            });
         } else if (this.type === 'circle') {
-            ctx.arc(0, 0, this.width/2, 0, Math.PI * 2);
+            pipeline.submit({
+                type: 'CIRCLE',
+                x: t.x,
+                y: t.y,
+                radius: this.width / 2,
+                color: this.color,
+                opacity: 1.0,
+                sortingOrder: this.sortingOrder,
+                y: t.y
+            });
         }
-
-        ctx.fill();
-        if (this.stroke) ctx.stroke();
-
-        ctx.restore();
     }
 
     roundRect(ctx, x, y, w, h, r) {

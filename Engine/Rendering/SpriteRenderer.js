@@ -38,33 +38,40 @@ class SpriteRenderer extends Renderer {
         }
     }
 
-    draw(ctx) {
-        if (!this._sprite || !this.gameObject) return;
-        // Check if image is loaded
-        if (this._sprite.complete === false && this._sprite.naturalWidth === 0) return;
+    render(pipeline) {
+        if (!this.gameObject) return;
+
+        // 1. Sync Sprite to Material
+        this.material.setTexture('_MainTex', this._sprite);
+
+        // 2. Read from Material
+        const tex = this.material.getTexture('_MainTex');
+        const color = this.material.getColor('_Color');
+
+        if (!tex) return;
 
         const t = this.gameObject.transform;
         
-        ctx.save();
-        ctx.translate(t.x, t.y);
-        ctx.rotate(t.rotation);
-        const scaleX = t.scale.x * (this.flipX ? -1 : 1);
-        const scaleY = t.scale.y * (this.flipY ? -1 : 1);
-        ctx.scale(scaleX, scaleY);
-        ctx.globalAlpha = this.opacity;
-
-        const w = this.width || this._sprite.width;
-        const h = this.height || this._sprite.height;
-        
-        ctx.drawImage(
-            this._sprite,
-            -w / 2 + this.offsetX,
-            -h / 2 + this.offsetY,
-            w,
-            h
-        );
-        
-        ctx.restore();
+        // 3. Submit to Pipeline
+        pipeline.submit({
+            type: 'SPRITE',
+            shader: this.material.shader,
+            texture: tex,
+            x: t.x,
+            y: t.y,
+            rotation: t.rotation,
+            scaleX: t.scale.x * (this.flipX ? -1 : 1),
+            scaleY: t.scale.y * (this.flipY ? -1 : 1),
+            width: this.width,
+            height: this.height,
+            color: color,
+            opacity: this.opacity,
+            offsetX: this.offsetX,
+            offsetY: this.offsetY,
+            sortingOrder: this.sortingOrder,
+            // For secondary sorting
+            y: t.y 
+        });
     }
 }
 window.SpriteRenderer = SpriteRenderer;

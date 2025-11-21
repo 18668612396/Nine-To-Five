@@ -31,12 +31,23 @@ class Animator extends Component {
             if (this.controller && this.controller.clips) {
                 // Load all referenced clips
                 const promises = [];
-                for (const [name, guid] of Object.entries(this.controller.clips)) {
-                    promises.push(
-                        window.resourceManager.load(guid).then(clip => {
-                            if (clip) this.clips[name] = clip;
-                        })
-                    );
+                
+                if (Array.isArray(this.controller.clips)) {
+                    for (const clipData of this.controller.clips) {
+                        promises.push(
+                            window.resourceManager.load(clipData.guid).then(clip => {
+                                if (clip) this.clips[clipData.name] = clip;
+                            })
+                        );
+                    }
+                } else {
+                    for (const [name, guid] of Object.entries(this.controller.clips)) {
+                        promises.push(
+                            window.resourceManager.load(guid).then(clip => {
+                                if (clip) this.clips[name] = clip;
+                            })
+                        );
+                    }
                 }
                 await Promise.all(promises);
                 
@@ -112,10 +123,10 @@ class Animator extends Component {
         }
 
         if (frameIndex !== this.currentFrameIndex) {
-            this.currentFrameIndex = frameIndex;
             const frameImage = this.currentClip.getFrame(frameIndex);
             if (frameImage) {
                 this.spriteRenderer.sprite = frameImage;
+                this.currentFrameIndex = frameIndex;
             }
         }
     }

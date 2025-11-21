@@ -12,6 +12,6 @@ echo Opening http://localhost:8000/Project/NineToFive/index.html ...
 start "" "http://localhost:8000/Project/NineToFive/index.html"
 
 :: Start the server from the workspace root so Engine/ is accessible
-python -m http.server 8000
+python "Engine\Tools\SimpleServer.py"
 
 pause

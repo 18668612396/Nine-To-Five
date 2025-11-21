@@ -17,29 +17,58 @@ class CanvasRenderer extends Renderer {
         this.elements = [];
     }
 
-    draw(ctx) {
+    render(pipeline) {
         if (!this.gameObject || !this.gameObject.active) return;
 
-        ctx.save();
-        const t = this.gameObject.transform;
-        ctx.translate(t.x, t.y);
-        ctx.rotate(t.rotation);
-        ctx.scale(t.scale.x, t.scale.y);
-        ctx.translate(this.offsetX, this.offsetY);
+        // CanvasRenderer is tricky because it allows arbitrary JS drawing via callback.
+        // For a strict pipeline, we should convert these to commands.
+        // But for now, we can submit a "CUSTOM" command or just execute immediately if we break the purity.
+        // To keep it clean, let's assume we only support the 'elements' list for now, 
+        // OR we pass the callback to the pipeline to execute later.
         
-        // Draw via callback
+        const t = this.gameObject.transform;
+
+        // If we have a callback, we submit a CUSTOM command
         if (this.drawCallback) {
-            this.drawCallback(ctx, this.gameObject);
+            pipeline.submit({
+                type: 'CUSTOM',
+                callback: this.drawCallback,
+                gameObject: this.gameObject,
+                x: t.x,
+                y: t.y,
+                rotation: t.rotation,
+                scaleX: t.scale.x,
+                scaleY: t.scale.y,
+                offsetX: this.offsetX,
+                offsetY: this.offsetY,
+                sortingOrder: this.sortingOrder,
+                y: t.y
+            });
         }
 
-        // Draw elements list (from JSON scene)
+        // Elements
         if (this.elements && this.elements.length > 0) {
             for (const el of this.elements) {
-                this.drawElement(ctx, el);
+                // Convert element to command
+                // This is a simplification. Ideally we map each element type to a command.
+                // For now, let's assume elements are simple rects/texts
+                if (el.type === 'rect') {
+                    pipeline.submit({
+                        type: 'RECT',
+                        x: t.x + (el.x || 0),
+                        y: t.y + (el.y || 0),
+                        width: el.width,
+                        height: el.height,
+                        color: el.color,
+                        rotation: t.rotation,
+                        opacity: 1.0,
+                        sortingOrder: this.sortingOrder,
+                        y: t.y
+                    });
+                }
+                // ... other types
             }
         }
-        
-        ctx.restore();
     }
 
     drawElement(ctx, el) {

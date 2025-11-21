@@ -55,6 +55,9 @@ class Game extends EngineObject {
         // GM Manager
         this.gmManager = new GMManager(this);
 
+        // Render Pipeline
+        this.renderPipeline = new RenderPipeline(this);
+
         this.resize();
         window.addEventListener('resize', () => this.resize());
 
@@ -158,30 +161,8 @@ class Game extends EngineObject {
         this.survivalTime = 0;
         this.bossSpawned = false;
         
-        // Generate Obstacles
-        for(let i=0; i<20; i++) {
-            const r = 30 + Math.random() * 50;
-            const x = Math.random() * (this.worldWidth - 2*r) + r;
-            const y = Math.random() * (this.worldHeight - 2*r) + r;
-            // Avoid spawning on player
-            const dx = x - this.player.x;
-            const dy = y - this.player.y;
-            if (Math.sqrt(dx*dx + dy*dy) < 300) continue;
-            
-            // Convert Obstacle to GameObject
-            const obs = new GameObject('Obstacle', x, y);
-            obs.r = r; // Keep for legacy or just use collider
-            obs.addComponent(new CanvasRenderer((ctx) => {
-                ctx.fillStyle = '#555';
-                ctx.beginPath();
-                ctx.arc(0, 0, r, 0, Math.PI * 2);
-                ctx.fill();
-            }));
-            obs.addComponent(new CircleCollider(r));
-            
-            this.obstacles.push(obs);
-            scene.add(obs); // Add to Scene
-        }
+        // Generate Obstacles - Removed as per request
+        // for(let i=0; i<20; i++) { ... }
 
         this.uiManager.update(this.player, this.survivalTime, this.maxSurvivalTime);
     }
@@ -451,23 +432,73 @@ class Game extends EngineObject {
     }
 
     draw() {
-        this.ctx.fillStyle = '#333';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        // Use Render Pipeline
+        this.renderPipeline.beginFrame();
 
+        // 1. Collect Render Commands from Scene
+        if (this.sceneManager.activeScene) {
+            // We need to expose a way to get renderers or iterate objects
+            // For now, let's iterate gameObjects and find renderers
+            // Ideally SceneManager or Scene should handle this collection
+            const scene = this.sceneManager.activeScene;
+            
+            // Camera Setup (Pipeline could handle this if passed camera)
+            const camera = window.Camera && window.Camera.main;
+            if (camera) {
+                // Apply camera transform to context? 
+                // Or pass camera matrix to pipeline?
+                // For 2D Canvas, we usually translate the context.
+                // Let's keep the camera logic here for now or move it to pipeline.
+                // If we move to pipeline, we need to pass camera to beginFrame or render.
+                
+                // Current pipeline implementation assumes world coordinates in commands,
+                // but draws to screen. So we need the global transform.
+                this.ctx.save();
+                camera.apply(this.ctx);
+            }
+
+            // Collect
+            for (const go of scene.gameObjects) {
+                if (!go.active) continue;
+                // Check for Renderer components
+                // This is slow, better to have a list of renderers in Scene
+                const renderers = go.components.filter(c => c instanceof Renderer);
+                for (const r of renderers) {
+                    if (r.visible) r.render(this.renderPipeline);
+                }
+            }
+            
+            // 2. Collect Particles (They are not GameObjects usually in this engine?)
+            // ParticleSystemManager draws directly. We should wrap it or make it submit commands.
+            // For now, let's let it draw directly ON TOP of pipeline? 
+            // Or better, make ParticleSystemRenderer submit commands.
+            // Assuming ParticleSystemRenderer is a Component, it's covered above!
+            // Wait, ParticleSystemManager in Game.js seems to manage global particles?
+            // "this.particleSystemManager.draw(this.ctx);"
+            // Let's leave it as direct draw for now, or wrap it.
+        }
+
+        // Execute Pipeline
+        this.renderPipeline.endFrame();
+
+        // Restore Camera
+        if (window.Camera && window.Camera.main) {
+            this.ctx.restore();
+        }
+
+        // Draw Particles (Legacy/Global)
+        // Ideally these should be in the pipeline too
         this.ctx.save();
-        this.ctx.translate(-this.camera.x, -this.camera.y);
-
-        // Draw Scene (Backgrounds, Objects, Entities)
-        this.sceneManager.draw(this.ctx);
-
-        // Draw Particles on top
+        if (window.Camera && window.Camera.main) window.Camera.main.apply(this.ctx);
         this.particleSystemManager.draw(this.ctx);
+        this.ctx.restore();
 
         // Draw World Borders (Debug/Visual)
+        this.ctx.save();
+        if (window.Camera && window.Camera.main) window.Camera.main.apply(this.ctx);
         this.ctx.strokeStyle = '#f00';
         this.ctx.lineWidth = 5;
         this.ctx.strokeRect(0, 0, this.worldWidth, this.worldHeight);
-
         this.ctx.restore();
     }
 

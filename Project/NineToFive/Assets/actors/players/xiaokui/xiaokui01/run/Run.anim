@@ -3,7 +3,7 @@ Version: 1.0
 ---
 {
     "name": "Xiaokui_Run",
-    "frameRate": 1,
+    "frameRate": 10,
     "loop": true,
     "frames": [
         "7441fcf582894fa3b966fb2d2c90d636",
