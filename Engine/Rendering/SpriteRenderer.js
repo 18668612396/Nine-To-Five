@@ -48,7 +48,11 @@ class SpriteRenderer extends Renderer {
         const tex = this.material.getTexture('_MainTex');
         const color = this.material.getColor('_Color');
 
-        if (!tex) return;
+        if (!tex) {
+            // Debug: Why is texture missing?
+            // console.warn(`SpriteRenderer: No texture for ${this.gameObject.name}`);
+            return;
+        }
 
         const t = this.gameObject.transform;
         

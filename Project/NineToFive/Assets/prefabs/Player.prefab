@@ -27,7 +27,8 @@ Version: 1
             "properties": {
                 "width": 80,
                 "height": 80,
-                "sortingOrder": 10
+                "sortingOrder": 10,
+                "imagePath": "assets/actors/players/xiaokui/xiaokui01/run/xiaokui01_01.png"
             }
         },
         {

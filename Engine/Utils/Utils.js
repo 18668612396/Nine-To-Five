@@ -45,3 +45,6 @@ const checkCol = (c1, c2) => {
     return dist < (r1 + r2);
 };
 
+window.rand = rand;
+window.checkCol = checkCol;
+

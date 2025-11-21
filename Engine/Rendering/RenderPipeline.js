@@ -4,6 +4,8 @@ class RenderPipeline {
         this.ctx = game.ctx;
         this.canvas = game.canvas;
         this._renderQueue = [];
+        // Debug: Set a visible background color to verify rendering
+        this.clearColor = '#6495ED'; // Cornflower Blue
     }
 
     /**
@@ -11,8 +13,10 @@ class RenderPipeline {
      */
     beginFrame() {
         this._renderQueue = [];
-        // Clear canvas is handled by Camera usually, but we can do a default clear here
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Clear with specific color
+        this.ctx.fillStyle = this.clearColor;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     /**
@@ -27,6 +31,11 @@ class RenderPipeline {
      * Execute all submitted render commands
      */
     endFrame() {
+        // Debug: Log queue size occasionally
+        if (Math.random() < 0.01) {
+            console.log(`RenderPipeline: Processing ${this._renderQueue.length} commands.`);
+        }
+
         // Sort by sorting order
         this._renderQueue.sort((a, b) => {
             if (a.sortingOrder !== b.sortingOrder) {

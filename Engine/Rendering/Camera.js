@@ -50,8 +50,10 @@ class Camera extends Component {
      */
     apply(ctx) {
         // Clear screen
-        ctx.fillStyle = this.backgroundColor;
-        ctx.fillRect(0, 0, this.viewport.width, this.viewport.height);
+        // Note: RenderPipeline.beginFrame() already clears.
+        // We disable Camera clear to allow RenderPipeline's debug color to show.
+        // ctx.fillStyle = this.backgroundColor;
+        // ctx.fillRect(0, 0, this.viewport.width, this.viewport.height);
 
         ctx.save();
         
@@ -62,8 +64,8 @@ class Camera extends Component {
         ctx.scale(this.zoom, this.zoom);
         
         // Move camera to its position (inverse of object movement)
-        const camX = this.gameObject.transform.x;
-        const camY = this.gameObject.transform.y;
+        const camX = this.gameObject ? this.gameObject.transform.x : 0;
+        const camY = this.gameObject ? this.gameObject.transform.y : 0;
         ctx.translate(-camX, -camY);
     }
 

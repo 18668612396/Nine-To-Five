@@ -127,6 +127,11 @@ class Animator extends Component {
             if (frameImage) {
                 this.spriteRenderer.sprite = frameImage;
                 this.currentFrameIndex = frameIndex;
+                
+                // Force update material texture immediately
+                if (this.spriteRenderer.material) {
+                    this.spriteRenderer.material.setTexture('_MainTex', frameImage);
+                }
             }
         }
     }

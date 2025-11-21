@@ -140,6 +140,23 @@ class Game extends EngineObject {
         const scene = this.sceneManager.activeScene;
         if (!scene) return;
 
+        // Create Main Camera if not exists
+        if (!scene.gameObjects.find(go => go.getComponent('Camera'))) {
+            const cameraGO = new GameObject('MainCamera');
+            const camera = new Camera();
+            cameraGO.addComponent(camera);
+            scene.add(cameraGO);
+            this.cameraGO = cameraGO; // Keep reference
+            
+            // Snap camera to player immediately to avoid black screen during pan
+            if (this.player) {
+                this.cameraGO.transform.x = this.player.x;
+                this.cameraGO.transform.y = this.player.y;
+            }
+        } else {
+            this.cameraGO = scene.gameObjects.find(go => go.getComponent('Camera'));
+        }
+
         // Find Player in Scene
         const playerGO = scene.gameObjects.find(go => go.name === 'Player');
         if (playerGO) {
@@ -373,8 +390,11 @@ class Game extends EngineObject {
 
         if (this.state === 'TOWN') {
             this.sceneManager.update(1/60);
-            this.camera.x = 0;
-            this.camera.y = 0;
+            // Reset Camera if exists
+            if (window.Camera && window.Camera.main) {
+                window.Camera.main.gameObject.transform.x = this.canvas.width / 2;
+                window.Camera.main.gameObject.transform.y = this.canvas.height / 2;
+            }
             return;
         }
 
@@ -386,15 +406,21 @@ class Game extends EngineObject {
         if (!this.player) return;
 
         // Camera Follow
-        const targetX = this.player.x - this.canvas.width / 2;
-        const targetY = this.player.y - this.canvas.height / 2;
-        // Smooth follow with buffer
-        this.camera.x += (targetX - this.camera.x) * 0.1;
-        this.camera.y += (targetY - this.camera.y) * 0.1;
-        
-        // Clamp Camera
-        this.camera.x = Math.max(0, Math.min(this.camera.x, this.worldWidth - this.canvas.width));
-        this.camera.y = Math.max(0, Math.min(this.camera.y, this.worldHeight - this.canvas.height));
+        if (this.cameraGO) {
+            // Update Camera GameObject Transform (Center on player)
+            let targetX = this.player.x;
+            let targetY = this.player.y;
+            
+            // Clamp Camera
+            const halfW = this.canvas.width / 2;
+            const halfH = this.canvas.height / 2;
+            targetX = Math.max(halfW, Math.min(targetX, this.worldWidth - halfW));
+            targetY = Math.max(halfH, Math.min(targetY, this.worldHeight - halfH));
+
+            // Smooth follow
+            this.cameraGO.transform.x += (targetX - this.cameraGO.transform.x) * 0.1;
+            this.cameraGO.transform.y += (targetY - this.cameraGO.transform.y) * 0.1;
+        }
 
         // Update Particles
         this.particleSystemManager.update(1/60);
@@ -442,40 +468,26 @@ class Game extends EngineObject {
             // Ideally SceneManager or Scene should handle this collection
             const scene = this.sceneManager.activeScene;
             
-            // Camera Setup (Pipeline could handle this if passed camera)
+            // Camera Setup
             const camera = window.Camera && window.Camera.main;
             if (camera) {
-                // Apply camera transform to context? 
-                // Or pass camera matrix to pipeline?
-                // For 2D Canvas, we usually translate the context.
-                // Let's keep the camera logic here for now or move it to pipeline.
-                // If we move to pipeline, we need to pass camera to beginFrame or render.
+                // Camera.apply() internally calls ctx.save() and sets transform.
+                // We need to make sure we restore it later.
+                // But wait, Camera.apply() clears the screen too.
+                // And RenderPipeline.beginFrame() also clears the screen.
+                // This is redundant but fine.
                 
-                // Current pipeline implementation assumes world coordinates in commands,
-                // but draws to screen. So we need the global transform.
-                this.ctx.save();
                 camera.apply(this.ctx);
             }
 
             // Collect
             for (const go of scene.gameObjects) {
                 if (!go.active) continue;
-                // Check for Renderer components
-                // This is slow, better to have a list of renderers in Scene
                 const renderers = go.components.filter(c => c instanceof Renderer);
                 for (const r of renderers) {
                     if (r.visible) r.render(this.renderPipeline);
                 }
             }
-            
-            // 2. Collect Particles (They are not GameObjects usually in this engine?)
-            // ParticleSystemManager draws directly. We should wrap it or make it submit commands.
-            // For now, let's let it draw directly ON TOP of pipeline? 
-            // Or better, make ParticleSystemRenderer submit commands.
-            // Assuming ParticleSystemRenderer is a Component, it's covered above!
-            // Wait, ParticleSystemManager in Game.js seems to manage global particles?
-            // "this.particleSystemManager.draw(this.ctx);"
-            // Let's leave it as direct draw for now, or wrap it.
         }
 
         // Execute Pipeline
@@ -483,7 +495,10 @@ class Game extends EngineObject {
 
         // Restore Camera
         if (window.Camera && window.Camera.main) {
-            this.ctx.restore();
+            // Camera.apply() did a ctx.save(), so we must restore it.
+            // But Camera.js has a reset() method for this?
+            // Let's use reset() if available, or manual restore.
+            window.Camera.main.reset(this.ctx);
         }
 
         // Draw Particles (Legacy/Global)

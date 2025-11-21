@@ -53,10 +53,15 @@ class CanvasRenderer extends Renderer {
                 // This is a simplification. Ideally we map each element type to a command.
                 // For now, let's assume elements are simple rects/texts
                 if (el.type === 'rect') {
+                    // RenderPipeline draws rects centered, but el.x/y are usually top-left relative to object
+                    // We need to calculate the center position in world space
+                    const worldLeft = t.x + (el.x || 0);
+                    const worldTop = t.y + (el.y || 0);
+                    
                     pipeline.submit({
                         type: 'RECT',
-                        x: t.x + (el.x || 0),
-                        y: t.y + (el.y || 0),
+                        x: worldLeft + el.width / 2,
+                        y: worldTop + el.height / 2,
                         width: el.width,
                         height: el.height,
                         color: el.color,

@@ -1,10 +1,24 @@
-// import { rand } from '../core/Utils.js';
+
 
 class Enemy extends GameBehaviour {
     constructor() {
         super('Enemy');
         this.id = Math.random().toString(36).substr(2, 9);
         this.active = true;
+        this._initialPos = { x: 0, y: 0 };
+    }
+
+    // Proxy Transform properties
+    get x() { return this.gameObject ? this.gameObject.transform.x : this._initialPos.x; }
+    set x(v) { 
+        if (this.gameObject) this.gameObject.transform.x = v; 
+        else this._initialPos.x = v;
+    }
+
+    get y() { return this.gameObject ? this.gameObject.transform.y : this._initialPos.y; }
+    set y(v) { 
+        if (this.gameObject) this.gameObject.transform.y = v; 
+        else this._initialPos.y = v;
     }
 
     onLoad(props) {
@@ -17,11 +31,20 @@ class Enemy extends GameBehaviour {
         this.damage = this.isBoss ? 20 : 5;
 
         // Set initial position
-        if (props.x !== undefined && this.gameObject) this.gameObject.transform.x = props.x;
-        if (props.y !== undefined && this.gameObject) this.gameObject.transform.y = props.y;
+        if (props.x !== undefined) this.x = props.x;
+        if (props.y !== undefined) this.y = props.y;
     }
 
     start() {
+        // Apply initial position if set before gameObject was assigned
+        if (this._initialPos.x !== 0 || this._initialPos.y !== 0) {
+             // If gameObject was already set during onLoad (via setter), this is redundant but harmless.
+             // If onLoad was called before addComponent, the setter updated _initialPos.
+             // Now we apply it to the transform.
+             this.gameObject.transform.x = this._initialPos.x;
+             this.gameObject.transform.y = this._initialPos.y;
+        }
+
         // Add Renderer
         this.gameObject.addComponent(new CanvasRenderer((ctx) => {
             ctx.fillStyle = this.color;
