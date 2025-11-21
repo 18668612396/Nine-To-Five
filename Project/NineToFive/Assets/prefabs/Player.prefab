@@ -28,7 +28,7 @@ Version: 1
                 "width": 80,
                 "height": 80,
                 "sortingOrder": 10,
-                "imagePath": "assets/actors/players/xiaokui/xiaokui01/run/xiaokui01_01.png"
+                "imagePath": "Assets/Art/Textures/players/xiaokui/xiaokui01/run/xiaokui01_01.png"
             }
         },
         {
@@ -41,8 +41,8 @@ Version: 1
             "type": "Player",
             "properties": {
                 "speed": 0.5,
-                "weaponPrefab": "f2fd4ad503a74346af6dd9620994c7c7",
-                "shadowPrefab": "07006758b1a94a33abcedcaab940df3a"
+                "weaponPrefab": "975121fc87a74fdea9d7c79876df12d4",
+                "shadowPrefab": "a570430a7d9040dc865b5510d7e8184f"
             }
         }
     ]

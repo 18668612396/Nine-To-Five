@@ -25,9 +25,9 @@ class EnemyManager extends GameBehaviour {
 
     async loadPrefab() {
         // Load Enemy Prefab using its GUID
-        // GUID: 34112fa27d384daeb390a75f16a426e2
+        // GUID: f281e78241ff46698a68c67f6ad9c413
         try {
-            this.enemyPrefab = await window.resourceManager.load('34112fa27d384daeb390a75f16a426e2');
+            this.enemyPrefab = await window.resourceManager.load('f281e78241ff46698a68c67f6ad9c413');
             console.log("EnemyManager: Prefab loaded.");
         } catch (e) {
             console.error("EnemyManager: Failed to load prefab.", e);
@@ -35,7 +35,7 @@ class EnemyManager extends GameBehaviour {
 
         // Load Death Effect Prefab
         try {
-            this.deathEffectPrefab = await window.resourceManager.load('Assets/prefabs/EnemyDeathEffect.prefab');
+            this.deathEffectPrefab = await window.resourceManager.load('Assets/Prefabs/EnemyDeathEffect.prefab');
             console.log("EnemyManager: Death Effect Prefab loaded.");
         } catch (e) {
             console.error("EnemyManager: Failed to load death effect prefab.", e);

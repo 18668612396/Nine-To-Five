@@ -64,7 +64,7 @@
 
     function loadProject() {
         const script = document.createElement('script');
-        script.src = "Assets/ProjectBoot.js";
+        script.src = "Assets/Scripts/ProjectBoot.js";
         document.head.appendChild(script);
     }
 
