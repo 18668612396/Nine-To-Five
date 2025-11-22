@@ -1,4 +1,3 @@
-
 class ParticleModule {
     constructor() {
         this.enabled = true;
@@ -17,6 +16,14 @@ class ParticleModule {
 
     // Called for each active particle every frame
     updateParticle(particle, dt) {}
+
+    getValue(param) {
+        if (typeof param === 'number') return param;
+        if (param && param.min !== undefined && param.max !== undefined) {
+            return param.min + Math.random() * (param.max - param.min);
+        }
+        return param; 
+    }
 }
 
 class MainModule extends ParticleModule {
@@ -29,18 +36,12 @@ class MainModule extends ParticleModule {
         this.startSpeed = config.startSpeed || { min: 5.0, max: 5.0 };
         this.startSize = config.startSize || { min: 1.0, max: 1.0 };
         this.startColor = config.startColor || [1, 1, 1, 1]; // [r,g,b,a]
+        this.startRotation = config.startRotation || { min: 0, max: 0 };
         this.gravityModifier = config.gravityModifier || 0;
         this.maxParticles = config.maxParticles || 1000;
         this.playOnAwake = config.playOnAwake !== undefined ? config.playOnAwake : true;
         this.destroyOnStop = config.destroyOnStop !== undefined ? config.destroyOnStop : false;
-    }
-
-    getValue(param) {
-        if (typeof param === 'number') return param;
-        if (param.min !== undefined && param.max !== undefined) {
-            return param.min + Math.random() * (param.max - param.min);
-        }
-        return param; // Assume it's a direct value if not object
+        this.simulationSpace = config.simulationSpace || 'World'; // 'World', 'Local'
     }
 
     onEmit(particle) {
@@ -50,6 +51,7 @@ class MainModule extends ParticleModule {
         particle.size = particle.startSize;
         particle.startColor = [...this.startColor]; // Copy array
         particle.color = [...this.startColor];
+        particle.rotation = this.getValue(this.startRotation);
         
         const speed = this.getValue(this.startSpeed);
         // Velocity direction is usually set by ShapeModule, but we can set a default here if needed
@@ -268,9 +270,29 @@ class SizeOverLifetimeModule extends ParticleModule {
     }
 }
 
+class RotationOverLifetimeModule extends ParticleModule {
+    constructor(config = {}) {
+        super();
+        this.angularVelocity = config.angularVelocity || 0; 
+    }
+
+    onEmit(particle) {
+        particle.rotationSpeed = this.getValue(this.angularVelocity);
+    }
+}
+
+class RendererModule extends ParticleModule {
+    constructor(config = {}) {
+        super();
+        this.material = config.material || null; // GUID or Material Object
+    }
+}
+
 window.ParticleModule = ParticleModule;
 window.MainModule = MainModule;
 window.EmissionModule = EmissionModule;
 window.ShapeModule = ShapeModule;
 window.ColorOverLifetimeModule = ColorOverLifetimeModule;
 window.SizeOverLifetimeModule = SizeOverLifetimeModule;
+window.RotationOverLifetimeModule = RotationOverLifetimeModule;
+window.RendererModule = RendererModule;

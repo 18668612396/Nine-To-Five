@@ -28,6 +28,7 @@
         "../../Engine/Resources/Prefab.js",
         "../../Engine/Resources/AnimationClip.js",
         "../../Engine/Resources/AnimatorController.js",
+        "../../Engine/Resources/TGALoader.js",
         "../../Engine/Resources/ResourceManager.js",
         "../../Engine/Utils/Utils.js",
         "../../Engine/Particles/Particle.js",

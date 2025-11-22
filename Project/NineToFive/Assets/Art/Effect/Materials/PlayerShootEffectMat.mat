@@ -1,0 +1,7 @@
+{
+    "name": "PlayerShootEffectMat",
+    "properties": {
+        "_Color": { "r": 255, "g": 0, "b": 0, "a": 1.0 },
+        "_MainTex": "51f8a815bb3a439bb4d65010ad0d80e4"
+    }
+}

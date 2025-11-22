@@ -11,10 +11,12 @@ class ParticleSystem extends Component {
         this.shape = new ShapeModule(config.shape || config);
         this.colorOverLifetime = new ColorOverLifetimeModule(config.colorOverLifetime || {});
         this.sizeOverLifetime = new SizeOverLifetimeModule(config.sizeOverLifetime || {});
+        this.rotationOverLifetime = new RotationOverLifetimeModule(config.rotationOverLifetime || {});
+        this.renderer = new RendererModule(config.renderer || {});
         
         // Order matters for onEmit dependencies
         // Main (sets speed) -> Shape (uses speed to set velocity)
-        this.modules.push(this.main, this.emission, this.shape, this.colorOverLifetime, this.sizeOverLifetime);
+        this.modules.push(this.main, this.emission, this.shape, this.colorOverLifetime, this.sizeOverLifetime, this.rotationOverLifetime, this.renderer);
         
         this.modules.forEach(m => m.init(this));
 
@@ -30,13 +32,24 @@ class ParticleSystem extends Component {
     onLoad(config) {
         // Re-initialize modules with loaded config
         this.main = new MainModule(config.main || config); 
-        console.log("ParticleSystem MainModule loop:", this.main.loop);
         this.emission = new EmissionModule(config.emission || config);
         this.shape = new ShapeModule(config.shape || config);
         this.colorOverLifetime = new ColorOverLifetimeModule(config.colorOverLifetime || {});
         this.sizeOverLifetime = new SizeOverLifetimeModule(config.sizeOverLifetime || {});
+        this.rotationOverLifetime = new RotationOverLifetimeModule(config.rotationOverLifetime || {});
+        this.renderer = new RendererModule(config.renderer || {});
         
-        this.modules = [this.main, this.emission, this.shape, this.colorOverLifetime, this.sizeOverLifetime];
+        // Resolve Material if it's a GUID
+        if (this.renderer.material && typeof this.renderer.material === 'string') {
+            const matGuid = this.renderer.material;
+            if (window.resourceManager) {
+                window.resourceManager.load(matGuid).then(mat => {
+                    this.renderer.material = mat;
+                });
+            }
+        }
+
+        this.modules = [this.main, this.emission, this.shape, this.colorOverLifetime, this.sizeOverLifetime, this.rotationOverLifetime, this.renderer];
         this.modules.forEach(m => m.init(this));
         
         this.isPlaying = this.main.playOnAwake;
@@ -100,13 +113,19 @@ class ParticleSystem extends Component {
         }
 
         const transform = this.gameObject ? this.gameObject.transform : { x: 0, y: 0 };
+        const isLocal = this.main.simulationSpace === 'Local';
 
         for (let i = 0; i < count; i++) {
             const p = new Particle({});
             
             // Set initial transform from system
-            p.x = transform.x; 
-            p.y = transform.y;
+            if (isLocal) {
+                p.x = 0;
+                p.y = 0;
+            } else {
+                p.x = transform.x; 
+                p.y = transform.y;
+            }
             p.texture = this.texture;
             
             // Initialize via Modules
@@ -129,10 +148,53 @@ class ParticleSystem extends Component {
         this.isStopped = true;
     }
 
-    draw(ctx) {
-        for (const p of this.particles) {
-            if (p.active) {
-                p.draw(ctx);
+    draw(ctx, material) {
+        const isLocal = this.main.simulationSpace === 'Local';
+        
+        // Use material if provided, otherwise fallback to internal texture
+        // Note: Material support in Particle.draw needs to be implemented or handled here
+        // For now, let's assume we just want to use the texture from the material if available
+        let texture = this.texture;
+        if (material && material.getTexture) {
+            const matTex = material.getTexture('_MainTex');
+            if (matTex) texture = matTex;
+        }
+
+        if (isLocal && this.gameObject) {
+            const t = this.gameObject.transform;
+            ctx.save();
+            ctx.translate(t.x, t.y);
+            ctx.rotate(t.rotation);
+            // Note: Scale might distort particles if non-uniform, but let's support it
+            ctx.scale(t.scale.x, t.scale.y);
+            
+            for (const p of this.particles) {
+                if (p.active) {
+                    // Temporarily override texture for draw if needed, or pass it
+                    // But Particle.draw uses p.texture. 
+                    // We should probably update p.texture on emit or here.
+                    // If we update here, we avoid storing it on every particle if it's shared.
+                    // But Particle.draw expects p.texture.
+                    // Let's pass texture to draw? No, Particle.draw signature is (ctx).
+                    // Let's set p.texture = texture if it's different?
+                    // Or better: Particle.draw should take an optional texture override.
+                    
+                    // Hack for now:
+                    const oldTex = p.texture;
+                    if (texture) p.texture = texture;
+                    p.draw(ctx);
+                    p.texture = oldTex;
+                }
+            }
+            ctx.restore();
+        } else {
+            for (const p of this.particles) {
+                if (p.active) {
+                    const oldTex = p.texture;
+                    if (texture) p.texture = texture;
+                    p.draw(ctx);
+                    p.texture = oldTex;
+                }
             }
         }
     }

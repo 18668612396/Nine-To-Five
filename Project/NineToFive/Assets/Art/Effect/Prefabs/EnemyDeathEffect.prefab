@@ -1,6 +1,5 @@
-
 {
-    "name": "PlayerShootEffect",
+    "name": "EnemyDeathEffect",
     "type": "GameObject",
     "components": [
         {
@@ -13,36 +12,44 @@
             "type": "ParticleSystem",
             "properties": {
                 "main": {
-                    "duration": 0.2,
+                    "duration": 1.0,
                     "loop": false,
                     "destroyOnStop": true,
-                    "startLifetime": { "min": 0.1, "max": 0.15 },
-                    "startSpeed": { "min": 0, "max": 0 },
-                    "startSize": { "min": 30, "max": 50 },
-                    "startColor": [1, 0.9, 0.6, 1],
-                    "maxParticles": 5
+                    "startLifetime": { "min": 0.5, "max": 1.0 },
+                    "startSpeed": { "min": 2, "max": 6 },
+                    "startSize": { "min": 4, "max": 10 },
+                    "startColor": [1, 0.2, 0.2, 1],
+                    "maxParticles": 100,
+                    "simulationSpace": "World",
+                    "startRotation": { "min": 0, "max": 0 }
                 },
                 "emission": {
                     "rateOverTime": 0,
                     "bursts": [
-                        { "time": 0, "count": 1 }
+                        { "time": 0, "count": 20 }
                     ]
                 },
                 "shape": {
                     "shapeType": "circle",
-                    "radius": 0,
+                    "radius": 0.1,
                     "arc": 360
                 },
                 "colorOverLifetime": {
                     "gradient": {
-                        "0": [1, 0.9, 0.6, 1],
-                        "1": [1, 0.9, 0.6, 0]
+                        "0": [1, 0.2, 0.2, 1],
+                        "1": [1, 0.2, 0.2, 0]
                     }
                 },
                 "sizeOverLifetime": {
                     "curve": {
                         "0": 1.0,
-                        "1": 1.5
+                        "1": 0.0
+                    }
+                },
+                "rotationOverLifetime": {
+                    "curve": {
+                        "0": 0,
+                        "1": 0
                     }
                 }
             }

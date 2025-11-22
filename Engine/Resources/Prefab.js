@@ -73,6 +73,23 @@ class Prefab extends Asset {
                     continue;
                 }
 
+                // Special handling for Transform to avoid duplicates
+                if (compData.type === 'Transform') {
+                    if (compData.properties) {
+                        const props = compData.properties;
+                        if (props.localPosition) {
+                            obj.transform.localPosition.x = props.localPosition.x;
+                            obj.transform.localPosition.y = props.localPosition.y;
+                        }
+                        if (props.localRotation !== undefined) obj.transform.localRotation = props.localRotation;
+                        if (props.localScale) {
+                            obj.transform.localScale.x = props.localScale.x;
+                            obj.transform.localScale.y = props.localScale.y;
+                        }
+                    }
+                    continue; 
+                }
+
                 const comp = new CompClass();
                 if (compData.properties) {
                     // If component has onLoad method, use it (for complex deserialization)

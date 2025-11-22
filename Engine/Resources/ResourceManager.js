@@ -13,6 +13,8 @@ class ResourceManager {
         this.registerLoader('.png', this.loadImage.bind(this));
         this.registerLoader('.jpg', this.loadImage.bind(this));
         this.registerLoader('.txt', this.loadText.bind(this));
+        this.registerLoader('.mat', this.loadMaterial.bind(this));
+        this.registerLoader('.tga', this.loadTga.bind(this)); // Register .tga loader
 
         this.init();
     }
@@ -53,7 +55,6 @@ class ResourceManager {
         // UUID is 36 chars, our simple random is variable but usually no dots
         if (this.assetMap && this.assetMap[urlOrGuid]) {
             url = this.assetMap[urlOrGuid];
-            console.log(`ResourceManager: Resolved GUID ${urlOrGuid} to ${url}`);
         }
 
         if (this.cache.has(url)) {
@@ -166,6 +167,24 @@ class ResourceManager {
             console.warn(`ResourceManager: AssetType mismatch. Expected 'Prefab', got '${header.AssetType}'`);
         }
 
+        // Preload dependencies (e.g. ParticleSystem materials)
+        if (data.components) {
+            for (const comp of data.components) {
+                if (comp.type === 'ParticleSystem' && comp.properties && comp.properties.renderer && comp.properties.renderer.material) {
+                    const matGuid = comp.properties.renderer.material;
+                    if (typeof matGuid === 'string') {
+                        // Fire and forget load, or await?
+                        // Await is safer to ensure it's ready when instantiated
+                        try {
+                            await this.load(matGuid);
+                        } catch (e) {
+                            console.warn("Failed to preload material for prefab:", matGuid);
+                        }
+                    }
+                }
+            }
+        }
+
         return new Prefab(data);
     }
 
@@ -198,6 +217,49 @@ class ResourceManager {
             img.onerror = (e) => reject(new Error(`Failed to load image: ${url}`));
             img.src = url;
         });
+    }
+
+    async loadMaterial(url) {
+        // Material files might have headers or just be JSON
+        // Let's assume they might have headers like other assets
+        let data;
+        try {
+            const result = await this.loadAssetWithHeader(url);
+            data = result.data;
+        } catch (e) {
+            // Fallback to pure JSON if header parsing fails or it's just a JSON file
+            data = await this.loadJson(url);
+        }
+
+        const material = new Material(data);
+        
+        // Load textures if they are GUIDs
+        if (material._properties) {
+            for (const [key, value] of material._properties) {
+                // Check if value looks like a GUID (32 hex chars)
+                if (typeof value === 'string' && /^[0-9a-f]{32}$/i.test(value)) {
+                    try {
+                        const texture = await this.load(value);
+                        material.setTexture(key, texture);
+                    } catch (err) {
+                        console.warn(`Failed to load texture ${value} for material ${url}`, err);
+                    }
+                }
+            }
+        }
+        
+        return material;
+    }
+
+    async loadTga(url) {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const buffer = await response.arrayBuffer();
+        if (window.TGALoader) {
+            return window.TGALoader.parse(buffer);
+        } else {
+            throw new Error("TGALoader not found.");
+        }
     }
 }
 

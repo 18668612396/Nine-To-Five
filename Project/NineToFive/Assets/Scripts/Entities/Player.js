@@ -40,6 +40,8 @@ class Player extends GameBehaviour {
         this.level = 1;
         this.exp = 0;
         this.maxExp = 100;
+        
+        this.muzzleDistance = 40; // Default muzzle distance
     }
 
     onLoad(props) {
@@ -48,14 +50,15 @@ class Player extends GameBehaviour {
         if (props.speed) this.baseStats.speed = props.speed;
         if (props.weaponPrefab) this.weaponPrefabPath = props.weaponPrefab;
         if (props.shadowPrefab) this.shadowPrefabPath = props.shadowPrefab;
+        if (props.muzzleDistance !== undefined) this.muzzleDistance = props.muzzleDistance;
     }
 
     start() {
         // Get Components (Assumed to be added via Prefab)
         this.rb = this.gameObject.getComponent('RigidBody');
         this.collider = this.gameObject.getComponent('CircleCollider');
-        this.spriteRenderer = this.gameObject.getComponent('SpriteRenderer');
-        this.animator = this.gameObject.getComponent('Animator');
+
+        this.initVisuals();
 
         // Load Shadow Prefab if defined
         if (this.shadowPrefabPath) {
@@ -83,7 +86,7 @@ class Player extends GameBehaviour {
         // }
         
         // Load Shoot Effect Prefab
-        window.resourceManager.load('Assets/Prefabs/PlayerShootEffect.prefab').then(prefab => {
+        window.resourceManager.load('b6b093b829dd43b8beabf30869778a32').then(prefab => {
             this.shootEffectPrefab = prefab;
         }).catch(err => console.error("Failed to load shoot effect prefab:", err));
     }
@@ -158,8 +161,36 @@ class Player extends GameBehaviour {
         this.hp = Math.min(this.hp, this.maxHp);
     }
 
+    initVisuals() {
+        // Find Visuals child for rendering components
+        let visualsGO = this.gameObject;
+        if (this.gameObject.transform.children && this.gameObject.transform.children.length > 0) {
+             const visualTransform = this.gameObject.transform.children.find(t => t.gameObject.name === 'Visuals');
+             if (visualTransform) {
+                 visualsGO = visualTransform.gameObject;
+                 console.log("Player: Visuals child found.");
+             } else {
+                 console.warn("Player: Visuals child NOT found in children list:", this.gameObject.transform.children.map(t => t.gameObject.name));
+             }
+        } else {
+            console.warn("Player: No children found on Player object.");
+        }
+
+        // Only update if we found something or if we haven't set them yet
+        const sr = visualsGO.getComponent('SpriteRenderer');
+        if (sr) this.spriteRenderer = sr;
+        
+        const anim = visualsGO.getComponent('Animator');
+        if (anim) this.animator = anim;
+    }
+
     update(dt) {
         const input = window.game.inputManager;
+        
+        // Ensure visuals are linked (in case start() ran before children were created)
+        if (!this.animator || !this.spriteRenderer) {
+            this.initVisuals();
+        }
         
         // Reload Logic
         if (this.isReloading) {
@@ -197,10 +228,12 @@ class Player extends GameBehaviour {
         this.y = Math.max(this.r, Math.min(this.worldHeight - this.r, this.y));
 
         const isMoving = moveX !== 0 || moveY !== 0;
-        if (isMoving) {
-            if (this.animator.play) this.animator.play('Run');
-        } else {
-            if (this.animator.play) this.animator.play('Idle');
+        if (this.animator) {
+            if (isMoving) {
+                if (this.animator.play) this.animator.play('Run');
+            } else {
+                if (this.animator.play) this.animator.play('Idle');
+            }
         }
 
         // --- Combat Logic ---
@@ -289,13 +322,13 @@ class Player extends GameBehaviour {
 
         // Spawn Shoot Effect
         if (this.shootEffectPrefab) {
-            // Spawn at player center
-            this.shootEffectPrefab.instantiate({ x: this.x, y: this.y });
+            // Spawn as child of player so it follows
+            this.shootEffectPrefab.instantiate(null, this.gameObject);
         }
 
         // Spawn Bullet
         // Muzzle offset (approximate)
-        const muzzleDist = 40;
+        const muzzleDist = this.muzzleDistance;
         const spawnX = this.x + Math.cos(angle) * muzzleDist;
         const spawnY = this.y + Math.sin(angle) * muzzleDist;
 

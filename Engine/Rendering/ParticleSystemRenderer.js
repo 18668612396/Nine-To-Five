@@ -16,22 +16,38 @@ class ParticleSystemRenderer extends Renderer {
     render(pipeline) {
         if (!this.gameObject || !this.gameObject.active) return;
 
+        const ps = this.gameObject.getComponent('ParticleSystem');
+        if (!ps) return;
+
+        // Get Material from Renderer Module
+        let material = null;
+        if (ps.renderer && ps.renderer.material) {
+            // If it's a GUID, we might need to load it, but render loop is synchronous usually.
+            // Assuming material is already loaded or is a Material object.
+            // If it's a GUID string, we can't use it directly in draw.
+            // Ideally, ParticleSystem should have loaded it.
+            material = ps.renderer.material;
+        }
+
         const t = this.gameObject.transform;
         
         // Submit a CUSTOM command to the pipeline
         pipeline.submit({
             type: 'CUSTOM',
-            callback: (ctx) => this.draw(ctx),
+            callback: (ctx) => {
+                // Pass material to draw if needed, or set context state
+                // For now, ParticleSystem.draw handles context, but we can enhance it
+                ps.draw(ctx, material);
+            },
             gameObject: this.gameObject,
-            x: 0, // Particles are world-space, so we don't want pipeline to translate for us?
-            y: 0, // Wait, pipeline usually translates to object position.
+            x: 0, 
+            y: 0, 
             rotation: 0,
             scaleX: 1,
             scaleY: 1,
             offsetX: 0,
             offsetY: 0,
             sortingOrder: this.sortingOrder,
-            // For sorting, we use the object's Y
             sortY: t.y 
         });
     }

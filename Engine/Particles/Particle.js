@@ -21,8 +21,8 @@ class Particle {
         this.color = [...this.startColor];
         this.texture = config.texture || null;
         
-        this.rotation = Math.random() * Math.PI * 2;
-        this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+        this.rotation = config.rotation || 0;
+        this.rotationSpeed = config.rotationSpeed || 0;
         
         this.alpha = 1.0;
         this.active = true;
@@ -58,7 +58,16 @@ class Particle {
             const finalAlpha = this.color[3] * this.alpha;
             ctx.globalAlpha = finalAlpha;
 
-            if (this.texture && this.texture.complete && this.texture.naturalWidth > 0) {
+            let isDrawable = false;
+            if (this.texture) {
+                if (this.texture instanceof HTMLImageElement) {
+                    isDrawable = this.texture.complete && this.texture.naturalWidth > 0;
+                } else if (this.texture instanceof HTMLCanvasElement) {
+                    isDrawable = this.texture.width > 0 && this.texture.height > 0;
+                }
+            }
+
+            if (isDrawable) {
                 ctx.drawImage(this.texture, -this.size / 2, -this.size / 2, this.size, this.size);
             } else {
                 // Convert 0-1 color to 0-255 for Canvas

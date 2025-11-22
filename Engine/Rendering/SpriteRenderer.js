@@ -70,8 +70,6 @@ class SpriteRenderer extends Renderer {
             height: this.height,
             color: color,
             opacity: this.opacity,
-            offsetX: this.offsetX,
-            offsetY: this.offsetY,
             sortingOrder: this.sortingOrder,
             // For secondary sorting
             y: t.y 
