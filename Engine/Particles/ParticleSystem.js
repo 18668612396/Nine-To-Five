@@ -2,84 +2,70 @@ class ParticleSystem extends Component {
     constructor(config = {}) {
         super('ParticleSystem');
         this.particles = [];
+        this.modules = [];
         
-        // Main Module
-        this.duration = config.duration || 1.0;
-        this.looping = config.looping !== undefined ? config.looping : false;
-        this.startDelay = config.startDelay || 0;
-        this.startLifetime = config.startLifetime || { min: 0.5, max: 1.0 };
-        this.startSpeed = config.startSpeed || { min: 1, max: 3 };
-        this.startSize = config.startSize || { min: 5, max: 10 };
-        this.startColor = config.startColor || [1, 1, 1, 1]; // [r,g,b,a] 0-1
-        this.texture = config.texture || null;
-        this.destroyOnStop = config.destroyOnStop !== undefined ? config.destroyOnStop : false;
-
-        // Emission Module
-        this.emission = {
-            rateOverTime: config.emission?.rateOverTime || 0,
-            bursts: config.emission?.bursts || [] // Array of { time: 0, count: 10 }
-        };
+        // Initialize Modules
+        // We pass the specific config section if available, otherwise fallback to root config for backward compatibility
+        this.main = new MainModule(config.main || config); 
+        this.emission = new EmissionModule(config.emission || config);
+        this.shape = new ShapeModule(config.shape || config);
+        this.colorOverLifetime = new ColorOverLifetimeModule(config.colorOverLifetime || {});
+        this.sizeOverLifetime = new SizeOverLifetimeModule(config.sizeOverLifetime || {});
         
-        // Backward compatibility for old config style
-        if (config.burstCount) {
-            this.emission.bursts.push({ time: 0, count: config.burstCount });
-        }
-        if (config.emissionRate) {
-            this.emission.rateOverTime = config.emissionRate;
-        }
-        if (config.loop !== undefined) this.looping = config.loop;
-        if (config.particleLife) this.startLifetime = config.particleLife;
-        if (config.particleSpeed) this.startSpeed = config.particleSpeed;
-        if (config.particleSize) this.startSize = config.particleSize;
-        if (config.particleColor) this.startColor = config.particleColor;
-
-        // Shape Module
-        this.shape = {
-            angle: config.shape?.angle || 0,
-            arc: config.shape?.arc || Math.PI * 2
-        };
-        if (config.angle !== undefined) this.shape.angle = config.angle;
-        if (config.spread !== undefined) this.shape.arc = config.spread;
+        // Order matters for onEmit dependencies
+        // Main (sets speed) -> Shape (uses speed to set velocity)
+        this.modules.push(this.main, this.emission, this.shape, this.colorOverLifetime, this.sizeOverLifetime);
+        
+        this.modules.forEach(m => m.init(this));
 
         // Runtime State
         this.time = 0;
-        this.emitTimer = 0;
         this.isStopped = false;
-        this.burstsTriggered = new Set();
+        this.isPlaying = this.main.playOnAwake;
+        
+        // Texture
+        this.texture = config.texture || null;
+    }
 
-        // Initial Burst check (time 0)
-        this.checkBursts(0);
+    onLoad(config) {
+        // Re-initialize modules with loaded config
+        this.main = new MainModule(config.main || config); 
+        console.log("ParticleSystem MainModule loop:", this.main.loop);
+        this.emission = new EmissionModule(config.emission || config);
+        this.shape = new ShapeModule(config.shape || config);
+        this.colorOverLifetime = new ColorOverLifetimeModule(config.colorOverLifetime || {});
+        this.sizeOverLifetime = new SizeOverLifetimeModule(config.sizeOverLifetime || {});
+        
+        this.modules = [this.main, this.emission, this.shape, this.colorOverLifetime, this.sizeOverLifetime];
+        this.modules.forEach(m => m.init(this));
+        
+        this.isPlaying = this.main.playOnAwake;
+        if (config.texture) this.texture = config.texture;
     }
 
     update(dt) {
-        // If attached to a GameObject, use its active state
         if (this.gameObject && !this.gameObject.active) return;
-
-        this.time += dt;
         
-        // Handle Loop / End
-        if (this.time >= this.duration) {
-            if (this.looping) {
-                this.time = 0;
-                this.burstsTriggered.clear();
-                this.checkBursts(0);
-            } else {
-                // Stop emitting, but don't deactivate component yet as particles need to live out
-            }
-        }
+        if (this.isPlaying) {
+            this.time += dt;
+            
+            // Update Modules (System level)
+            this.modules.forEach(m => {
+                if (m.enabled) m.update(dt);
+            });
 
-        // Handle Bursts
-        if (this.time < this.duration || this.looping) {
-            this.checkBursts(this.time);
-        }
-
-        // Handle Continuous Emission
-        if ((this.time < this.duration || this.looping) && this.emission.rateOverTime > 0) {
-            const interval = 1.0 / this.emission.rateOverTime;
-            this.emitTimer += dt;
-            while (this.emitTimer >= interval) {
-                this.emit(1);
-                this.emitTimer -= interval;
+            // Check Duration/Looping
+            if (this.time >= this.main.duration) {
+                if (this.main.loop) {
+                    this.time = 0;
+                    // Reset modules if needed?
+                    this.modules.forEach(m => {
+                        if (m.reset) m.reset();
+                    });
+                } else {
+                    // If not looping, we stop emitting but let particles die out
+                    this.stop();
+                }
             }
         }
 
@@ -88,59 +74,59 @@ class ParticleSystem extends Component {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             if (p.active) {
-                p.update(dt);
+                // Module Particle Updates
+                this.modules.forEach(m => {
+                    if (m.enabled) m.updateParticle(p, dt);
+                });
+                
+                // Physics Integration (if not fully handled by modules)
+                p.update(dt); 
+                
                 activeCount++;
             } else {
                 this.particles.splice(i, 1);
             }
         }
         
-        // Debug Log
-        // if (activeCount > 0) console.log(`ParticleSystem: ${activeCount} active particles`);
-
-        // Check if system is completely finished (no particles left and not emitting)
-        if (!this.looping && this.time >= this.duration && activeCount === 0) {
-            this.isStopped = true;
-            // Optionally destroy the game object if it was just for this effect
-            if (this.destroyOnStop && this.gameObject) {
-                this.gameObject.destroy();
-            } else if (this.gameObject && this.gameObject.name === 'ParticleEffect') {
-                this.gameObject.active = false;
-            }
+        if (!this.isPlaying && activeCount === 0 && this.main.destroyOnStop) {
+             if (this.gameObject) this.gameObject.destroy();
         }
-    }
-
-    checkBursts(currentTime) {
-        this.emission.bursts.forEach((burst, index) => {
-            if (currentTime >= burst.time && !this.burstsTriggered.has(index)) {
-                this.emit(burst.count);
-                this.burstsTriggered.add(index);
-            }
-        });
     }
 
     emit(count) {
-        const transform = this.gameObject ? this.gameObject.transform : { x: 0, y: 0 };
-        
-        for (let i = 0; i < count; i++) {
-            const angle = this.shape.angle + (Math.random() - 0.5) * this.shape.arc;
-            const speed = this.randomRange(this.startSpeed.min, this.startSpeed.max);
-            const life = this.randomRange(this.startLifetime.min, this.startLifetime.max);
-            const size = this.randomRange(this.startSize.min, this.startSize.max);
-
-            const pConfig = {
-                x: transform.x,
-                y: transform.y,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed,
-                life: life,
-                size: size,
-                color: this.startColor,
-                texture: this.texture
-            };
-
-            this.particles.push(new Particle(pConfig));
+        if (this.particles.length + count > this.main.maxParticles) {
+            count = this.main.maxParticles - this.particles.length;
+            if (count <= 0) return;
         }
+
+        const transform = this.gameObject ? this.gameObject.transform : { x: 0, y: 0 };
+
+        for (let i = 0; i < count; i++) {
+            const p = new Particle({});
+            
+            // Set initial transform from system
+            p.x = transform.x; 
+            p.y = transform.y;
+            p.texture = this.texture;
+            
+            // Initialize via Modules
+            this.modules.forEach(m => {
+                if (m.enabled) m.onEmit(p);
+            });
+            
+            this.particles.push(p);
+        }
+    }
+    
+    play() {
+        this.isPlaying = true;
+        this.isStopped = false;
+        this.time = 0;
+    }
+    
+    stop() {
+        this.isPlaying = false;
+        this.isStopped = true;
     }
 
     draw(ctx) {
@@ -149,10 +135,6 @@ class ParticleSystem extends Component {
                 p.draw(ctx);
             }
         }
-    }
-
-    randomRange(min, max) {
-        return min + Math.random() * (max - min);
     }
 }
 

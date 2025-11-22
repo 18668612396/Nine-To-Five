@@ -6,8 +6,8 @@ class Game extends EngineObject {
         this.container = document.getElementById('gameContainer');
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
-        this.ctx.imageSmoothingEnabled = false; // 设置纹理采样为 Point (最近邻)
-        
+        this.ctx.imageSmoothingEnabled = true; // 设置纹理采样为 Linear (平滑)
+        this.ctx.imageSmoothingQuality = 'high';
         // Fixed resolution
         this.designWidth = 1280;
         this.designHeight = 720;

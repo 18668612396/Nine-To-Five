@@ -195,7 +195,7 @@ class Player extends GameBehaviour {
         if (isMoving) {
             if (this.animator.play) this.animator.play('Run');
         } else {
-            if (this.animator.stop) this.animator.stop();
+            if (this.animator.play) this.animator.play('Idle');
         }
 
         // --- Combat Logic ---

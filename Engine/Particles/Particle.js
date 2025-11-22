@@ -9,10 +9,13 @@ class Particle {
         this.vx = config.vx || 0;
         this.vy = config.vy || 0;
         
-        this.life = config.life || 1.0;
-        this.startLife = config.life || 1.0;
+        this.startLifetime = config.life || 1.0;
+        this.remainingLifetime = this.startLifetime;
+        this.life = this.remainingLifetime; // Backwards compatibility
         
-        this.size = config.size || 5;
+        this.startSize = config.size || 5;
+        this.size = this.startSize;
+
         // Color should be [r, g, b, a] with 0-1 values
         this.startColor = config.color || [1, 1, 1, 1];
         this.color = [...this.startColor];
@@ -23,23 +26,24 @@ class Particle {
         
         this.alpha = 1.0;
         this.active = true;
+        this.speed = 0; // Used by modules
     }
 
     update(dt) {
         if (!this.active) return;
 
-        this.life -= dt;
-        if (this.life <= 0) {
-            this.active = false;
-            return;
-        }
-
+        // Modules will handle life, color, size updates
+        // We just handle basic physics here if not handled by a module
+        // But wait, if we move everything to modules, this update might become empty
+        // or just integration of position.
+        
         this.x += this.vx;
         this.y += this.vy;
         this.rotation += this.rotationSpeed;
-
-        // Fade out based on life
-        this.alpha = this.life / this.startLife;
+        
+        // Sync legacy property for rendering
+        this.life = this.remainingLifetime;
+        this.alpha = this.color[3];
     }
 
     draw(ctx) {

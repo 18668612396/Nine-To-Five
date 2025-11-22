@@ -31,6 +31,7 @@
         "../../Engine/Resources/ResourceManager.js",
         "../../Engine/Utils/Utils.js",
         "../../Engine/Particles/Particle.js",
+        "../../Engine/Particles/ParticleModules.js",
         "../../Engine/Particles/ParticleSystem.js"
     ];
 

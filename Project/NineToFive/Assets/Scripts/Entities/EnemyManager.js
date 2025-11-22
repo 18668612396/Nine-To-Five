@@ -27,18 +27,23 @@ class EnemyManager extends GameBehaviour {
         // Load Enemy Prefab using its GUID
         // GUID: f281e78241ff46698a68c67f6ad9c413
         try {
-            this.enemyPrefab = await window.resourceManager.load('f281e78241ff46698a68c67f6ad9c413');
-            console.log("EnemyManager: Prefab loaded.");
-        } catch (e) {
-            console.error("EnemyManager: Failed to load prefab.", e);
-        }
+            const p1 = window.resourceManager.load('f281e78241ff46698a68c67f6ad9c413')
+                .then(p => {
+                    this.enemyPrefab = p;
+                    console.log("EnemyManager: Enemy Prefab loaded.");
+                });
 
-        // Load Death Effect Prefab
-        try {
-            this.deathEffectPrefab = await window.resourceManager.load('Assets/Prefabs/EnemyDeathEffect.prefab');
-            console.log("EnemyManager: Death Effect Prefab loaded.");
+            // Load Death Effect Prefab
+            // GUID: 026444e2ade749068f12727648ae4d9c
+            const p2 = window.resourceManager.load('026444e2ade749068f12727648ae4d9c')
+                .then(p => {
+                    this.deathEffectPrefab = p;
+                    console.log("EnemyManager: Death Effect Prefab loaded.");
+                });
+
+            await Promise.all([p1, p2]);
         } catch (e) {
-            console.error("EnemyManager: Failed to load death effect prefab.", e);
+            console.error("EnemyManager: Failed to load prefabs.", e);
         }
     }
 
@@ -47,6 +52,8 @@ class EnemyManager extends GameBehaviour {
             // Pass position to instantiate so particles spawn at correct location
             const effectGO = this.deathEffectPrefab.instantiate({ x: x, y: y });
             // Effect handles its own destruction via ParticleSystem duration
+        } else {
+            console.warn("Death Effect Prefab not loaded!");
         }
     }
 

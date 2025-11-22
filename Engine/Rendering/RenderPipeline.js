@@ -42,7 +42,9 @@ class RenderPipeline {
                 return a.sortingOrder - b.sortingOrder;
             }
             // Secondary sort by Y for top-down 2D depth
-            return a.y - b.y;
+            const ay = a.sortY !== undefined ? a.sortY : a.y;
+            const by = b.sortY !== undefined ? b.sortY : b.y;
+            return ay - by;
         });
 
         // Execute

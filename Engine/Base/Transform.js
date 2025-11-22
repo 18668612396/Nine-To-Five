@@ -12,23 +12,31 @@ class Transform extends Component {
     // Getters for World Position
     get x() {
         if (this.parent) {
-            // Apply parent scale to local position offset
-            // WorldX = ParentWorldX + (LocalX * ParentScaleX)
-            // Note: Still ignoring rotation for simplicity as requested
-            return this.parent.x + (this.localPosition.x * this.parent.scale.x); 
+            // WorldX = ParentWorldX + (RotatedLocalX * ParentScaleX)
+            const pRot = this.parent.rotation;
+            const pScale = this.parent.scale;
+            
+            // Rotate local position
+            const cos = Math.cos(pRot);
+            const sin = Math.sin(pRot);
+            
+            const scaledX = this.localPosition.x * pScale.x;
+            const scaledY = this.localPosition.y * pScale.y;
+            
+            const rotatedX = scaledX * cos - scaledY * sin;
+            
+            return this.parent.x + rotatedX;
         }
         return this.localPosition.x;
     }
 
     set x(value) {
         if (this.parent) {
-            // Inverse operation: LocalX = (WorldX - ParentWorldX) / ParentScaleX
-            const pScaleX = this.parent.scale.x;
-            if (pScaleX !== 0) {
-                this.localPosition.x = (value - this.parent.x) / pScaleX;
-            } else {
-                this.localPosition.x = 0;
-            }
+            // This is complex because changing WorldX affects LocalX AND LocalY if rotated.
+            // We need to calculate the delta in world space, then inverse transform it to local space.
+            // For simplicity, let's just update localPosition based on current WorldY.
+            const currentWorldY = this.y;
+            this.setWorldPosition(value, currentWorldY);
         } else {
             this.localPosition.x = value;
         }
@@ -36,22 +44,62 @@ class Transform extends Component {
 
     get y() {
         if (this.parent) {
-            return this.parent.y + (this.localPosition.y * this.parent.scale.y);
+            const pRot = this.parent.rotation;
+            const pScale = this.parent.scale;
+            
+            const cos = Math.cos(pRot);
+            const sin = Math.sin(pRot);
+            
+            const scaledX = this.localPosition.x * pScale.x;
+            const scaledY = this.localPosition.y * pScale.y;
+            
+            const rotatedY = scaledX * sin + scaledY * cos;
+            
+            return this.parent.y + rotatedY;
         }
         return this.localPosition.y;
     }
 
     set y(value) {
         if (this.parent) {
-            const pScaleY = this.parent.scale.y;
-            if (pScaleY !== 0) {
-                this.localPosition.y = (value - this.parent.y) / pScaleY;
-            } else {
-                this.localPosition.y = 0;
-            }
+            const currentWorldX = this.x;
+            this.setWorldPosition(currentWorldX, value);
         } else {
             this.localPosition.y = value;
         }
+    }
+
+    /**
+     * Helper to set world position correctly when parented
+     */
+    setWorldPosition(worldX, worldY) {
+        if (!this.parent) {
+            this.localPosition.x = worldX;
+            this.localPosition.y = worldY;
+            return;
+        }
+
+        // Inverse Transform
+        // 1. Translate back to parent origin
+        const dx = worldX - this.parent.x;
+        const dy = worldY - this.parent.y;
+
+        // 2. Inverse Rotate (rotate by -parentRotation)
+        const pRot = this.parent.rotation;
+        const cos = Math.cos(-pRot);
+        const sin = Math.sin(-pRot);
+
+        const unrotatedX = dx * cos - dy * sin;
+        const unrotatedY = dx * sin + dy * cos;
+
+        // 3. Inverse Scale
+        const pScale = this.parent.scale;
+        // Avoid division by zero
+        const sX = pScale.x === 0 ? 0.0001 : pScale.x;
+        const sY = pScale.y === 0 ? 0.0001 : pScale.y;
+
+        this.localPosition.x = unrotatedX / sX;
+        this.localPosition.y = unrotatedY / sY;
     }
 
     get rotation() {
