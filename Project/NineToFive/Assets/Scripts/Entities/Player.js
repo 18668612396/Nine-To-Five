@@ -72,15 +72,20 @@ class Player extends GameBehaviour {
         this.ammo = this.maxAmmo;
 
         // Load Weapon Prefab if defined
-        if (this.weaponPrefabPath) {
-            window.resourceManager.load(this.weaponPrefabPath).then(prefab => {
-                if (prefab && prefab instanceof window.Prefab) {
-                    const weaponGO = prefab.instantiate(null, this.gameObject);
-                    this.weaponGO = weaponGO;
-                    console.log("Weapon instantiated:", weaponGO);
-                }
-            }).catch(err => console.error("Failed to load weapon prefab:", err));
-        }
+        // if (this.weaponPrefabPath) {
+        //     window.resourceManager.load(this.weaponPrefabPath).then(prefab => {
+        //         if (prefab && prefab instanceof window.Prefab) {
+        //             const weaponGO = prefab.instantiate(null, this.gameObject);
+        //             this.weaponGO = weaponGO;
+        //             console.log("Weapon instantiated:", weaponGO);
+        //         }
+        //     }).catch(err => console.error("Failed to load weapon prefab:", err));
+        // }
+        
+        // Load Shoot Effect Prefab
+        window.resourceManager.load('Assets/Prefabs/PlayerShootEffect.prefab').then(prefab => {
+            this.shootEffectPrefab = prefab;
+        }).catch(err => console.error("Failed to load shoot effect prefab:", err));
     }
 
     // Proxy Transform properties for compatibility
@@ -281,6 +286,12 @@ class Player extends GameBehaviour {
     fire(angle) {
         this.fireTimer = 60 / this.fireRate; // Frames between shots
         this.consumeAmmo();
+
+        // Spawn Shoot Effect
+        if (this.shootEffectPrefab) {
+            // Spawn at player center
+            this.shootEffectPrefab.instantiate({ x: this.x, y: this.y });
+        }
 
         // Spawn Bullet
         // Muzzle offset (approximate)

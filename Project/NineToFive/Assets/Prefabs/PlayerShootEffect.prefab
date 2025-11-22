@@ -1,0 +1,54 @@
+
+{
+    "name": "PlayerShootEffect",
+    "type": "GameObject",
+    "components": [
+        {
+            "type": "Transform",
+            "properties": {
+                "localPosition": { "x": 0, "y": 0 }
+            }
+        },
+        {
+            "type": "ParticleSystem",
+            "properties": {
+                "main": {
+                    "duration": 0.2,
+                    "loop": false,
+                    "destroyOnStop": true,
+                    "startLifetime": { "min": 0.1, "max": 0.15 },
+                    "startSpeed": { "min": 0, "max": 0 },
+                    "startSize": { "min": 30, "max": 50 },
+                    "startColor": [1, 0.9, 0.6, 1],
+                    "maxParticles": 5
+                },
+                "emission": {
+                    "rateOverTime": 0,
+                    "bursts": [
+                        { "time": 0, "count": 1 }
+                    ]
+                },
+                "shape": {
+                    "shapeType": "circle",
+                    "radius": 0,
+                    "arc": 360
+                },
+                "colorOverLifetime": {
+                    "gradient": {
+                        "0": [1, 0.9, 0.6, 1],
+                        "1": [1, 0.9, 0.6, 0]
+                    }
+                },
+                "sizeOverLifetime": {
+                    "curve": {
+                        "0": 1.0,
+                        "1": 1.5
+                    }
+                }
+            }
+        },
+        {
+            "type": "ParticleSystemRenderer"
+        }
+    ]
+}
