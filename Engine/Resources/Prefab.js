@@ -8,11 +8,12 @@ class Prefab extends Asset {
      * Instantiate the prefab into the scene
      * @param {Vector2} position - Optional position override
      * @param {GameObject} parent - Optional parent
+     * @param {Scene} scene - Optional scene to add to (defaults to activeScene)
      * @returns {GameObject} The instantiated root object
      */
-    instantiate(position = null, parent = null) {
+    instantiate(position = null, parent = null, scene = null) {
         if (!this.data) return null;
-        return Prefab.instantiateData(this.data, position, parent);
+        return Prefab.instantiateData(this.data, position, parent, scene);
     }
 
     /**
@@ -20,8 +21,9 @@ class Prefab extends Asset {
      * @param {Object} data - The JSON data of the GameObject
      * @param {Vector2} position - Optional position override (World Position)
      * @param {GameObject} parent - Optional parent
+     * @param {Scene} scene - Optional scene to add to (defaults to activeScene)
      */
-    static instantiateData(data, position = null, parent = null) {
+    static instantiateData(data, position = null, parent = null, scene = null) {
         // Deep clone data to prevent shared references
         const clonedData = JSON.parse(JSON.stringify(data));
 
@@ -103,16 +105,21 @@ class Prefab extends Asset {
             }
         }
 
-        // Add to active scene automatically if we have one
-        if (window.game && window.game.sceneManager && window.game.sceneManager.activeScene) {
-            window.game.sceneManager.activeScene.add(obj);
+        // Add to scene
+        let targetScene = scene;
+        if (!targetScene && window.game && window.game.sceneManager && window.game.sceneManager.activeScene) {
+            targetScene = window.game.sceneManager.activeScene;
+        }
+
+        if (targetScene) {
+            targetScene.add(obj);
         }
 
         // Handle Children
         if (Array.isArray(clonedData.children)) {
             for (const childData of clonedData.children) {
                 // Children are instantiated relative to this object
-                Prefab.instantiateData(childData, null, obj);
+                Prefab.instantiateData(childData, null, obj, targetScene);
             }
         }
 

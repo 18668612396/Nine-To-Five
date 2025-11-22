@@ -168,12 +168,8 @@ class Player extends GameBehaviour {
              const visualTransform = this.gameObject.transform.children.find(t => t.gameObject.name === 'Visuals');
              if (visualTransform) {
                  visualsGO = visualTransform.gameObject;
-                 console.log("Player: Visuals child found.");
-             } else {
-                 console.warn("Player: Visuals child NOT found in children list:", this.gameObject.transform.children.map(t => t.gameObject.name));
+                 // console.log("Player: Visuals child found.");
              }
-        } else {
-            console.warn("Player: No children found on Player object.");
         }
 
         // Only update if we found something or if we haven't set them yet

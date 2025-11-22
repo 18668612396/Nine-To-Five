@@ -409,7 +409,31 @@ class Game extends EngineObject {
                     console.log("%c🧩 Components:", "color: #aaa; font-size: 10px; font-weight: bold;");
                     go.components.forEach(c => {
                         // c.name is usually the class name or set name
-                        console.log(`%c   • ${c.name || c.constructor.name}`, "color: #81c784;");
+                        console.groupCollapsed(`%c   • ${c.name || c.constructor.name}`, "color: #81c784;");
+                        
+                        // Filter properties for display
+                        const displayProps = {};
+                        // Get all keys including inherited ones if needed, but usually instance props are enough
+                        for (const key in c) {
+                            // Skip functions, gameObject reference, and private members
+                            if (typeof c[key] === 'function') continue;
+                            if (key === 'gameObject') continue;
+                            if (key.startsWith('_')) continue;
+                            
+                            // Handle objects nicely
+                            if (typeof c[key] === 'object' && c[key] !== null) {
+                                // If it's a simple object, show it. If it's complex, maybe just type
+                                if (c[key].constructor && c[key].constructor.name !== 'Object') {
+                                    displayProps[key] = `[${c[key].constructor.name}]`;
+                                } else {
+                                    displayProps[key] = c[key];
+                                }
+                            } else {
+                                displayProps[key] = c[key];
+                            }
+                        }
+                        console.log(displayProps);
+                        console.groupEnd();
                     });
                 }
                 

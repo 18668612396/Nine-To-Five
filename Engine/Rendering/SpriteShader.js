@@ -8,7 +8,7 @@ class SpriteShader extends Shader {
         
         if (!texture) return;
         // Check if image is loaded
-        if (texture.complete === false && texture.naturalWidth === 0) return;
+        if (texture instanceof HTMLImageElement && texture.complete === false && texture.naturalWidth === 0) return;
 
         ctx.save();
         ctx.translate(x, y);
@@ -21,13 +21,21 @@ class SpriteShader extends Shader {
         const w = width || texture.width;
         const h = height || texture.height;
         
-        ctx.drawImage(
-            texture,
-            -w / 2 + offsetX,
-            -h / 2 + offsetY,
-            w,
-            h
-        );
+        // Debug Draw
+        // ctx.strokeStyle = 'red';
+        // ctx.strokeRect(-w / 2 + offsetX, -h / 2 + offsetY, w, h);
+
+        try {
+            ctx.drawImage(
+                texture,
+                -w / 2 + offsetX,
+                -h / 2 + offsetY,
+                w,
+                h
+            );
+        } catch (e) {
+            console.warn("SpriteShader: Failed to draw image", e);
+        }
         
         ctx.restore();
     }

@@ -96,7 +96,8 @@ class Scene extends Asset {
                     try {
                         const prefab = await window.resourceManager.load(objData.prefab);
                         if (prefab && prefab.instantiate) {
-                            const obj = prefab.instantiate();
+                            // Pass 'scene' to instantiate so children are added to THIS scene, not activeScene
+                            const obj = prefab.instantiate(null, null, scene);
                             
                             // Apply Scene Overrides
                             if (objData.name) obj.name = objData.name;
@@ -106,7 +107,13 @@ class Scene extends Asset {
                             if (parent) {
                                 parent.transform.setChild(obj.transform);
                             }
-                            scene.add(obj);
+                            // Note: prefab.instantiate already adds to scene if we passed it, 
+                            // but scene.add handles duplicates gracefully (or we should check)
+                            // Actually Scene.add just pushes. So we might double add the root.
+                            // Let's check if it's already added.
+                            if (!scene.gameObjects.includes(obj)) {
+                                scene.add(obj);
+                            }
                             return obj;
                         }
                     } catch (e) {

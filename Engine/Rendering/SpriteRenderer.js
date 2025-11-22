@@ -18,6 +18,10 @@ class SpriteRenderer extends Renderer {
     get sprite() { return this._sprite; }
     set sprite(value) {
         this._sprite = value;
+        // Immediately update material if possible
+        if (this.material) {
+            this.material.setTexture('_MainTex', value);
+        }
     }
 
     // Compatibility for StaticRenderer's imagePath
@@ -29,7 +33,14 @@ class SpriteRenderer extends Renderer {
         }
         if (window.resourceManager) {
             window.resourceManager.load(url).then(img => {
-                if (img instanceof Image) this._sprite = img;
+                if (img instanceof Image) {
+                    this._sprite = img;
+                    // console.log(`SpriteRenderer: Loaded image for ${this.gameObject ? this.gameObject.name : 'Unknown'}`, url);
+                } else {
+                    console.warn(`SpriteRenderer: Loaded asset is not an Image for ${url}`, img);
+                }
+            }).catch(err => {
+                console.error(`SpriteRenderer: Failed to load image ${url}`, err);
             });
         } else {
             const img = new Image();
@@ -50,7 +61,9 @@ class SpriteRenderer extends Renderer {
 
         if (!tex) {
             // Debug: Why is texture missing?
-            // console.warn(`SpriteRenderer: No texture for ${this.gameObject.name}`);
+            if (this.gameObject.active && this.visible) {
+                 console.warn(`SpriteRenderer: No texture for ${this.gameObject.name}. ImagePath: ${this.imagePath}, Sprite:`, this._sprite);
+            }
             return;
         }
 
@@ -70,6 +83,8 @@ class SpriteRenderer extends Renderer {
             height: this.height,
             color: color,
             opacity: this.opacity,
+            offsetX: this.offsetX,
+            offsetY: this.offsetY,
             sortingOrder: this.sortingOrder,
             // For secondary sorting
             y: t.y 
