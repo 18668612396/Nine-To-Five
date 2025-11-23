@@ -172,16 +172,15 @@ class ParticleSystem extends Component {
 
             for (const p of this.particles) {
                 if (p.active) {
-                    // Temporarily override texture for draw if needed, or pass it
-                    // But Particle.draw uses p.texture. 
-                    // We should probably update p.texture on emit or here.
-                    // If we update here, we avoid storing it on every particle if it's shared.
-                    // But Particle.draw expects p.texture.
-                    // Let's pass texture to draw? No, Particle.draw signature is (ctx).
-                    // Let's set p.texture = texture if it's different?
-                    // Or better: Particle.draw should take an optional texture override.
+                    if (material) {
+                        material.setColor('_Color', {
+                            r: p.color[0] * 255,
+                            g: p.color[1] * 255,
+                            b: p.color[2] * 255,
+                            a: p.color[3]
+                        });
+                    }
 
-                    // Hack for now:
                     const oldTex = p.texture;
                     if (texture) p.texture = texture;
                     p.draw(ctx);
@@ -192,6 +191,15 @@ class ParticleSystem extends Component {
         } else {
             for (const p of this.particles) {
                 if (p.active) {
+                    if (material) {
+                        material.setColor('_Color', {
+                            r: p.color[0] * 255,
+                            g: p.color[1] * 255,
+                            b: p.color[2] * 255,
+                            a: p.color[3]
+                        });
+                    }
+
                     const oldTex = p.texture;
                     if (texture) p.texture = texture;
                     p.draw(ctx);

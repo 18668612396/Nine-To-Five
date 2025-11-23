@@ -1,0 +1,7 @@
+{
+    "name": "DefaultParticleMaterial",
+    "properties": {
+        "_Color": { "r": 255, "g": 255, "b": 255, "a": 1 },
+        "_MainTex": null
+    }
+}

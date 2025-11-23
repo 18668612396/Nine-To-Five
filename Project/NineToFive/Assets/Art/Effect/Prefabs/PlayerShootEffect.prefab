@@ -32,8 +32,8 @@
                     },
                     "startColor": [
                         1,
-                        0.9,
-                        0.6,
+                        0.0,
+                        0.0,
                         1
                     ],
                     "maxParticles": 5,
