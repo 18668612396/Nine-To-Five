@@ -3,7 +3,7 @@ class ResourceManager {
         this.loaders = new Map();
         this.cache = new Map();
         this.assetMap = null;
-        
+
         // Register default loaders
         this.registerLoader('.json', this.loadJson.bind(this));
         this.registerLoader('.scene', this.loadScene.bind(this));
@@ -16,7 +16,9 @@ class ResourceManager {
         this.registerLoader('.mat', this.loadMaterial.bind(this));
         this.registerLoader('.tga', this.loadTga.bind(this)); // Register .tga loader
 
-        this.init();
+        this.registerLoader('.tga', this.loadTga.bind(this)); // Register .tga loader
+
+        this.ready = this.init();
     }
 
     async init() {
@@ -70,7 +72,6 @@ class ResourceManager {
         }
 
         try {
-            console.log(`Loading asset: ${url}`);
             const asset = await loader(url);
             this.cache.set(url, asset);
             // Also cache by GUID if we loaded by URL but it has a GUID mapping? 
@@ -112,7 +113,7 @@ class ResourceManager {
 
         // Find the start of the JSON content
         const firstBrace = text.indexOf('{');
-        
+
         // If no brace found, or it looks like a pure JSON file (starts with {), try parsing as JSON directly
         // This handles legacy files or files without headers gracefully-ish
         if (firstBrace === 0) {
@@ -120,7 +121,7 @@ class ResourceManager {
         }
 
         if (firstBrace === -1) {
-             throw new Error("Invalid asset format: No JSON content found.");
+            throw new Error("Invalid asset format: No JSON content found.");
         }
 
         const headerText = text.substring(0, firstBrace);
@@ -147,7 +148,7 @@ class ResourceManager {
 
     async loadScene(url) {
         const { header, data } = await this.loadAssetWithHeader(url);
-        
+
         if (header.AssetType && header.AssetType !== 'Scene') {
             console.warn(`ResourceManager: AssetType mismatch. Expected 'Scene', got '${header.AssetType}'`);
         }
@@ -162,7 +163,7 @@ class ResourceManager {
 
     async loadPrefab(url) {
         const { header, data } = await this.loadAssetWithHeader(url);
-        
+
         if (header.AssetType && header.AssetType !== 'Prefab') {
             console.warn(`ResourceManager: AssetType mismatch. Expected 'Prefab', got '${header.AssetType}'`);
         }
@@ -190,7 +191,7 @@ class ResourceManager {
 
     async loadAnimationClip(url) {
         const { header, data } = await this.loadAssetWithHeader(url);
-        
+
         if (header.AssetType && header.AssetType !== 'AnimationClip') {
             console.warn(`ResourceManager: AssetType mismatch. Expected 'AnimationClip', got '${header.AssetType}'`);
         }
@@ -202,7 +203,7 @@ class ResourceManager {
 
     async loadAnimatorController(url) {
         const { header, data } = await this.loadAssetWithHeader(url);
-        
+
         if (header.AssetType && header.AssetType !== 'AnimatorController') {
             console.warn(`ResourceManager: AssetType mismatch. Expected 'AnimatorController', got '${header.AssetType}'`);
         }
@@ -232,7 +233,7 @@ class ResourceManager {
         }
 
         const material = new Material(data);
-        
+
         // Load textures if they are GUIDs
         if (material._properties) {
             for (const [key, value] of material._properties) {
@@ -247,7 +248,7 @@ class ResourceManager {
                 }
             }
         }
-        
+
         return material;
     }
 

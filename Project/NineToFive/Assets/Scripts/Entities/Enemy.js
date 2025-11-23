@@ -19,9 +19,9 @@ class Enemy extends GameBehaviour {
         this.gameObject.transform.x = x;
         this.gameObject.transform.y = y;
         this.type = type;
-        
+
         // Config based on type
-        switch(type) {
+        switch (type) {
             case 'Boss':
                 this.maxHp = 500;
                 this.speed = 1.5;
@@ -41,7 +41,7 @@ class Enemy extends GameBehaviour {
                 this.gameObject.transform.localScale = { x: 1, y: 1 };
                 break;
         }
-        
+
         this.hp = this.maxHp;
         this.gameObject.active = true;
     }
@@ -69,12 +69,12 @@ class Enemy extends GameBehaviour {
 
         const dx = tx - mx;
         const dy = ty - my;
-        const dist = Math.sqrt(dx*dx + dy*dy);
+        const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist > 0) {
             const moveX = (dx / dist) * this.speed;
             const moveY = (dy / dist) * this.speed;
-            
+
             this.gameObject.transform.x += moveX;
             this.gameObject.transform.y += moveY;
         }

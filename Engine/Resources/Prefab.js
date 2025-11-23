@@ -60,12 +60,6 @@ class Prefab extends Asset {
             }
         }
 
-        // 2. Override with provided Position (World)
-        if (position) {
-            obj.transform.x = position.x;
-            obj.transform.y = position.y;
-        }
-
         // Add Components
         if (Array.isArray(clonedData.components)) {
             for (const compData of clonedData.components) {
@@ -89,7 +83,7 @@ class Prefab extends Asset {
                             obj.transform.localScale.y = props.localScale.y;
                         }
                     }
-                    continue; 
+                    continue;
                 }
 
                 const comp = new CompClass();
@@ -103,6 +97,13 @@ class Prefab extends Asset {
                 }
                 obj.addComponent(comp);
             }
+        }
+
+        // 2. Override with provided Position (World)
+        // Moved after components loop to ensure it overrides any Transform component data
+        if (position) {
+            obj.transform.x = position.x;
+            obj.transform.y = position.y;
         }
 
         // Add to scene

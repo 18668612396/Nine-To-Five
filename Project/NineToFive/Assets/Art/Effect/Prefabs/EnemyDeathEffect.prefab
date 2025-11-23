@@ -5,7 +5,10 @@
         {
             "type": "Transform",
             "properties": {
-                "localPosition": { "x": 0, "y": 0 }
+                "localPosition": {
+                    "x": 0,
+                    "y": 0
+                }
             }
         },
         {
@@ -15,18 +18,38 @@
                     "duration": 1.0,
                     "loop": false,
                     "destroyOnStop": true,
-                    "startLifetime": { "min": 0.5, "max": 1.0 },
-                    "startSpeed": { "min": 2, "max": 6 },
-                    "startSize": { "min": 4, "max": 10 },
-                    "startColor": [1, 0.2, 0.2, 1],
+                    "startLifetime": {
+                        "min": 0.5,
+                        "max": 1.0
+                    },
+                    "startSpeed": {
+                        "min": 2,
+                        "max": 6
+                    },
+                    "startSize": {
+                        "min": 4,
+                        "max": 10
+                    },
+                    "startColor": [
+                        1,
+                        0.2,
+                        0.2,
+                        1
+                    ],
                     "maxParticles": 100,
-                    "simulationSpace": "World",
-                    "startRotation": { "min": 0, "max": 0 }
+                    "simulationSpace": "Local",
+                    "startRotation": {
+                        "min": 0,
+                        "max": 0
+                    }
                 },
                 "emission": {
                     "rateOverTime": 0,
                     "bursts": [
-                        { "time": 0, "count": 20 }
+                        {
+                            "time": 0,
+                            "count": 20
+                        }
                     ]
                 },
                 "shape": {
@@ -36,8 +59,18 @@
                 },
                 "colorOverLifetime": {
                     "gradient": {
-                        "0": [1, 0.2, 0.2, 1],
-                        "1": [1, 0.2, 0.2, 0]
+                        "0": [
+                            1,
+                            0.2,
+                            0.2,
+                            1
+                        ],
+                        "1": [
+                            1,
+                            0.2,
+                            0.2,
+                            0
+                        ]
                     }
                 },
                 "sizeOverLifetime": {

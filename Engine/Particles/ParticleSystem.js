@@ -3,42 +3,42 @@ class ParticleSystem extends Component {
         super('ParticleSystem');
         this.particles = [];
         this.modules = [];
-        
+
         // Initialize Modules
         // We pass the specific config section if available, otherwise fallback to root config for backward compatibility
-        this.main = new MainModule(config.main || config); 
+        this.main = new MainModule(config.main || config);
         this.emission = new EmissionModule(config.emission || config);
         this.shape = new ShapeModule(config.shape || config);
         this.colorOverLifetime = new ColorOverLifetimeModule(config.colorOverLifetime || {});
         this.sizeOverLifetime = new SizeOverLifetimeModule(config.sizeOverLifetime || {});
         this.rotationOverLifetime = new RotationOverLifetimeModule(config.rotationOverLifetime || {});
         this.renderer = new RendererModule(config.renderer || {});
-        
+
         // Order matters for onEmit dependencies
         // Main (sets speed) -> Shape (uses speed to set velocity)
         this.modules.push(this.main, this.emission, this.shape, this.colorOverLifetime, this.sizeOverLifetime, this.rotationOverLifetime, this.renderer);
-        
+
         this.modules.forEach(m => m.init(this));
 
         // Runtime State
         this.time = 0;
         this.isStopped = false;
         this.isPlaying = this.main.playOnAwake;
-        
+
         // Texture
         this.texture = config.texture || null;
     }
 
     onLoad(config) {
         // Re-initialize modules with loaded config
-        this.main = new MainModule(config.main || config); 
+        this.main = new MainModule(config.main || config);
         this.emission = new EmissionModule(config.emission || config);
         this.shape = new ShapeModule(config.shape || config);
         this.colorOverLifetime = new ColorOverLifetimeModule(config.colorOverLifetime || {});
         this.sizeOverLifetime = new SizeOverLifetimeModule(config.sizeOverLifetime || {});
         this.rotationOverLifetime = new RotationOverLifetimeModule(config.rotationOverLifetime || {});
         this.renderer = new RendererModule(config.renderer || {});
-        
+
         // Resolve Material if it's a GUID
         if (this.renderer.material && typeof this.renderer.material === 'string') {
             const matGuid = this.renderer.material;
@@ -51,17 +51,17 @@ class ParticleSystem extends Component {
 
         this.modules = [this.main, this.emission, this.shape, this.colorOverLifetime, this.sizeOverLifetime, this.rotationOverLifetime, this.renderer];
         this.modules.forEach(m => m.init(this));
-        
+
         this.isPlaying = this.main.playOnAwake;
         if (config.texture) this.texture = config.texture;
     }
 
     update(dt) {
         if (this.gameObject && !this.gameObject.active) return;
-        
+
         if (this.isPlaying) {
             this.time += dt;
-            
+
             // Update Modules (System level)
             this.modules.forEach(m => {
                 if (m.enabled) m.update(dt);
@@ -91,18 +91,18 @@ class ParticleSystem extends Component {
                 this.modules.forEach(m => {
                     if (m.enabled) m.updateParticle(p, dt);
                 });
-                
+
                 // Physics Integration (if not fully handled by modules)
-                p.update(dt); 
-                
+                p.update(dt);
+
                 activeCount++;
             } else {
                 this.particles.splice(i, 1);
             }
         }
-        
+
         if (!this.isPlaying && activeCount === 0 && this.main.destroyOnStop) {
-             if (this.gameObject) this.gameObject.destroy();
+            if (this.gameObject) this.gameObject.destroy();
         }
     }
 
@@ -117,40 +117,42 @@ class ParticleSystem extends Component {
 
         for (let i = 0; i < count; i++) {
             const p = new Particle({});
-            
+
             // Set initial transform from system
             if (isLocal) {
                 p.x = 0;
                 p.y = 0;
             } else {
-                p.x = transform.x; 
+                p.x = transform.x;
                 p.y = transform.y;
             }
             p.texture = this.texture;
-            
+
             // Initialize via Modules
             this.modules.forEach(m => {
                 if (m.enabled) m.onEmit(p);
             });
-            
+
             this.particles.push(p);
         }
     }
-    
+
     play() {
+        console.log("ParticleSystem: Play called");
         this.isPlaying = true;
         this.isStopped = false;
         this.time = 0;
     }
-    
+
     stop() {
         this.isPlaying = false;
         this.isStopped = true;
     }
 
     draw(ctx, material) {
+        // console.log("ParticleSystem: Draw. Active particles:", this.particles.length);
         const isLocal = this.main.simulationSpace === 'Local';
-        
+
         // Use material if provided, otherwise fallback to internal texture
         // Note: Material support in Particle.draw needs to be implemented or handled here
         // For now, let's assume we just want to use the texture from the material if available
@@ -167,7 +169,7 @@ class ParticleSystem extends Component {
             ctx.rotate(t.rotation);
             // Note: Scale might distort particles if non-uniform, but let's support it
             ctx.scale(t.scale.x, t.scale.y);
-            
+
             for (const p of this.particles) {
                 if (p.active) {
                     // Temporarily override texture for draw if needed, or pass it
@@ -178,7 +180,7 @@ class ParticleSystem extends Component {
                     // Let's pass texture to draw? No, Particle.draw signature is (ctx).
                     // Let's set p.texture = texture if it's different?
                     // Or better: Particle.draw should take an optional texture override.
-                    
+
                     // Hack for now:
                     const oldTex = p.texture;
                     if (texture) p.texture = texture;

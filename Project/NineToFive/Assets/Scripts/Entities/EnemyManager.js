@@ -80,7 +80,7 @@ class EnemyManager extends GameBehaviour {
         // Instantiate under the container
         const container = this.getContainer();
         const enemyGO = this.enemyPrefab.instantiate(null, container);
-        
+
         // Determine spawn position (random edge of screen)
         // Assuming 800x600 resolution for now
         // Better: Get camera bounds. For now, hardcode somewhat outside center.
@@ -88,7 +88,7 @@ class EnemyManager extends GameBehaviour {
         const dist = 400; // Radius from center
         const spawnX = Math.cos(angle) * dist;
         const spawnY = Math.sin(angle) * dist;
-        
+
         // Initialize
         const enemyScript = enemyGO.getComponent('Enemy');
         if (enemyScript) {
@@ -97,7 +97,7 @@ class EnemyManager extends GameBehaviour {
             let type = 'Minion';
             if (rand > 0.95) type = 'Boss';
             else if (rand > 0.8) type = 'Elite';
-            
+
             enemyScript.init(spawnX, spawnY, type);
         }
 

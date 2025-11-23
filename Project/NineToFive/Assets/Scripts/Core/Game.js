@@ -11,7 +11,7 @@ class Game extends EngineObject {
         // Fixed resolution
         this.designWidth = 1280;
         this.designHeight = 720;
-        
+
         // World Size
         this.worldWidth = 2500;
         this.worldHeight = 2500;
@@ -23,11 +23,11 @@ class Game extends EngineObject {
         this.bullets = [];
         this.enemies = [];
         this.loots = [];
-        
+
         // Input Manager
         this.inputManager = new InputManager(this.canvas);
         this.input = this.inputManager; // Backward compatibility
-        
+
         this.level = 1;
         this.survivalTime = 0;
         this.maxSurvivalTime = 600; // 10 minutes in seconds
@@ -40,12 +40,12 @@ class Game extends EngineObject {
             inventory: [],
             gold: 0
         };
-        
+
         this.loadData();
 
         this.sceneManager = new SceneManager(this);
         this.uiManager = new UIManager(this);
-        
+
         // Card Manager
         this.cardManager = new CardManager();
 
@@ -71,13 +71,13 @@ class Game extends EngineObject {
         const windowHeight = window.innerHeight;
         const scaleX = windowWidth / this.designWidth;
         const scaleY = windowHeight / this.designHeight;
-        
+
         // Fit to window while maintaining aspect ratio
         const scale = Math.min(scaleX, scaleY);
-        
+
         this.container.style.width = `${this.designWidth * scale}px`;
         this.container.style.height = `${this.designHeight * scale}px`;
-        
+
         // Canvas internal resolution stays constant
         this.canvas.width = this.designWidth;
         this.canvas.height = this.designHeight;
@@ -117,7 +117,7 @@ class Game extends EngineObject {
     startLevel(lvl) {
         this.level = lvl;
         this.state = 'PLAYING';
-        
+
         console.log("Starting level " + lvl);
         console.log("LoadSceneMode:", window.LoadSceneMode);
 
@@ -144,7 +144,7 @@ class Game extends EngineObject {
             cameraGO.addComponent(camera);
             scene.add(cameraGO);
             this.cameraGO = cameraGO; // Keep reference
-            
+
             // Snap camera to player immediately to avoid black screen during pan
             if (this.player) {
                 this.cameraGO.transform.x = this.player.x;
@@ -164,17 +164,17 @@ class Game extends EngineObject {
             return;
         }
 
-        this.player.x = this.worldWidth/2;
-        this.player.y = this.worldHeight/2;
+        this.player.x = this.worldWidth / 2;
+        this.player.y = this.worldHeight / 2;
         this.player.hp = this.player.maxHp;
-        
+
         this.bullets = [];
         this.enemies = [];
         this.loots = [];
         this.obstacles = [];
         this.survivalTime = 0;
         this.bossSpawned = false;
-        
+
         // Generate Obstacles - Removed as per request
         // for(let i=0; i<20; i++) { ... }
 
@@ -218,12 +218,12 @@ class Game extends EngineObject {
             // Simple random spawn for now
             ex = Math.random() * this.worldWidth;
             ey = Math.random() * this.worldHeight;
-            
+
             const enemyGO = new GameObject('Enemy');
             const enemyComp = new Enemy();
             enemyComp.onLoad({ x: ex, y: ey, isBoss: false });
             enemyGO.addComponent(enemyComp);
-            
+
             this.enemies.push(enemyComp);
             this.sceneManager.activeScene.add(enemyGO); // Add to Scene
         }
@@ -237,8 +237,8 @@ class Game extends EngineObject {
         const bossComp = new Enemy();
         bossComp.onLoad({ x: this.player.x + 400, y: this.player.y, isBoss: true });
         bossGO.addComponent(bossComp);
-        
-        this.enemies.push(bossComp); 
+
+        this.enemies.push(bossComp);
         this.sceneManager.activeScene.add(bossGO); // Add to Scene
         this.uiManager.showBossLabel();
     }
@@ -336,8 +336,9 @@ class Game extends EngineObject {
                 if (!enemy.gameObject || !enemy.collider) continue;
 
                 if (bullet.collider && bullet.collider.checkCollision(enemy.collider)) {
-                    enemy.hp -= bullet.damage;
-                    
+                    // Use takeDamage to trigger Enemy logic (Death Effect, Loot)
+                    enemy.takeDamage(bullet.damage);
+
                     if (bullet.pierce > 0) {
                         if (!bullet.hitList.includes(enemy)) {
                             bullet.hitList.push(enemy);
@@ -352,7 +353,7 @@ class Game extends EngineObject {
                     if (enemy.hp <= 0) {
                         this.handleKill(enemy);
                         this.enemies.splice(j, 1);
-                        if (this.sceneManager.activeScene) this.sceneManager.activeScene.remove(enemy.gameObject);
+                        // Scene removal is handled by Enemy.die() -> destroy()
                     }
 
                     if (!bullet.active) break;
@@ -378,7 +379,7 @@ class Game extends EngineObject {
     onLevelUp(level) {
         console.log(`Level Up! New Level: ${level}`);
         this.togglePause(true);
-        
+
         // Show Level Up UI
         if (this.uiManager) {
             this.uiManager.showLevelUp(level);
@@ -398,19 +399,19 @@ class Game extends EngineObject {
         // Debug: Print Hierarchy
         if (this.inputManager.getKeyDown('h')) {
             console.log("%c=== Scene Hierarchy ===", "color: cyan; font-weight: bold; font-size: 14px;");
-            
+
             const printNode = (go) => {
                 const style = go.active ? "color: #e0e0e0; font-weight: bold;" : "color: #888;";
                 // Use groupCollapsed to keep it tidy, or group to see everything
                 console.groupCollapsed(`%c📦 ${go.name} [${go.constructor.name}]`, style);
-                
+
                 // Components
                 if (go.components && go.components.length > 0) {
                     console.log("%c🧩 Components:", "color: #aaa; font-size: 10px; font-weight: bold;");
                     go.components.forEach(c => {
                         // c.name is usually the class name or set name
                         console.groupCollapsed(`%c   • ${c.name || c.constructor.name}`, "color: #81c784;");
-                        
+
                         // Filter properties for display
                         const displayProps = {};
                         // Get all keys including inherited ones if needed, but usually instance props are enough
@@ -419,7 +420,7 @@ class Game extends EngineObject {
                             if (typeof c[key] === 'function') continue;
                             if (key === 'gameObject') continue;
                             if (key.startsWith('_')) continue;
-                            
+
                             // Handle objects nicely
                             if (typeof c[key] === 'object' && c[key] !== null) {
                                 // If it's a simple object, show it. If it's complex, maybe just type
@@ -436,7 +437,7 @@ class Game extends EngineObject {
                         console.groupEnd();
                     });
                 }
-                
+
                 // Children
                 if (go.transform.children && go.transform.children.length > 0) {
                     console.log("%c👶 Children:", "color: #aaa; font-size: 10px; font-weight: bold;");
@@ -461,7 +462,7 @@ class Game extends EngineObject {
         }
 
         if (this.state === 'TOWN') {
-            this.sceneManager.update(1/60);
+            this.sceneManager.update(1 / 60);
             // Reset Camera if exists
             if (window.Camera && window.Camera.main) {
                 window.Camera.main.gameObject.transform.x = this.canvas.width / 2;
@@ -473,7 +474,7 @@ class Game extends EngineObject {
         if (this.state !== 'PLAYING') return;
 
         // Update Scene (Updates all GameObjects)
-        this.sceneManager.update(1/60);
+        this.sceneManager.update(1 / 60);
 
         if (!this.player) return;
 
@@ -482,7 +483,7 @@ class Game extends EngineObject {
             // Update Camera GameObject Transform (Center on player)
             let targetX = this.player.x;
             let targetY = this.player.y;
-            
+
             // Clamp Camera
             const halfW = this.canvas.width / 2;
             const halfH = this.canvas.height / 2;
@@ -500,29 +501,11 @@ class Game extends EngineObject {
     }
 
     handleKill(enemy) {
-        // Death Effect is now handled by Enemy.js die() method
-
-        // Remove from Scene
-        if (this.sceneManager.activeScene) {
-            this.sceneManager.activeScene.remove(enemy.gameObject || enemy);
-        }
-
         if (enemy.isBoss) {
             this.victory();
             return;
         }
-
-        if (Math.random() < 0.3) {
-            // 30% chance for item loot (currently just damage boost)
-            // this.loots.push(new Loot(enemy.x, enemy.y, 'item'));
-        }
-        
-        // Always drop EXP
-        const loot = new Loot(enemy.x, enemy.y, 'exp', 20);
-        this.loots.push(loot);
-        if (this.sceneManager.activeScene) {
-            this.sceneManager.activeScene.add(loot);
-        }
+        // Loot and Death Effect are now handled by Enemy.js die() method
     }
 
     draw() {
@@ -535,7 +518,7 @@ class Game extends EngineObject {
             // For now, let's iterate gameObjects and find renderers
             // Ideally SceneManager or Scene should handle this collection
             const scene = this.sceneManager.activeScene;
-            
+
             // Camera Setup
             const camera = window.Camera && window.Camera.main;
             if (camera) {
@@ -544,7 +527,7 @@ class Game extends EngineObject {
                 // But wait, Camera.apply() clears the screen too.
                 // And RenderPipeline.beginFrame() also clears the screen.
                 // This is redundant but fine.
-                
+
                 camera.apply(this.ctx);
             }
 
