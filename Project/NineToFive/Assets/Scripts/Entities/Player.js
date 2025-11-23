@@ -1,4 +1,4 @@
-class Player extends GameBehaviour {
+class Player extends Actor {
     constructor() {
         super('Player');
         this.r = 20; // 半径
@@ -22,13 +22,14 @@ class Player extends GameBehaviour {
             shoes: null
         };
 
-        // Runtime Stats
+        // Runtime Stats (Initialized in Actor, but we can override defaults here if needed)
         this.maxHp = 100;
         this.hp = 100;
         this.speed = 5;
         this.damage = 10;
+
         this.fireRate = 15;
-        
+
         // Combat State
         this.fireTimer = 0;
         this.reloadTimer = 0;
@@ -40,7 +41,7 @@ class Player extends GameBehaviour {
         this.level = 1;
         this.exp = 0;
         this.maxExp = 100;
-        
+
         this.muzzleDistance = 40; // Default muzzle distance
     }
 
@@ -74,35 +75,18 @@ class Player extends GameBehaviour {
         this.recalcStats();
         this.ammo = this.maxAmmo;
 
-        // Load Weapon Prefab if defined
-        // if (this.weaponPrefabPath) {
-        //     window.resourceManager.load(this.weaponPrefabPath).then(prefab => {
-        //         if (prefab && prefab instanceof window.Prefab) {
-        //             const weaponGO = prefab.instantiate(null, this.gameObject);
-        //             this.weaponGO = weaponGO;
-        //             console.log("Weapon instantiated:", weaponGO);
-        //         }
-        //     }).catch(err => console.error("Failed to load weapon prefab:", err));
-        // }
-        
         // Load Shoot Effect Prefab
         window.resourceManager.load('b6b093b829dd43b8beabf30869778a32').then(prefab => {
             this.shootEffectPrefab = prefab;
         }).catch(err => console.error("Failed to load shoot effect prefab:", err));
     }
 
-    // Proxy Transform properties for compatibility
-    get x() { return this.gameObject ? this.gameObject.transform.x : 0; }
-    set x(v) { if (this.gameObject) this.gameObject.transform.x = v; }
-    get y() { return this.gameObject ? this.gameObject.transform.y : 0; }
-    set y(v) { if (this.gameObject) this.gameObject.transform.y = v; }
-
     gainExp(amount) {
         this.exp += amount;
         if (this.exp >= this.maxExp) {
             this.levelUp();
         }
-        
+
         // Update UI (Assuming UIManager handles this via event or direct call)
         if (window.game && window.game.uiManager) {
             window.game.uiManager.updateExpBar(this.exp, this.maxExp, this.level);
@@ -113,12 +97,12 @@ class Player extends GameBehaviour {
         this.level++;
         this.exp -= this.maxExp;
         this.maxExp = Math.floor(this.maxExp * 1.2); // Increase requirement by 20%
-        
+
         // Trigger Level Up Event
         if (window.game) {
             window.game.onLevelUp(this.level);
         }
-        
+
         // Check if we have enough exp for another level
         if (this.exp >= this.maxExp) {
             this.levelUp();
@@ -148,7 +132,7 @@ class Player extends GameBehaviour {
         const weapon = this.equipment.weapon;
         if (weapon) {
             this.damage = weapon.damage;
-            this.fireRate = Math.max(1, weapon.fireRate * (1 - (this.equipment.gloves?.stats.fireRate || 0))); 
+            this.fireRate = Math.max(1, weapon.fireRate * (1 - (this.equipment.gloves?.stats.fireRate || 0)));
             this.maxAmmo = weapon.clipSize;
             this.reloadTime = weapon.reloadTime / reloadMult;
         } else {
@@ -165,29 +149,29 @@ class Player extends GameBehaviour {
         // Find Visuals child for rendering components
         let visualsGO = this.gameObject;
         if (this.gameObject.transform.children && this.gameObject.transform.children.length > 0) {
-             const visualTransform = this.gameObject.transform.children.find(t => t.gameObject.name === 'Visuals');
-             if (visualTransform) {
-                 visualsGO = visualTransform.gameObject;
-                 // console.log("Player: Visuals child found.");
-             }
+            const visualTransform = this.gameObject.transform.children.find(t => t.gameObject.name === 'Visuals');
+            if (visualTransform) {
+                visualsGO = visualTransform.gameObject;
+                // console.log("Player: Visuals child found.");
+            }
         }
 
         // Only update if we found something or if we haven't set them yet
         const sr = visualsGO.getComponent('SpriteRenderer');
         if (sr) this.spriteRenderer = sr;
-        
+
         const anim = visualsGO.getComponent('Animator');
         if (anim) this.animator = anim;
     }
 
     update(dt) {
         const input = window.game.inputManager;
-        
+
         // Ensure visuals are linked (in case start() ran before children were created)
         if (!this.animator || !this.spriteRenderer) {
             this.initVisuals();
         }
-        
+
         // Reload Logic
         if (this.isReloading) {
             this.reloadTimer--;
@@ -198,11 +182,11 @@ class Player extends GameBehaviour {
         }
 
         if (this.fireTimer > 0) this.fireTimer--;
-        
+
         // Movement using RigidBody
         let moveX = 0;
         let moveY = 0;
-        
+
         if (input.getKey('w')) moveY -= 1;
         if (input.getKey('s')) moveY += 1;
         if (input.getKey('a')) moveX -= 1;
@@ -210,10 +194,10 @@ class Player extends GameBehaviour {
 
         // Normalize vector
         if (moveX !== 0 || moveY !== 0) {
-            const len = Math.sqrt(moveX*moveX + moveY*moveY);
+            const len = Math.sqrt(moveX * moveX + moveY * moveY);
             moveX /= len;
             moveY /= len;
-            
+
             const forceMagnitude = this.speed * this.rb.drag * this.rb.mass * 10;
             this.rb.addForce(moveX * forceMagnitude, moveY * forceMagnitude);
         }
@@ -241,17 +225,17 @@ class Player extends GameBehaviour {
         let nearest = null;
         let minDistSq = Infinity;
         const rangeSq = 800 * 800; // Max detection range
-        
+
         // Use activeEnemies list
         const enemies = window.enemyManager.activeEnemies || [];
 
         for (const enemy of enemies) {
             if (!enemy.active || enemy.destroyed) continue;
-            
+
             const dx = enemy.transform.x - this.x;
             const dy = enemy.transform.y - this.y;
-            const distSq = dx*dx + dy*dy;
-            
+            const distSq = dx * dx + dy * dy;
+
             if (distSq < rangeSq && distSq < minDistSq) {
                 minDistSq = distSq;
                 nearest = enemy;
@@ -271,11 +255,11 @@ class Player extends GameBehaviour {
             const dx = enemy.transform.x - this.x;
             const dy = enemy.transform.y - this.y;
             angle = Math.atan2(dy, dx);
-            
+
             // Face Enemy
             const isLeft = dx < 0;
             this.gameObject.transform.localScale.x = isLeft ? -1 : 1;
-            
+
             // Auto Fire
             if (this.fireTimer <= 0 && !this.isReloading) {
                 if (this.ammo > 0) {
@@ -304,7 +288,7 @@ class Player extends GameBehaviour {
             const isLeft = Math.abs(angle) > Math.PI / 2;
             this.weaponGO.transform.scale.y = isLeft ? -1 : 1;
             this.weaponGO.transform.rotation = angle;
-            
+
             // Adjust weapon position relative to player (orbit)
             const orbitRadius = 20;
             this.weaponGO.transform.x = this.x + Math.cos(angle) * orbitRadius;
@@ -329,7 +313,7 @@ class Player extends GameBehaviour {
         const spawnY = this.y + Math.sin(angle) * muzzleDist;
 
         const bullet = new Bullet(spawnX, spawnY, angle, this.equipment.weapon || {}, this.worldWidth, this.worldHeight);
-        
+
         // Add to scene
         if (window.game && window.game.sceneManager && window.game.sceneManager.activeScene) {
             window.game.sceneManager.activeScene.add(bullet);

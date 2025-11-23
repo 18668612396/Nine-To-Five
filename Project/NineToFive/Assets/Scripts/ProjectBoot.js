@@ -1,4 +1,4 @@
-(function() {
+(function () {
     const projectScripts = [
         "Assets/Scripts/UI/Commands/OpenLevelSelectCommand.js",
         "Assets/Scripts/UI/Commands/OpenTalentsCommand.js",
@@ -6,6 +6,7 @@
         "Assets/Scripts/UI/Commands/OpenSettingsCommand.js",
         "Assets/Scripts/Items/Item.js",
         // "Assets/Scripts/Entities/ActorShadow.js", // Removed as we use CanvasRenderer directly
+        "Assets/Scripts/Entities/Actor.js",
         "Assets/Scripts/Entities/Player.js",
         "Assets/Scripts/Entities/Bullet.js",
         "Assets/Scripts/Entities/Enemy.js",

@@ -1,13 +1,16 @@
 
 
-class Enemy extends GameBehaviour {
+class Enemy extends Actor {
     constructor() {
         super('Enemy');
         this.type = 'Minion'; // Minion, Elite, Boss
+
+        // Stats initialized in Actor, overridden here or in init
         this.hp = 10;
         this.maxHp = 10;
         this.damage = 10;
         this.speed = 2;
+
         this.expValue = 10;
         this.target = null;
     }
