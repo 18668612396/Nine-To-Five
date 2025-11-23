@@ -4,15 +4,6 @@ class ParticleSystemRenderer extends Renderer {
         this.sortingOrder = 100; // Default to be on top of most things
     }
 
-    draw(ctx) {
-        // ParticleSystem handles its own drawing usually, 
-        // but if we wanted to integrate it into the Scene draw loop strictly:
-        const ps = this.gameObject.getComponent('ParticleSystem');
-        if (ps) {
-            ps.draw(ctx);
-        }
-    }
-
     render(pipeline) {
         if (!this.gameObject || !this.gameObject.active) return;
 
