@@ -4,7 +4,7 @@ class Transform extends Component {
         this.localPosition = { x: x, y: y };
         this.localRotation = 0;
         this.localScale = { x: 1, y: 1 };
-        
+
         this.parent = null;
         this.children = [];
     }
@@ -15,16 +15,16 @@ class Transform extends Component {
             // WorldX = ParentWorldX + (RotatedLocalX * ParentScaleX)
             const pRot = this.parent.rotation;
             const pScale = this.parent.scale;
-            
+
             // Rotate local position
             const cos = Math.cos(pRot);
             const sin = Math.sin(pRot);
-            
+
             const scaledX = this.localPosition.x * pScale.x;
             const scaledY = this.localPosition.y * pScale.y;
-            
+
             const rotatedX = scaledX * cos - scaledY * sin;
-            
+
             return this.parent.x + rotatedX;
         }
         return this.localPosition.x;
@@ -46,15 +46,15 @@ class Transform extends Component {
         if (this.parent) {
             const pRot = this.parent.rotation;
             const pScale = this.parent.scale;
-            
+
             const cos = Math.cos(pRot);
             const sin = Math.sin(pRot);
-            
+
             const scaledX = this.localPosition.x * pScale.x;
             const scaledY = this.localPosition.y * pScale.y;
-            
+
             const rotatedY = scaledX * sin + scaledY * cos;
-            
+
             return this.parent.y + rotatedY;
         }
         return this.localPosition.y;
@@ -102,6 +102,15 @@ class Transform extends Component {
         this.localPosition.y = unrotatedY / sY;
     }
 
+    get position() {
+        return { x: this.x, y: this.y };
+    }
+
+    set position(value) {
+        this.x = value.x;
+        this.y = value.y;
+    }
+
     get rotation() {
         if (this.parent) {
             return this.parent.rotation + this.localRotation;
@@ -125,7 +134,22 @@ class Transform extends Component {
                 y: this.parent.scale.y * this.localScale.y
             };
         }
-        return this.localScale;
+        return { x: this.localScale.x, y: this.localScale.y };
+    }
+
+    set scale(value) {
+        if (this.parent) {
+            const pScale = this.parent.scale;
+            // Avoid division by zero
+            const sX = pScale.x === 0 ? 0.0001 : pScale.x;
+            const sY = pScale.y === 0 ? 0.0001 : pScale.y;
+
+            this.localScale.x = value.x / sX;
+            this.localScale.y = value.y / sY;
+        } else {
+            this.localScale.x = value.x;
+            this.localScale.y = value.y;
+        }
     }
 
     setChild(childTransform) {
@@ -146,11 +170,11 @@ class Transform extends Component {
 
     setParent(parentTransform) {
         if (this.parent === parentTransform) return;
-        
+
         if (this.parent) {
             this.parent.removeChild(this);
         }
-        
+
         this.parent = parentTransform;
         if (parentTransform) {
             parentTransform.children.push(this);
