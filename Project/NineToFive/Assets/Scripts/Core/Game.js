@@ -399,14 +399,6 @@ class Game extends EngineObject {
             }
         }
 
-        // Debug: Toggle Attack Range Visualization
-        if (this.inputManager.getKeyDown('r')) {
-            if (this.player) {
-                this.player.showAttackRange = !this.player.showAttackRange;
-                console.log(`Attack Range Visualization: ${this.player.showAttackRange ? 'ON' : 'OFF'}`);
-            }
-        }
-
         // Debug: Print Hierarchy
         if (this.inputManager.getKeyDown('h')) {
             console.log("%c=== Scene Hierarchy ===", "color: cyan; font-weight: bold; font-size: 14px;");
@@ -571,8 +563,8 @@ class Game extends EngineObject {
         // World is centered at 0,0
         this.ctx.strokeRect(-this.worldHalfWidth, -this.worldHalfHeight, this.worldWidth, this.worldHeight);
         
-        // Draw Attack Range (Debug)
-        if (this.player && this.player.showAttackRange) {
+        // Draw Attack Range (Always visible)
+        if (this.player && this.player.attackRange) {
             this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
             this.ctx.fillStyle = 'rgba(255, 255, 0, 0.05)';
             this.ctx.lineWidth = 2;

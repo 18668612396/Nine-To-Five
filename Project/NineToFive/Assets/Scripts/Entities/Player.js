@@ -14,7 +14,7 @@ class Player extends Actor {
             damage: 0,
             fireRate: 0,
             reloadSpeed: 1.0,
-            attackRange: 600 // Attack range in pixels
+            attackRange: 300 // Attack range in pixels
         };
 
         // Equipment
@@ -46,10 +46,7 @@ class Player extends Actor {
         this.exp = 0;
         this.maxExp = 100;
 
-        this.muzzleDistance = 40; //最小攻击范围，小于这个范围内的怪物不会受到伤害
-        
-        // Debug
-        this.showAttackRange = false; // Toggle with 'R' key
+        this.muzzleDistance = 40; // Default muzzle distance
     }
 
     onLoad(props) {
