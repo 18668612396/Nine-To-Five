@@ -81,13 +81,20 @@ class EnemyManager extends GameBehaviour {
         const container = this.getContainer();
         const enemyGO = this.enemyPrefab.instantiate(null, container);
 
-        // Determine spawn position (random edge of screen)
-        // Assuming 800x600 resolution for now
-        // Better: Get camera bounds. For now, hardcode somewhat outside center.
+        // Determine spawn position (random edge around player)
+        // Get player position
+        let playerX = 0;
+        let playerY = 0;
+        if (window.game && window.game.player) {
+            playerX = window.game.player.x;
+            playerY = window.game.player.y;
+        }
+
+        // Spawn at random angle around player, outside camera view
         const angle = Math.random() * Math.PI * 2;
-        const dist = 400; // Radius from center
-        const spawnX = Math.cos(angle) * dist;
-        const spawnY = Math.sin(angle) * dist;
+        const dist = 700 + Math.random() * 200; // 700-900 pixels from player
+        const spawnX = playerX + Math.cos(angle) * dist;
+        const spawnY = playerY + Math.sin(angle) * dist;
 
         // Initialize
         const enemyScript = enemyGO.getComponent('Enemy');

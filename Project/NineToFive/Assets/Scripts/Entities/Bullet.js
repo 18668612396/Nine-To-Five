@@ -45,8 +45,10 @@ class Bullet extends GameObject {
             return;
         }
 
-        // Out of bounds
-        if (this.x < 0 || this.x > this.worldWidth || this.y < 0 || this.y > this.worldHeight) {
+        // Out of bounds (world is centered at 0,0)
+        const halfW = this.worldWidth / 2;
+        const halfH = this.worldHeight / 2;
+        if (this.x < -halfW || this.x > halfW || this.y < -halfH || this.y > halfH) {
             this.destroy();
             return;
         }

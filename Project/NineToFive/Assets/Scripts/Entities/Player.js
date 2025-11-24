@@ -2,8 +2,10 @@ class Player extends Actor {
     constructor() {
         super('Player');
         this.r = 20; // 半径
-        this.worldWidth = 2500; // Default, should be set via onLoad or property
-        this.worldHeight = 2500;
+        this.worldWidth = 3000; // Default, should be set via onLoad or property
+        this.worldHeight = 3000;
+        this.worldHalfWidth = this.worldWidth / 2;
+        this.worldHalfHeight = this.worldHeight / 2;
 
         // Base Stats
         this.baseStats = {
@@ -46,8 +48,14 @@ class Player extends Actor {
     }
 
     onLoad(props) {
-        if (props.worldWidth) this.worldWidth = props.worldWidth;
-        if (props.worldHeight) this.worldHeight = props.worldHeight;
+        if (props.worldWidth) {
+            this.worldWidth = props.worldWidth;
+            this.worldHalfWidth = this.worldWidth / 2;
+        }
+        if (props.worldHeight) {
+            this.worldHeight = props.worldHeight;
+            this.worldHalfHeight = this.worldHeight / 2;
+        }
         if (props.speed) this.baseStats.speed = props.speed;
         if (props.weaponPrefab) this.weaponPrefabPath = props.weaponPrefab;
         if (props.shadowPrefab) this.shadowPrefabPath = props.shadowPrefab;
@@ -202,10 +210,10 @@ class Player extends Actor {
             this.rb.addForce(moveX * forceMagnitude, moveY * forceMagnitude);
         }
 
-        // 边界限制
+        // 边界限制 (world is centered at 0,0)
         // Note: accessing this.x/y via getters which proxy to transform
-        this.x = Math.max(this.r, Math.min(this.worldWidth - this.r, this.x));
-        this.y = Math.max(this.r, Math.min(this.worldHeight - this.r, this.y));
+        this.x = Math.max(-this.worldHalfWidth + this.r, Math.min(this.worldHalfWidth - this.r, this.x));
+        this.y = Math.max(-this.worldHalfHeight + this.r, Math.min(this.worldHalfHeight - this.r, this.y));
 
         const isMoving = moveX !== 0 || moveY !== 0;
         if (this.animator) {

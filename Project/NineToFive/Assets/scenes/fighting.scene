@@ -6,8 +6,8 @@ Version: 1
         {
             "type": "GameObject",
             "name": "WorldBoundary",
-            "x": 1250,
-            "y": 1250,
+            "x": 0,
+            "y": 0,
             "components": [
                 {
                     "type": "GridBackground"
@@ -17,8 +17,8 @@ Version: 1
         {
             "prefab": "625482e00ab441d7942719e7401c34f5",
             "name": "Player",
-            "x": 1250,
-            "y": 1250
+            "x": 0,
+            "y": 0
         },
         {
             "type": "GameObject",

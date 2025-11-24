@@ -12,9 +12,11 @@ class Game extends EngineObject {
         this.designWidth = 1280;
         this.designHeight = 720;
 
-        // World Size
-        this.worldWidth = 2500;
-        this.worldHeight = 2500;
+        // World Size (centered at 0,0)
+        this.worldWidth = 3000;
+        this.worldHeight = 3000;
+        this.worldHalfWidth = this.worldWidth / 2;
+        this.worldHalfHeight = this.worldHeight / 2;
         this.camera = { x: 0, y: 0 };
         this.obstacles = [];
 
@@ -164,8 +166,9 @@ class Game extends EngineObject {
             return;
         }
 
-        this.player.x = this.worldWidth / 2;
-        this.player.y = this.worldHeight / 2;
+        // Place player at world center (0, 0)
+        this.player.x = 0;
+        this.player.y = 0;
         this.player.hp = this.player.maxHp;
 
         this.bullets = [];
@@ -484,11 +487,11 @@ class Game extends EngineObject {
             let targetX = this.player.x;
             let targetY = this.player.y;
 
-            // Clamp Camera
+            // Clamp Camera (world is centered at 0,0)
             const halfW = this.canvas.width / 2;
             const halfH = this.canvas.height / 2;
-            targetX = Math.max(halfW, Math.min(targetX, this.worldWidth - halfW));
-            targetY = Math.max(halfH, Math.min(targetY, this.worldHeight - halfH));
+            targetX = Math.max(-this.worldHalfWidth + halfW, Math.min(targetX, this.worldHalfWidth - halfW));
+            targetY = Math.max(-this.worldHalfHeight + halfH, Math.min(targetY, this.worldHalfHeight - halfH));
 
             // Smooth follow
             this.cameraGO.transform.x += (targetX - this.cameraGO.transform.x) * 0.1;
@@ -557,7 +560,8 @@ class Game extends EngineObject {
         if (window.Camera && window.Camera.main) window.Camera.main.apply(this.ctx);
         this.ctx.strokeStyle = '#f00';
         this.ctx.lineWidth = 5;
-        this.ctx.strokeRect(0, 0, this.worldWidth, this.worldHeight);
+        // World is centered at 0,0
+        this.ctx.strokeRect(-this.worldHalfWidth, -this.worldHalfHeight, this.worldWidth, this.worldHeight);
         this.ctx.restore();
     }
 
