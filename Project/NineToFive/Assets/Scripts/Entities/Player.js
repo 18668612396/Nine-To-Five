@@ -13,7 +13,8 @@ class Player extends Actor {
             speed: 5,
             damage: 0,
             fireRate: 0,
-            reloadSpeed: 1.0
+            reloadSpeed: 1.0,
+            attackRange: 600 // Attack range in pixels
         };
 
         // Equipment
@@ -31,6 +32,7 @@ class Player extends Actor {
         this.damage = 10;
 
         this.fireRate = 15;
+        this.attackRange = 300; // Current attack range
 
         // Combat State
         this.fireTimer = 0;
@@ -44,7 +46,10 @@ class Player extends Actor {
         this.exp = 0;
         this.maxExp = 100;
 
-        this.muzzleDistance = 40; // Default muzzle distance
+        this.muzzleDistance = 40; //最小攻击范围，小于这个范围内的怪物不会受到伤害
+        
+        // Debug
+        this.showAttackRange = false; // Toggle with 'R' key
     }
 
     onLoad(props) {
@@ -57,6 +62,7 @@ class Player extends Actor {
             this.worldHalfHeight = this.worldHeight / 2;
         }
         if (props.speed) this.baseStats.speed = props.speed;
+        if (props.attackRange !== undefined) this.baseStats.attackRange = props.attackRange;
         if (props.weaponPrefab) this.weaponPrefabPath = props.weaponPrefab;
         if (props.shadowPrefab) this.shadowPrefabPath = props.shadowPrefab;
         if (props.muzzleDistance !== undefined) this.muzzleDistance = props.muzzleDistance;
@@ -121,6 +127,7 @@ class Player extends Actor {
         // Reset to base
         this.maxHp = this.baseStats.hp;
         this.speed = this.baseStats.speed;
+        this.attackRange = this.baseStats.attackRange;
         let reloadMult = this.baseStats.reloadSpeed;
         let fireRateMult = 1.0;
 
@@ -143,6 +150,10 @@ class Player extends Actor {
             this.fireRate = Math.max(1, weapon.fireRate * (1 - (this.equipment.gloves?.stats.fireRate || 0)));
             this.maxAmmo = weapon.clipSize;
             this.reloadTime = weapon.reloadTime / reloadMult;
+            // Weapon can also modify attack range
+            if (weapon.attackRange !== undefined) {
+                this.attackRange = weapon.attackRange;
+            }
         } else {
             this.damage = 1;
             this.fireRate = 30;
@@ -232,7 +243,7 @@ class Player extends Actor {
         if (!window.enemyManager) return null;
         let nearest = null;
         let minDistSq = Infinity;
-        const rangeSq = 800 * 800; // Max detection range
+        const rangeSq = this.attackRange * this.attackRange; // Use attack range
 
         // Use activeEnemies list
         const enemies = window.enemyManager.activeEnemies || [];
@@ -268,16 +279,19 @@ class Player extends Actor {
             const isLeft = dx < 0;
             this.gameObject.transform.localScale.x = isLeft ? -1 : 1;
 
-            // Auto Fire
-            if (this.fireTimer <= 0 && !this.isReloading) {
-                if (this.ammo > 0) {
-                    this.fire(angle);
-                } else {
-                    this.startReload();
+            // Auto Fire - Only if enemy is within attack range
+            const distSq = dx * dx + dy * dy;
+            if (distSq <= this.attackRange * this.attackRange) {
+                if (this.fireTimer <= 0 && !this.isReloading) {
+                    if (this.ammo > 0) {
+                        this.fire(angle);
+                    } else {
+                        this.startReload();
+                    }
                 }
             }
         } else {
-            // No enemy, face movement direction
+            // No enemy in range, face movement direction
             if (input.getKey('a')) {
                 this.gameObject.transform.localScale.x = -1;
                 angle = Math.PI;

@@ -23,6 +23,7 @@ class Weapon extends Item {
         this.count = stats.count || 1; // Bullets per shot
         this.pierce = stats.pierce || 0; // How many enemies it can pass through
         this.range = stats.range || 1000; // Max distance/lifetime
+        this.attackRange = stats.attackRange || 600; // Attack range in pixels
         this.isFlame = weaponType === 'flame';
     }
 }
@@ -33,27 +34,27 @@ const ItemFactory = {
             case 'rifle':
                 return new Weapon('w_rifle', '标准步枪', {
                     damage: 15, fireRate: 15, reloadTime: 60, clipSize: 30, 
-                    bulletSpeed: 15, spread: 0.05, range: 800
+                    bulletSpeed: 15, spread: 0.05, range: 800, attackRange: 600
                 }, 'rifle', '均衡的自动步枪');
             case 'smg':
                 return new Weapon('w_smg', '轻型冲锋枪', {
                     damage: 6, fireRate: 5, reloadTime: 40, clipSize: 60, 
-                    bulletSpeed: 14, spread: 0.15, range: 500
+                    bulletSpeed: 14, spread: 0.15, range: 500, attackRange: 500
                 }, 'smg', '射速极快，但伤害较低');
             case 'sniper':
                 return new Weapon('w_sniper', '反器材狙击枪', {
                     damage: 80, fireRate: 80, reloadTime: 150, clipSize: 5, 
-                    bulletSpeed: 25, spread: 0, pierce: 10, range: 1500
+                    bulletSpeed: 25, spread: 0, pierce: 10, range: 1500, attackRange: 1000
                 }, 'sniper', '高伤害，自带贯穿，但射速慢');
             case 'shotgun':
                 return new Weapon('w_shotgun', '战术霰弹枪', {
                     damage: 10, fireRate: 50, reloadTime: 90, clipSize: 8, 
-                    bulletSpeed: 12, spread: 0.4, count: 6, range: 400
+                    bulletSpeed: 12, spread: 0.4, count: 6, range: 400, attackRange: 350
                 }, 'shotgun', '一次发射多枚弹丸，近战利器');
             case 'flame':
                 return new Weapon('w_flame', '工业喷火器', {
                     damage: 3, fireRate: 3, reloadTime: 180, clipSize: 100, 
-                    bulletSpeed: 7, spread: 0.3, count: 1, pierce: 999, range: 250
+                    bulletSpeed: 7, spread: 0.3, count: 1, pierce: 999, range: 250, attackRange: 300
                 }, 'flame', '持续喷射火焰，需要冷却');
             default:
                 return ItemFactory.createWeapon('rifle');
