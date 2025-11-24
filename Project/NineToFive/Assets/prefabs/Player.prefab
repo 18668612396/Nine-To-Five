@@ -31,6 +31,7 @@ Version: 1
                 "speed": 0.5,
                 "weaponPrefab": "975121fc87a74fdea9d7c79876df12d4",
                 "shadowPrefab": "a570430a7d9040dc865b5510d7e8184f",
+                "reloadProgressPrefab": "4ec2abc5a9e14c338d22ef9f2f197fb0",
                 "muzzleDistance": 60
             }
         }

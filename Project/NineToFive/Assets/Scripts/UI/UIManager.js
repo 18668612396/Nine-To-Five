@@ -16,6 +16,8 @@ class UIManager extends EngineObject {
         this.progBar = document.getElementById('progBar');
         this.bossLabel = document.getElementById('bossLabel');
         this.lootMsg = document.getElementById('lootMsg');
+        this.ammoText = document.getElementById('ammoText');
+        this.reloadingText = document.getElementById('reloadingText');
 
         // Buttons
         // Town UI Buttons Removed
@@ -338,6 +340,32 @@ class UIManager extends EngineObject {
             if (this.expBar) {
                 this.expBar.style.width = (player.exp / player.maxExp * 100) + '%';
                 this.expText.innerText = Math.floor(player.exp) + '/' + player.maxExp;
+            }
+
+            // Update ammo display
+            if (this.ammoText) {
+                this.ammoText.innerText = `${player.ammo}/${player.maxAmmo}`;
+                
+                // Change color based on ammo level
+                if (player.ammo === 0) {
+                    this.ammoText.style.color = '#f44336'; // Red when empty
+                } else if (player.ammo <= player.maxAmmo * 0.3) {
+                    this.ammoText.style.color = '#ff9800'; // Orange when low
+                } else {
+                    this.ammoText.style.color = '#4caf50'; // Green when good
+                }
+            }
+
+            // Show/hide reloading indicator
+            if (this.reloadingText) {
+                if (player.isReloading) {
+                    this.reloadingText.style.display = 'inline';
+                    // Add pulsing animation
+                    const progress = 1 - (player.reloadTimer / player.reloadTime);
+                    this.reloadingText.innerText = `换弹中... ${Math.floor(progress * 100)}%`;
+                } else {
+                    this.reloadingText.style.display = 'none';
+                }
             }
         }
         if (this.progBar) {

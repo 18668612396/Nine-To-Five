@@ -62,6 +62,7 @@ class Player extends Actor {
         if (props.attackRange !== undefined) this.baseStats.attackRange = props.attackRange;
         if (props.weaponPrefab) this.weaponPrefabPath = props.weaponPrefab;
         if (props.shadowPrefab) this.shadowPrefabPath = props.shadowPrefab;
+        if (props.reloadProgressPrefab) this.reloadProgressPrefabPath = props.reloadProgressPrefab;
         if (props.muzzleDistance !== undefined) this.muzzleDistance = props.muzzleDistance;
     }
 
@@ -90,7 +91,20 @@ class Player extends Actor {
         window.resourceManager.load('b6b093b829dd43b8beabf30869778a32').then(prefab => {
             this.shootEffectPrefab = prefab;
         }).catch(err => console.error("Failed to load shoot effect prefab:", err));
+
+        // Load Reload Progress UI Prefab
+        if (this.reloadProgressPrefabPath) {
+            window.resourceManager.load(this.reloadProgressPrefabPath).then(prefab => {
+                this.reloadProgressPrefab = prefab;
+                // 实例化为子物体
+                this.reloadProgressUI = prefab.instantiate(null, this.gameObject);
+                // 初始状态为隐藏
+                this.reloadProgressUI.active = false;
+            }).catch(err => console.error("Failed to load reload progress prefab:", err));
+        }
     }
+
+
 
     gainExp(amount) {
         this.exp += amount;
@@ -181,6 +195,7 @@ class Player extends Actor {
     }
 
     update(dt) {
+        //打印当前时间
         const input = window.game.inputManager;
 
         // Ensure visuals are linked (in case start() ran before children were created)
@@ -192,11 +207,20 @@ class Player extends Actor {
         if (this.isReloading) {
             this.reloadTimer--;
             if (this.reloadTimer <= 0) {
+                console.log("Player: Reload complete!");
                 this.isReloading = false;
                 this.ammo = this.maxAmmo;
+
+                // 隐藏换弹进度UI
+                if (this.reloadProgressUI) {
+                    const progressComponent = this.reloadProgressUI.getComponent(ReloadProgressUI);
+                    if (progressComponent) {
+                        progressComponent.stopReload();
+                    }
+                }
             }
         }
-
+        
         if (this.fireTimer > 0) this.fireTimer--;
 
         // Movement using RigidBody
@@ -358,8 +382,17 @@ class Player extends Actor {
 
     startReload() {
         if (this.isReloading) return;
+        console.log("Player: Starting reload, reloadTime =", this.reloadTime);
         this.isReloading = true;
         this.reloadTimer = this.reloadTime;
+
+        // 显示换弹进度UI
+        if (this.reloadProgressUI) {
+            const progressComponent = this.reloadProgressUI.getComponent(ReloadProgressUI);
+            if (progressComponent) {
+                progressComponent.startReload(this.reloadTime);
+            }
+        }
     }
 
     gainExp(amount) {

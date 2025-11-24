@@ -4,6 +4,7 @@
         "Assets/Scripts/UI/Commands/OpenTalentsCommand.js",
         "Assets/Scripts/UI/Commands/OpenInventoryCommand.js",
         "Assets/Scripts/UI/Commands/OpenSettingsCommand.js",
+        "Assets/Scripts/UI/ReloadProgressUI.js",
         "Assets/Scripts/Items/Item.js",
         // "Assets/Scripts/Entities/ActorShadow.js", // Removed as we use CanvasRenderer directly
         "Assets/Scripts/Entities/Actor.js",
