@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>喵喵幸存者 (Meow Survivors)</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- UI层 -->
+        <div id="ui-layer">
+            <!-- HUD -->
+            <div id="hud" class="hidden">
+                <div class="bar-container">
+                    <div class="bar-label">HP</div>
+                    <div id="hp-bar-bg"><div id="hp-bar-fill"></div></div>
+                    <div id="hp-text">100/100</div>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-label">EXP</div>
+                    <div id="xp-bar-bg"><div id="xp-bar-fill"></div></div>
+                    <div id="level-text">Lv. 1</div>
+                </div>
+                <div id="timer">00:00</div>
+                <div id="kill-count">击杀: 0</div>
+            </div>
+
+            <!-- 加载界面 -->
+            <div id="loading-screen" class="screen">
+                <h1 class="loading-title">喵喵幸存者</h1>
+                <p class="loading-subtitle">Meow Survivors</p>
+                <canvas id="loading-cat" width="120" height="120"></canvas>
+                <button id="start-btn" class="menu-btn">开始游戏</button>
+            </div>
+
+            <!-- 主菜单 -->
+            <div id="main-menu" class="screen hidden">
+                <div class="main-top-bar">
+                    <div class="player-info">
+                        <div class="player-avatar">
+                            <canvas id="avatar-preview" width="50" height="50"></canvas>
+                        </div>
+                        <div class="player-details">
+                            <span class="player-name">喵喵玩家</span>
+                            <span class="player-level">Lv. 1</span>
+                        </div>
+                    </div>
+                    <div class="currency-bar">
+                        <div class="currency-item">
+                            <span class="currency-icon">🐟</span>
+                            <span class="currency-value">0</span>
+                        </div>
+                        <div class="currency-item">
+                            <span class="currency-icon">💎</span>
+                            <span class="currency-value">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="main-center">
+                    <canvas id="main-character" width="200" height="200"></canvas>
+                    <h2 class="current-char-name">瓜瓜</h2>
+                </div>
+
+                <div class="main-bottom">
+                    <div class="bottom-nav">
+                        <div class="nav-btn" onclick="showCharacterSelect()">
+                            <span class="nav-icon">🐱</span>
+                            <span class="nav-label">角色</span>
+                        </div>
+                        <div class="nav-btn" onclick="showPanel('talents')">
+                            <span class="nav-icon">⭐</span>
+                            <span class="nav-label">天赋</span>
+                        </div>
+                        <div class="nav-btn start-btn-main" onclick="startGameWithSelectedChar()">
+                            <span class="nav-icon">⚔️</span>
+                            <span class="nav-label">开始</span>
+                        </div>
+                        <div class="nav-btn" onclick="showPanel('collection')">
+                            <span class="nav-icon">📖</span>
+                            <span class="nav-label">图鉴</span>
+                        </div>
+                        <div class="nav-btn" onclick="showPanel('settings')">
+                            <span class="nav-icon">⚙️</span>
+                            <span class="nav-label">设置</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="side-buttons left">
+                    <div class="side-btn" onclick="showPanel('achievements')">
+                        <span>🏆</span><span>成就</span>
+                    </div>
+                    <div class="side-btn" onclick="showPanel('daily')">
+                        <span>📅</span><span>每日</span>
+                    </div>
+                </div>
+
+                <div class="side-buttons right">
+                    <div class="side-btn" onclick="showPanel('shop')">
+                        <span>🛒</span><span>商店</span>
+                    </div>
+                    <div class="side-btn" onclick="showPanel('mail')">
+                        <span>📬</span><span>邮件</span>
+                    </div>
+                </div>
+
+                <p class="menu-footer">© 2024 Meow Survivors v0.1</p>
+            </div>
+
+            <!-- 面板容器 -->
+            <div id="panel-overlay" class="screen hidden" onclick="closePanel()">
+                <div class="panel-container" onclick="event.stopPropagation()">
+                    <div class="panel-header">
+                        <h2 id="panel-title">面板标题</h2>
+                        <button class="panel-close" onclick="closePanel()">✕</button>
+                    </div>
+                    <div id="panel-content" class="panel-body"></div>
+                </div>
+            </div>
+
+            <!-- 角色选择界面 -->
+            <div id="character-select-screen" class="screen hidden">
+                <h1>选择你的喵喵英雄</h1>
+                <div class="char-select-container">
+                    <div class="char-card" id="card-guagua" onclick="selectCharacter('guagua')">
+                        <canvas id="guagua-preview" class="char-preview" width="100" height="100"></canvas>
+                        <h2>瓜瓜 (Guagua)</h2>
+                        <p class="desc">布偶猫</p>
+                        <p class="char-stats">速度 +15% | 初始武器: 鱼骨飞镖</p>
+                    </div>
+                    <div class="char-card" id="card-kuikui" onclick="selectCharacter('kuikui')">
+                        <canvas id="kuikui-preview" class="char-preview" width="100" height="100"></canvas>
+                        <h2>葵葵 (Kuikui)</h2>
+                        <p class="desc">蓝白英短</p>
+                        <p class="char-stats">生命 +50% | 初始武器: 呼噜护盾</p>
+                    </div>
+                </div>
+                <button class="back-btn" onclick="backToMainMenu()">← 返回</button>
+            </div>
+
+            <!-- 升级界面 -->
+            <div id="levelup-screen" class="screen hidden">
+                <h2>升级了! (Lv. <span id="levelup-level"></span>)</h2>
+                <p>选择一个升级</p>
+                <div id="cards-container"></div>
+            </div>
+
+            <!-- 游戏结束界面 -->
+            <div id="gameover-screen" class="screen hidden">
+                <h1>游戏结束</h1>
+                <p>存活时间: <span id="final-time"></span></p>
+                <p>击杀数量: <span id="final-kills"></span></p>
+                <button onclick="location.reload()">再来一局</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本加载顺序很重要 -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/characters.js"></script>
+    <script src="js/entities.js"></script>
+    <script src="js/weapons.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+    <script>
+        // 初始化
+        UI.init();
+        Game.init();
+    </script>
+</body>
+</html>
