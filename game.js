@@ -330,6 +330,13 @@ class Player extends Entity {
             ctx.beginPath(); ctx.ellipse(-6, 13 + bob, 4, 3, 0, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.ellipse(6, 13 - bob, 4, 3, 0, 0, Math.PI*2); ctx.fill();
 
+            // Ears (Brown) - 先画耳朵，让头盖住耳朵根部
+            ctx.fillStyle = COLORS.guagua_dark;
+            ctx.beginPath();
+            ctx.moveTo(-9, -14); ctx.lineTo(-14, -24); ctx.lineTo(-3, -17); ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(9, -14); ctx.lineTo(14, -24); ctx.lineTo(3, -17); ctx.fill();
+
             // 3. Head (Cream base)
             ctx.fillStyle = COLORS.guagua;
             ctx.beginPath();
@@ -343,20 +350,22 @@ class Player extends Entity {
             // Mask (Brown Points - Bicolor V shape)
             ctx.fillStyle = COLORS.guagua_dark;
             ctx.beginPath();
-            // Left Eye Patch (Rotated Oval)
+            // Left Eye Patch (Rotated Oval) - 保持原样
             ctx.ellipse(-6, -7, 6, 7, 0.4, 0, Math.PI*2);
             ctx.fill();
+            // Left side extension - 向左侧延伸
             ctx.beginPath();
-            // Right Eye Patch (Rotated Oval)
+            ctx.ellipse(-12, -3, 4, 5, 0.2, 0, Math.PI*2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            // Right Eye Patch (Rotated Oval) - 保持原样
             ctx.ellipse(6, -7, 6, 7, -0.4, 0, Math.PI*2); 
             ctx.fill();
-
-            // Ears (Brown)
-            ctx.fillStyle = COLORS.guagua_dark;
+            // Right side extension - 向右侧延伸
             ctx.beginPath();
-            ctx.moveTo(-9, -10); ctx.lineTo(-14, -22); ctx.lineTo(-3, -14); ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(9, -10); ctx.lineTo(14, -22); ctx.lineTo(3, -14); ctx.fill();
+            ctx.ellipse(12, -3, 4, 5, -0.2, 0, Math.PI*2);
+            ctx.fill();
 
             // 4. Face Features
             // Eyes (Blue for Ragdoll)
