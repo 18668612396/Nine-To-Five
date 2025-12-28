@@ -1,6 +1,10 @@
 // --- 角色绘制模块 ---
+// 所有坐标基于基准尺寸15，通过scale统一缩放
 
 const CharacterRenderer = {
+    // 基准半径（所有坐标都基于此尺寸设计）
+    BASE_RADIUS: 15,
+
     // 绘制葵葵（蓝白英短）
     drawKuikui(ctx, x, y, r, frameCount, options = {}) {
         const { 
@@ -11,14 +15,23 @@ const CharacterRenderer = {
             lastTailAngle = Math.PI / 3
         } = options;
 
+        // 计算缩放比例
+        const scale = r / this.BASE_RADIUS;
+
         ctx.save();
         ctx.translate(x, y);
+        
+        // 统一缩放整个角色
+        ctx.scale(scale, scale);
+        
         if (isFlipped) ctx.scale(-1, 1);
+
+        // 以下所有坐标都基于 BASE_RADIUS = 15 的基准尺寸
 
         // 阴影
         ctx.fillStyle = 'rgba(0,0,0,0.15)';
         ctx.beginPath();
-        ctx.ellipse(0, r + 2, r * 0.8, r * 0.3, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 17, 12, 4.5, 0, 0, Math.PI * 2);
         ctx.fill();
 
         // 尾巴
@@ -53,13 +66,13 @@ const CharacterRenderer = {
         // 身体
         ctx.fillStyle = COLORS.kuikui;
         ctx.beginPath();
-        ctx.ellipse(0, 6, r, r * 0.8, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 6, 15, 12, 0, 0, Math.PI * 2);
         ctx.fill();
 
         // 肚皮
         ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.ellipse(0, 8, r * 0.6, r * 0.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 8, 9, 7.5, 0, 0, Math.PI * 2);
         ctx.fill();
 
         // 爪子
@@ -71,7 +84,7 @@ const CharacterRenderer = {
         // 头部
         ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.arc(0, -6, r * 0.95, 0, Math.PI * 2);
+        ctx.arc(0, -6, 14.25, 0, Math.PI * 2);
         ctx.fill();
 
         // 灰色面罩
@@ -85,14 +98,14 @@ const CharacterRenderer = {
 
         // 额头斑纹
         ctx.beginPath();
-        ctx.arc(0, -6, r * 0.95, Math.PI, 0);
+        ctx.arc(0, -6, 14.25, Math.PI, 0);
         ctx.lineTo(0, -6);
         ctx.fill();
 
         ctx.beginPath();
-        ctx.moveTo(-r + 1, -6);
-        ctx.quadraticCurveTo(-r + 1, -20, 0, -20);
-        ctx.quadraticCurveTo(r - 1, -20, r - 1, -6);
+        ctx.moveTo(-14, -6);
+        ctx.quadraticCurveTo(-14, -20, 0, -20);
+        ctx.quadraticCurveTo(14, -20, 14, -6);
         ctx.lineTo(0, -10);
         ctx.fill();
 
@@ -129,14 +142,23 @@ const CharacterRenderer = {
             lastTailAngle = Math.PI / 4
         } = options;
 
+        // 计算缩放比例
+        const scale = r / this.BASE_RADIUS;
+
         ctx.save();
         ctx.translate(x, y);
+        
+        // 统一缩放整个角色
+        ctx.scale(scale, scale);
+        
         if (isFlipped) ctx.scale(-1, 1);
+
+        // 以下所有坐标都基于 BASE_RADIUS = 15 的基准尺寸
 
         // 阴影
         ctx.fillStyle = 'rgba(0,0,0,0.15)';
         ctx.beginPath();
-        ctx.ellipse(0, r + 2, r * 0.8, r * 0.3, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 17, 12, 4.5, 0, 0, Math.PI * 2);
         ctx.fill();
 
         // 尾巴
@@ -171,12 +193,12 @@ const CharacterRenderer = {
         // 身体
         ctx.fillStyle = COLORS.guagua;
         ctx.beginPath();
-        ctx.ellipse(0, 6, r, r * 0.8, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 6, 15, 12, 0, 0, Math.PI * 2);
         ctx.fill();
 
         // 蓬松侧边
-        ctx.beginPath(); ctx.arc(-r + 2, 6, 4, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(r - 2, 6, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(-13, 6, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(13, 6, 4, 0, Math.PI * 2); ctx.fill();
 
         // 爪子
         const bob = Math.sin(frameCount * 0.2) * 2;
@@ -194,7 +216,7 @@ const CharacterRenderer = {
         // 头部
         ctx.fillStyle = COLORS.guagua;
         ctx.beginPath();
-        ctx.arc(0, -6, r * 0.95, 0, Math.PI * 2);
+        ctx.arc(0, -6, 14.25, 0, Math.PI * 2);
         ctx.fill();
 
         // 蓬松脸颊

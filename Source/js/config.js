@@ -2,8 +2,22 @@
 
 // 游戏配置
 const CONFIG = {
-    TILE_SIZE: 64,
-    FPS: 60
+    // 游戏画布尺寸（竖屏比例 9:16）
+    GAME_WIDTH: 720,
+    GAME_HEIGHT: 1280,
+    
+    // 实际显示会根据屏幕缩放
+    FPS: 60,
+    
+    // 地图滚动速度
+    SCROLL_SPEED: 3,
+    
+    // 敌人生成区域
+    ENEMY_SPAWN_Y: -100,  // 屏幕上方生成
+    ENEMY_DESPAWN_Y: 1.1, // 超过屏幕下方110%消失
+    
+    // 战斗设置
+    AUTO_BATTLE: true     // 自动战斗（自动瞄准+自动开火）
 };
 
 // 颜色配置

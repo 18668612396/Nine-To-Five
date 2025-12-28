@@ -8,6 +8,10 @@ const UI = {
     mainCharFrame: 0,
     
     panels: {
+        characters: {
+            title: '选择角色',
+            content: '' // 动态生成
+        },
         talents: {
             title: '天赋树',
             content: `
@@ -91,7 +95,6 @@ const UI = {
     
     init() {
         this.animateLoadingScreen();
-        this.animateCharacterPreviews();
         this.animateMainCharacter();
         this.bindEvents();
     },
@@ -109,29 +112,87 @@ const UI = {
     },
     
     showCharacterSelect() {
-        document.getElementById('main-menu').classList.add('hidden');
-        document.getElementById('character-select-screen').classList.remove('hidden');
-        this.updateCharacterCards();
+        // 使用面板形式显示角色选择
+        this.panels.characters.content = this.generateCharacterPanelContent();
+        this.showPanel('characters');
+        
+        // 延迟启动预览动画（等待DOM渲染）
+        setTimeout(() => this.startCharacterPanelAnimation(), 50);
     },
     
-    backToMainMenu() {
-        document.getElementById('character-select-screen').classList.add('hidden');
-        document.getElementById('main-menu').classList.remove('hidden');
+    generateCharacterPanelContent() {
+        const guaguaSelected = this.selectedCharacter === 'guagua' ? 'selected' : '';
+        const kuikuiSelected = this.selectedCharacter === 'kuikui' ? 'selected' : '';
+        
+        return `
+            <div class="char-panel-container">
+                <div class="char-panel-card ${guaguaSelected}" onclick="selectCharacter('guagua')">
+                    <canvas id="panel-guagua-preview" class="char-panel-preview" width="80" height="80"></canvas>
+                    <div class="char-panel-info">
+                        <h3>瓜瓜 (Guagua)</h3>
+                        <p class="char-panel-desc">布偶猫</p>
+                        <p class="char-panel-stats">速度 +15% | 初始武器: 鱼骨飞镖</p>
+                    </div>
+                    ${guaguaSelected ? '<span class="char-panel-check">✓</span>' : ''}
+                </div>
+                <div class="char-panel-card ${kuikuiSelected}" onclick="selectCharacter('kuikui')">
+                    <canvas id="panel-kuikui-preview" class="char-panel-preview" width="80" height="80"></canvas>
+                    <div class="char-panel-info">
+                        <h3>葵葵 (Kuikui)</h3>
+                        <p class="char-panel-desc">蓝白英短</p>
+                        <p class="char-panel-stats">生命 +50% | 初始武器: 呼噜护盾</p>
+                    </div>
+                    ${kuikuiSelected ? '<span class="char-panel-check">✓</span>' : ''}
+                </div>
+            </div>
+        `;
+    },
+    
+    charPanelAnimationId: null,
+    charPanelFrame: 0,
+    
+    startCharacterPanelAnimation() {
+        // 停止之前的动画
+        if (this.charPanelAnimationId) {
+            cancelAnimationFrame(this.charPanelAnimationId);
+        }
+        
+        const animate = () => {
+            this.charPanelFrame++;
+            
+            const guaguaCanvas = document.getElementById('panel-guagua-preview');
+            const kuikuiCanvas = document.getElementById('panel-kuikui-preview');
+            
+            if (guaguaCanvas && kuikuiCanvas) {
+                const guaguaCtx = guaguaCanvas.getContext('2d');
+                const kuikuiCtx = kuikuiCanvas.getContext('2d');
+                
+                guaguaCtx.clearRect(0, 0, 80, 80);
+                kuikuiCtx.clearRect(0, 0, 80, 80);
+                
+                CharacterRenderer.drawGuagua(guaguaCtx, 40, 45, 15, this.charPanelFrame);
+                CharacterRenderer.drawKuikui(kuikuiCtx, 40, 45, 15, this.charPanelFrame);
+                
+                this.charPanelAnimationId = requestAnimationFrame(animate);
+            } else {
+                // Canvas不存在了，停止动画
+                this.charPanelAnimationId = null;
+            }
+        };
+        
+        animate();
     },
     
     selectCharacter(charType) {
         this.selectedCharacter = charType;
-        this.updateCharacterCards();
         this.updateMainCharName();
-        this.backToMainMenu();
-    },
-    
-    updateCharacterCards() {
-        const cards = document.querySelectorAll('.char-card');
-        cards.forEach(card => card.classList.remove('selected'));
+        this.closePanel();
         
-        const selectedCard = document.getElementById('card-' + this.selectedCharacter);
-        if (selectedCard) selectedCard.classList.add('selected');
+        // 停止面板动画
+        if (this.charPanelAnimationId) {
+            cancelAnimationFrame(this.charPanelAnimationId);
+            this.charPanelAnimationId = null;
+        }
     },
     
     updateMainCharName() {
@@ -155,6 +216,12 @@ const UI = {
     
     closePanel() {
         document.getElementById('panel-overlay').classList.add('hidden');
+        
+        // 停止角色面板动画
+        if (this.charPanelAnimationId) {
+            cancelAnimationFrame(this.charPanelAnimationId);
+            this.charPanelAnimationId = null;
+        }
     },
     
     animateLoadingScreen() {
@@ -206,25 +273,7 @@ const UI = {
         requestAnimationFrame(() => this.animateMainCharacter());
     },
     
-    animateCharacterPreviews() {
-        this.previewFrame++;
-        
-        const guaguaCanvas = document.getElementById('guagua-preview');
-        const kuikuiCanvas = document.getElementById('kuikui-preview');
-        
-        if (guaguaCanvas && kuikuiCanvas) {
-            const guaguaCtx = guaguaCanvas.getContext('2d');
-            const kuikuiCtx = kuikuiCanvas.getContext('2d');
-            
-            guaguaCtx.clearRect(0, 0, 100, 100);
-            kuikuiCtx.clearRect(0, 0, 100, 100);
-            
-            CharacterRenderer.drawGuagua(guaguaCtx, 50, 55, 15, this.previewFrame);
-            CharacterRenderer.drawKuikui(kuikuiCtx, 50, 55, 15, this.previewFrame);
-        }
-        
-        requestAnimationFrame(() => this.animateCharacterPreviews());
-    }
+
 };
 
 // 全局函数
@@ -234,3 +283,9 @@ window.showPanel = function(panelId) { UI.showPanel(panelId); };
 window.closePanel = function() { UI.closePanel(); };
 window.selectCharacter = function(charType) { UI.selectCharacter(charType); };
 window.startGameWithSelectedChar = function() { UI.startGameWithSelectedChar(); };
+window.toggleAutoBattle = function() {
+    CONFIG.AUTO_BATTLE = !CONFIG.AUTO_BATTLE;
+    const btn = document.getElementById('auto-battle-btn');
+    btn.innerText = CONFIG.AUTO_BATTLE ? '自动: 开' : '自动: 关';
+    btn.classList.toggle('off', !CONFIG.AUTO_BATTLE);
+};

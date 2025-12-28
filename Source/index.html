@@ -14,6 +14,7 @@
         <div id="ui-layer">
             <!-- HUD -->
             <div id="hud" class="hidden">
+                <button class="hud-back-btn" onclick="Game.backToMenu()">← 返回</button>
                 <div class="bar-container">
                     <div class="bar-label">HP</div>
                     <div id="hp-bar-bg"><div id="hp-bar-fill"></div></div>
@@ -26,6 +27,7 @@
                 </div>
                 <div id="timer">00:00</div>
                 <div id="kill-count">击杀: 0</div>
+                <button id="auto-battle-btn" class="hud-toggle-btn" onclick="toggleAutoBattle()">自动: 开</button>
             </div>
 
             <!-- 加载界面 -->
@@ -122,25 +124,7 @@
                 </div>
             </div>
 
-            <!-- 角色选择界面 -->
-            <div id="character-select-screen" class="screen hidden">
-                <h1>选择你的喵喵英雄</h1>
-                <div class="char-select-container">
-                    <div class="char-card" id="card-guagua" onclick="selectCharacter('guagua')">
-                        <canvas id="guagua-preview" class="char-preview" width="100" height="100"></canvas>
-                        <h2>瓜瓜 (Guagua)</h2>
-                        <p class="desc">布偶猫</p>
-                        <p class="char-stats">速度 +15% | 初始武器: 鱼骨飞镖</p>
-                    </div>
-                    <div class="char-card" id="card-kuikui" onclick="selectCharacter('kuikui')">
-                        <canvas id="kuikui-preview" class="char-preview" width="100" height="100"></canvas>
-                        <h2>葵葵 (Kuikui)</h2>
-                        <p class="desc">蓝白英短</p>
-                        <p class="char-stats">生命 +50% | 初始武器: 呼噜护盾</p>
-                    </div>
-                </div>
-                <button class="back-btn" onclick="backToMainMenu()">← 返回</button>
-            </div>
+
 
             <!-- 升级界面 -->
             <div id="levelup-screen" class="screen hidden">

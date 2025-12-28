@@ -1,11 +1,40 @@
-// --- 游戏引擎 ---
+// --- 游戏引擎 (球比伦战记风格 - 垂直滚动射击) ---
 
 const CANVAS = document.getElementById('gameCanvas');
 const CTX = CANVAS.getContext('2d');
 
+// 游戏缩放相关
+let gameScale = 1;
+let offsetX = 0;
+let offsetY = 0;
+
 function resize() {
-    CANVAS.width = window.innerWidth;
-    CANVAS.height = window.innerHeight;
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // 计算缩放比例，保持 1080:2340 的比例
+    const targetRatio = CONFIG.GAME_WIDTH / CONFIG.GAME_HEIGHT;
+    const windowRatio = windowWidth / windowHeight;
+    
+    if (windowRatio > targetRatio) {
+        // 窗口更宽，以高度为基准
+        gameScale = windowHeight / CONFIG.GAME_HEIGHT;
+        CANVAS.height = windowHeight;
+        CANVAS.width = CONFIG.GAME_WIDTH * gameScale;
+        offsetX = (windowWidth - CANVAS.width) / 2;
+        offsetY = 0;
+    } else {
+        // 窗口更高，以宽度为基准
+        gameScale = windowWidth / CONFIG.GAME_WIDTH;
+        CANVAS.width = windowWidth;
+        CANVAS.height = CONFIG.GAME_HEIGHT * gameScale;
+        offsetX = 0;
+        offsetY = (windowHeight - CANVAS.height) / 2;
+    }
+    
+    CANVAS.style.position = 'absolute';
+    CANVAS.style.left = offsetX + 'px';
+    CANVAS.style.top = offsetY + 'px';
 }
 window.addEventListener('resize', resize);
 resize();
@@ -18,7 +47,13 @@ const Game = {
     projectiles: [],
     floatingTexts: [],
     particles: [],
-    trees: [],
+    
+    // 地图滚动
+    scrollY: 0,
+    scrollSpeed: CONFIG.SCROLL_SPEED,
+    
+    // 背景元素
+    bgElements: [],
     
     frameCount: 0,
     time: 0,
@@ -27,23 +62,37 @@ const Game = {
     xp: 0,
     xpToNext: 10,
     
+    // 波次系统
+    wave: 1,
+    waveTimer: 0,
+    waveEnemyCount: 0,
+    
     init() {
         Input.init();
         this.loop = this.loop.bind(this);
         requestAnimationFrame(this.loop);
-        
-        for (let i = 0; i < 50; i++) {
-            this.trees.push({
-                x: (Math.random() - 0.5) * 4000,
-                y: (Math.random() - 0.5) * 4000,
-                r: 30 + Math.random() * 20,
-                type: Math.random() > 0.3 ? 'tree' : 'rock'
+        this.generateBgElements();
+    },
+    
+    generateBgElements() {
+        // 生成初始背景元素（树和石头）
+        this.bgElements = [];
+        for (let i = 0; i < 25; i++) {
+            this.bgElements.push({
+                x: Math.random() * CONFIG.GAME_WIDTH,
+                y: Math.random() * CONFIG.GAME_HEIGHT * 2 - CONFIG.GAME_HEIGHT,
+                type: Math.random() > 0.3 ? 'tree' : 'rock',
+                size: 25 + Math.random() * 20
             });
         }
     },
 
     start(charType) {
         this.player = new Player(charType);
+        // 玩家初始位置在屏幕下方中央
+        this.player.x = CONFIG.GAME_WIDTH / 2;
+        this.player.y = CONFIG.GAME_HEIGHT * 0.8;
+        
         this.enemies = [];
         this.gems = [];
         this.projectiles = [];
@@ -55,6 +104,12 @@ const Game = {
         this.level = 1;
         this.xp = 0;
         this.xpToNext = 10;
+        this.scrollY = 0;
+        this.wave = 1;
+        this.waveTimer = 0;
+        this.waveEnemyCount = 0;
+        
+        this.generateBgElements();
         
         document.getElementById('hud').classList.remove('hidden');
         document.getElementById('gameover-screen').classList.add('hidden');
@@ -77,28 +132,52 @@ const Game = {
             this.time++;
             document.getElementById('timer').innerText = this.formatTime(this.time);
         }
+        
+        // 地图滚动
+        this.scrollY += this.scrollSpeed;
+        
+        // 更新背景元素
+        this.bgElements.forEach(el => {
+            el.y += this.scrollSpeed;
+            // 循环背景
+            if (el.y > CONFIG.GAME_HEIGHT + 100) {
+                el.y = -100;
+                el.x = Math.random() * CONFIG.GAME_WIDTH;
+            }
+        });
 
+        // 生成敌人
         this.spawnEnemies();
 
+        // 更新粒子
         this.particles.forEach(p => {
             p.x += p.vx;
-            p.y += p.vy;
+            p.y += p.vy + this.scrollSpeed * 0.5;
             p.life--;
             p.vx *= 0.95;
             p.vy *= 0.95;
         });
         this.particles = this.particles.filter(p => p.life > 0);
 
+        // 更新玩家
         this.player.update();
         if (this.player.hp <= 0) {
             this.gameOver();
         }
 
+        // 更新敌人（向下移动 + 追踪玩家）
         this.enemies.forEach(e => e.update(this.player));
-        this.gems.forEach(g => g.update(this.player));
+        
+        // 更新宝石
+        this.gems.forEach(g => {
+            g.y += this.scrollSpeed * 0.5;
+            g.update(this.player);
+        });
+        
+        // 更新投射物
         this.projectiles.forEach(p => p.update());
 
-        // 碰撞检测
+        // 碰撞检测：投射物 vs 敌人
         this.projectiles.forEach(p => {
             this.enemies.forEach(e => {
                 if (!e.markedForDeletion && !p.markedForDeletion) {
@@ -116,6 +195,7 @@ const Game = {
             });
         });
 
+        // 碰撞检测：敌人 vs 玩家
         this.enemies.forEach(e => {
             if (checkCircleCollide(e, this.player)) {
                 if (this.frameCount % 30 === 0) {
@@ -127,8 +207,9 @@ const Game = {
             }
         });
 
-        this.enemies = this.enemies.filter(e => !e.markedForDeletion);
-        this.gems = this.gems.filter(g => !g.markedForDeletion);
+        // 清理
+        this.enemies = this.enemies.filter(e => !e.markedForDeletion && e.y < CONFIG.GAME_HEIGHT * CONFIG.ENEMY_DESPAWN_Y);
+        this.gems = this.gems.filter(g => !g.markedForDeletion && g.y < CONFIG.GAME_HEIGHT + 50);
         this.projectiles = this.projectiles.filter(p => !p.markedForDeletion);
         this.floatingTexts = this.floatingTexts.filter(t => t.life > 0);
         this.floatingTexts.forEach(t => {
@@ -138,74 +219,44 @@ const Game = {
     },
 
     draw() {
+        // 清空画布 - 草地底色
         CTX.fillStyle = '#8ccf7e';
         CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
-
-        let camX = 0, camY = 0;
-
-        if (this.player) {
-            camX = this.player.x - CANVAS.width / 2;
-            camY = this.player.y - CANVAS.height / 2;
-        } else {
-            const t = Date.now() / 20;
-            camX = Math.sin(t / 100) * 200;
-            camY = Math.cos(t / 100) * 200;
-        }
-
-        // 草地纹理
-        CTX.fillStyle = '#83c276';
-        for (let i = 0; i < CANVAS.width; i += 100) {
-            for (let j = 0; j < CANVAS.height; j += 100) {
-                if ((Math.floor((i + camX) / 100) + Math.floor((j + camY) / 100)) % 2 === 0) {
-                    CTX.fillRect(i - (camX % 100), j - (camY % 100), 10, 10);
-                }
-            }
-        }
-
-        // 环境
-        this.trees.forEach(t => {
-            const tx = t.x - camX;
-            const ty = t.y - camY;
-            if (tx > -100 && tx < CANVAS.width + 100 && ty > -100 && ty < CANVAS.height + 100) {
-                if (t.type === 'tree') {
-                    CTX.fillStyle = 'rgba(0,0,0,0.2)';
-                    CTX.beginPath(); CTX.arc(tx, ty + 10, t.r, 0, Math.PI * 2); CTX.fill();
-                    CTX.fillStyle = '#8d6e63';
-                    CTX.fillRect(tx - 5, ty - 10, 10, 20);
-                    CTX.fillStyle = '#4caf50';
-                    CTX.beginPath(); CTX.arc(tx, ty - 20, t.r, 0, Math.PI * 2); CTX.fill();
-                    CTX.fillStyle = '#66bb6a';
-                    CTX.beginPath(); CTX.arc(tx - 5, ty - 25, t.r * 0.7, 0, Math.PI * 2); CTX.fill();
-                } else {
-                    CTX.fillStyle = 'rgba(0,0,0,0.2)';
-                    CTX.beginPath(); CTX.arc(tx, ty + 5, t.r * 0.8, 0, Math.PI * 2); CTX.fill();
-                    CTX.fillStyle = '#9e9e9e';
-                    CTX.beginPath();
-                    CTX.moveTo(tx - t.r, ty);
-                    CTX.lineTo(tx, ty - t.r);
-                    CTX.lineTo(tx + t.r, ty);
-                    CTX.lineTo(tx, ty + t.r * 0.6);
-                    CTX.fill();
-                }
-            }
-        });
-
-        if (!this.player) return;
-
-        this.gems.forEach(g => g.draw(CTX, camX, camY));
         
+        CTX.save();
+        CTX.scale(gameScale, gameScale);
+        
+        // 绘制道路背景
+        this.drawBackground();
+        
+        if (!this.player) {
+            // 菜单状态的背景动画
+            this.drawMenuBackground();
+            CTX.restore();
+            return;
+        }
+        
+        // 绘制宝石
+        this.gems.forEach(g => g.draw(CTX, 0, 0));
+        
+        // 绘制粒子
         this.particles.forEach(p => {
             CTX.fillStyle = p.color;
             CTX.globalAlpha = p.life / 30;
             CTX.beginPath();
-            CTX.arc(p.x - camX, p.y - camY, p.size, 0, Math.PI * 2);
+            CTX.arc(p.x, p.y, p.size, 0, Math.PI * 2);
             CTX.fill();
             CTX.globalAlpha = 1.0;
         });
 
-        this.enemies.forEach(e => e.draw(CTX, camX, camY));
-        this.player.draw(CTX, camX, camY);
-        this.projectiles.forEach(p => p.draw(CTX, camX, camY));
+        // 绘制敌人
+        this.enemies.forEach(e => e.draw(CTX, 0, 0));
+        
+        // 绘制玩家
+        this.player.draw(CTX, 0, 0);
+        
+        // 绘制投射物
+        this.projectiles.forEach(p => p.draw(CTX, 0, 0));
 
         // 光环视觉
         this.player.weapons.forEach(w => {
@@ -213,7 +264,7 @@ const Game = {
                 const stats = w.getStats();
                 const r = (w.id === 'aura' ? 60 : 80) * stats.area;
                 CTX.beginPath();
-                CTX.arc(this.player.x - camX, this.player.y - camY, r, 0, Math.PI * 2);
+                CTX.arc(this.player.x, this.player.y, r, 0, Math.PI * 2);
                 CTX.strokeStyle = w.id === 'aura' ? 'rgba(255, 255, 255, 0.5)' : 'rgba(100, 255, 100, 0.4)';
                 CTX.lineWidth = 3;
                 CTX.setLineDash([10, 10]);
@@ -227,12 +278,75 @@ const Game = {
         // 浮动文字
         this.floatingTexts.forEach(t => {
             CTX.fillStyle = t.color;
-            CTX.font = 'bold 20px Fredoka';
+            CTX.font = 'bold 24px Fredoka';
             CTX.strokeStyle = 'black';
             CTX.lineWidth = 3;
-            CTX.strokeText(t.text, t.x - camX, t.y - camY);
-            CTX.fillText(t.text, t.x - camX, t.y - camY);
+            CTX.strokeText(t.text, t.x, t.y);
+            CTX.fillText(t.text, t.x, t.y);
         });
+        
+        CTX.restore();
+    },
+    
+    drawBackground() {
+        // 草地背景
+        CTX.fillStyle = '#8ccf7e';
+        CTX.fillRect(0, 0, CONFIG.GAME_WIDTH, CONFIG.GAME_HEIGHT);
+        
+        // 草地纹理（棋盘格效果）
+        CTX.fillStyle = '#83c276';
+        const tileSize = 100;
+        const offsetY = this.scrollY % tileSize;
+        
+        for (let i = 0; i < CONFIG.GAME_WIDTH; i += tileSize) {
+            for (let j = -tileSize + offsetY; j < CONFIG.GAME_HEIGHT + tileSize; j += tileSize) {
+                if ((Math.floor(i / tileSize) + Math.floor((j - offsetY + this.scrollY) / tileSize)) % 2 === 0) {
+                    CTX.fillRect(i, j, tileSize / 2, tileSize / 2);
+                }
+            }
+        }
+        
+        // 背景装饰（树和石头）
+        this.bgElements.forEach(el => {
+            if (el.type === 'tree') {
+                // 阴影
+                CTX.fillStyle = 'rgba(0,0,0,0.2)';
+                CTX.beginPath();
+                CTX.arc(el.x, el.y + 10, el.size, 0, Math.PI * 2);
+                CTX.fill();
+                // 树干
+                CTX.fillStyle = '#8d6e63';
+                CTX.fillRect(el.x - 5, el.y - 10, 10, 20);
+                // 树冠
+                CTX.fillStyle = '#4caf50';
+                CTX.beginPath();
+                CTX.arc(el.x, el.y - 20, el.size, 0, Math.PI * 2);
+                CTX.fill();
+                CTX.fillStyle = '#66bb6a';
+                CTX.beginPath();
+                CTX.arc(el.x - 5, el.y - 25, el.size * 0.7, 0, Math.PI * 2);
+                CTX.fill();
+            } else {
+                // 石头
+                CTX.fillStyle = 'rgba(0,0,0,0.2)';
+                CTX.beginPath();
+                CTX.arc(el.x, el.y + 5, el.size * 0.8, 0, Math.PI * 2);
+                CTX.fill();
+                CTX.fillStyle = '#9e9e9e';
+                CTX.beginPath();
+                CTX.moveTo(el.x - el.size, el.y);
+                CTX.lineTo(el.x, el.y - el.size);
+                CTX.lineTo(el.x + el.size, el.y);
+                CTX.lineTo(el.x, el.y + el.size * 0.6);
+                CTX.fill();
+            }
+        });
+    },
+    
+    drawMenuBackground() {
+        // 菜单背景动画
+        const t = Date.now() / 1000;
+        this.scrollY = t * 50;
     },
 
     spawnParticles(x, y, color, count) {
@@ -249,19 +363,44 @@ const Game = {
     },
 
     spawnEnemies() {
-        const spawnRate = Math.max(10, 60 - Math.floor(this.time / 10));
+        // 基础生成率随时间增加
+        const baseRate = Math.max(15, 45 - Math.floor(this.time / 5));
         
-        if (this.frameCount % spawnRate === 0) {
-            const angle = Math.random() * Math.PI * 2;
-            const dist = Math.sqrt((CANVAS.width / 2) ** 2 + (CANVAS.height / 2) ** 2) + 50;
-            const x = this.player.x + Math.cos(angle) * dist;
-            const y = this.player.y + Math.sin(angle) * dist;
+        if (this.frameCount % baseRate === 0) {
+            // 在屏幕上方随机位置生成
+            const roadWidth = CONFIG.GAME_WIDTH * 0.6;
+            const roadX = (CONFIG.GAME_WIDTH - roadWidth) / 2;
+            const x = roadX + Math.random() * roadWidth;
+            const y = CONFIG.ENEMY_SPAWN_Y;
             
             let type = 1;
-            if (this.time > 30 && Math.random() < 0.3) type = 2;
-            if (this.time > 60 && Math.random() < 0.1) type = 3;
+            if (this.time > 20 && Math.random() < 0.25) type = 2;
+            if (this.time > 45 && Math.random() < 0.15) type = 3;
 
             this.enemies.push(new Enemy(x, y, type));
+        }
+        
+        // 波次敌人（成群出现）
+        if (this.frameCount % 600 === 0) {
+            this.spawnWave();
+        }
+    },
+    
+    spawnWave() {
+        this.wave++;
+        const enemyCount = 5 + this.wave * 2;
+        const roadWidth = CONFIG.GAME_WIDTH * 0.6;
+        const roadX = (CONFIG.GAME_WIDTH - roadWidth) / 2;
+        
+        for (let i = 0; i < enemyCount; i++) {
+            setTimeout(() => {
+                if (this.state === 'PLAYING') {
+                    const x = roadX + (i / enemyCount) * roadWidth;
+                    const y = CONFIG.ENEMY_SPAWN_Y - Math.random() * 100;
+                    const type = Math.random() < 0.3 ? 2 : 1;
+                    this.enemies.push(new Enemy(x, y, type));
+                }
+            }, i * 100);
         }
     },
 
@@ -369,6 +508,21 @@ const Game = {
         document.getElementById('gameover-screen').classList.remove('hidden');
         document.getElementById('final-time').innerText = this.formatTime(this.time);
         document.getElementById('final-kills').innerText = this.kills;
+    },
+
+    backToMenu() {
+        this.state = 'MENU';
+        this.player = null;
+        this.enemies = [];
+        this.gems = [];
+        this.projectiles = [];
+        this.floatingTexts = [];
+        this.particles = [];
+        
+        document.getElementById('hud').classList.add('hidden');
+        document.getElementById('levelup-screen').classList.add('hidden');
+        document.getElementById('gameover-screen').classList.add('hidden');
+        document.getElementById('main-menu').classList.remove('hidden');
     }
 };
 
