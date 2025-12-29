@@ -214,38 +214,40 @@ const Game = {
     },
     
     drawWeaponEffects() {
-        this.player.weapons.forEach(w => {
-            if (w.id === 'shield') {
-                const stats = w.getStats();
-                const r = 60 * stats.area;
-                CTX.save();
-                CTX.translate(this.player.x, this.player.y);
-                CTX.rotate(w.shieldAngle);
-                const gradient = CTX.createRadialGradient(0, 0, r - 10, 0, 0, r + 10);
-                gradient.addColorStop(0, 'rgba(0, 200, 255, 0)');
-                gradient.addColorStop(0.5, 'rgba(0, 200, 255, 0.3)');
-                gradient.addColorStop(1, 'rgba(0, 200, 255, 0)');
-                CTX.fillStyle = gradient;
-                CTX.beginPath();
-                CTX.arc(0, 0, r, 0, Math.PI * 2);
-                CTX.fill();
-                CTX.strokeStyle = 'rgba(0, 200, 255, 0.6)';
-                CTX.lineWidth = 2;
-                CTX.setLineDash([10, 5]);
-                CTX.stroke();
-                CTX.setLineDash([]);
-                CTX.restore();
+        const weapon = this.player.weapon;
+        
+        // 护盾效果
+        if (weapon.effects.shield.unlocked) {
+            const r = weapon.shieldRadius || 60;
+            CTX.save();
+            CTX.translate(this.player.x, this.player.y);
+            CTX.rotate(weapon.shieldAngle);
+            const gradient = CTX.createRadialGradient(0, 0, r - 10, 0, 0, r + 10);
+            gradient.addColorStop(0, 'rgba(0, 200, 255, 0)');
+            gradient.addColorStop(0.5, 'rgba(0, 200, 255, 0.3)');
+            gradient.addColorStop(1, 'rgba(0, 200, 255, 0)');
+            CTX.fillStyle = gradient;
+            CTX.beginPath();
+            CTX.arc(0, 0, r, 0, Math.PI * 2);
+            CTX.fill();
+            CTX.strokeStyle = 'rgba(0, 200, 255, 0.6)';
+            CTX.lineWidth = 2;
+            CTX.setLineDash([10, 5]);
+            CTX.stroke();
+            CTX.setLineDash([]);
+            CTX.restore();
+        }
+        
+        // 僚机效果
+        if (weapon.effects.wingman.unlocked) {
+            const level = weapon.effects.wingman.level;
+            const wingCount = Math.ceil(level / 2);
+            for (let i = 0; i < wingCount; i++) {
+                const offset = weapon.wingOffset + i * 25;
+                this.drawWingman(this.player.x - offset, this.player.y - 5);
+                this.drawWingman(this.player.x + offset, this.player.y - 5);
             }
-            
-            if (w.id === 'wingman') {
-                const wingCount = 1 + Math.floor(w.level / 3);
-                for (let i = 0; i < wingCount; i++) {
-                    const offset = w.wingOffset + i * 30;
-                    this.drawWingman(this.player.x - offset, this.player.y - 5);
-                    this.drawWingman(this.player.x + offset, this.player.y - 5);
-                }
-            }
-        });
+        }
     },
     
     drawLightningEffects() {
@@ -267,18 +269,17 @@ const Game = {
     },
     
     drawLaserBeams() {
-        this.player.weapons.forEach(w => {
-            if (w.id === 'laserbeam' && w.isActive) {
-                const gradient = CTX.createLinearGradient(w.beamX - w.beamWidth/2, 0, w.beamX + w.beamWidth/2, 0);
-                gradient.addColorStop(0, 'rgba(255, 0, 0, 0)');
-                gradient.addColorStop(0.3, 'rgba(255, 100, 100, 0.6)');
-                gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.9)');
-                gradient.addColorStop(0.7, 'rgba(255, 100, 100, 0.6)');
-                gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
-                CTX.fillStyle = gradient;
-                CTX.fillRect(w.beamX - w.beamWidth/2, 0, w.beamWidth, this.player.y - 20);
-            }
-        });
+        const weapon = this.player.weapon;
+        if (weapon.effects.laser.unlocked && weapon.laserActive) {
+            const gradient = CTX.createLinearGradient(weapon.laserX - weapon.laserWidth/2, 0, weapon.laserX + weapon.laserWidth/2, 0);
+            gradient.addColorStop(0, 'rgba(255, 0, 0, 0)');
+            gradient.addColorStop(0.3, 'rgba(255, 100, 100, 0.6)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.9)');
+            gradient.addColorStop(0.7, 'rgba(255, 100, 100, 0.6)');
+            gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+            CTX.fillStyle = gradient;
+            CTX.fillRect(weapon.laserX - weapon.laserWidth/2, 0, weapon.laserWidth, this.player.y - 20);
+        }
     },
     
     drawWingman(x, y) {
@@ -397,8 +398,8 @@ const Game = {
             else if (opt.stat === 'projSpeed') this.player.projSpeed *= opt.val;
             else if (opt.val < 1) this.player[opt.stat] += opt.val;
             else this.player[opt.stat] *= opt.val;
-        } else if (opt.type === 'weapon') {
-            this.player.addWeapon(opt.weaponId);
+        } else if (opt.type === 'effect') {
+            this.player.unlockEffect(opt.effectId);
         }
         document.getElementById('levelup-screen').classList.add('hidden');
         this.state = 'PLAYING';

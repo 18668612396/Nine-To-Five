@@ -42,20 +42,18 @@ class Player extends Entity {
         this.amount = 0;
         this.knockback = 1.0;
 
-        // 武器
-        this.weapons = [];
+        // 主武器（单一武器系统）
+        this.weapon = new MainWeapon(this);
 
         // 角色特性
         if (charType === 'guagua') {
             this.color = COLORS.guagua;
             this.speed = 6;
-            this.addWeapon('basicshot'); // 瓜瓜用基础射击
         } else {
             this.color = COLORS.kuikui;
             this.maxHp = 150;
             this.hp = 150;
-            this.addWeapon('basicshot'); // 葵葵也用基础射击
-            this.addWeapon('shield'); // 葵葵额外有护盾
+            this.weapon.unlockEffect('shield'); // 葵葵初始有护盾
         }
 
         // 视觉
@@ -68,22 +66,9 @@ class Player extends Entity {
         this.maxY = CONFIG.GAME_HEIGHT - this.radius;
     }
 
-    addWeapon(id) {
-        const w = this.weapons.find(w => w.id === id);
-        if (w) {
-            w.levelUp();
-        } else {
-            switch(id) {
-                case 'basicshot': this.weapons.push(new WeaponBasicShot(this)); break;
-                case 'spread': this.weapons.push(new WeaponSpread(this)); break;
-                case 'lightning': this.weapons.push(new WeaponLightning(this)); break;
-                case 'missile': this.weapons.push(new WeaponMissile(this)); break;
-                case 'laserbeam': this.weapons.push(new WeaponLaserBeam(this)); break;
-                case 'shield': this.weapons.push(new WeaponShield(this)); break;
-                case 'plasma': this.weapons.push(new WeaponPlasma(this)); break;
-                case 'wingman': this.weapons.push(new WeaponWingman(this)); break;
-            }
-        }
+    // 解锁/升级武器效果
+    unlockEffect(effectId) {
+        this.weapon.unlockEffect(effectId);
     }
 
     update() {
@@ -107,7 +92,7 @@ class Player extends Entity {
         }
 
         // 武器更新
-        this.weapons.forEach(w => w.update());
+        this.weapon.update();
     }
 
     draw(ctx, camX, camY) {

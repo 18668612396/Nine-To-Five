@@ -1,52 +1,88 @@
-// --- 武器类 (雷霆战机风格 - 向前方攻击) ---
+// --- 主武器系统 (单一武器 + 效果卡牌) ---
 
-class Weapon {
-    constructor(player, id, cooldown) {
+// 主武器类 - 玩家唯一的武器，通过卡牌解锁不同效果
+class MainWeapon {
+    constructor(player) {
         this.player = player;
-        this.id = id;
-        this.baseCooldown = cooldown;
+        this.baseCooldown = 12;
         this.timer = 0;
-        this.level = 1;
+        
+        // 效果开关和等级（通过卡牌解锁/升级）
+        this.effects = {
+            spread: { unlocked: false, level: 0 },      // 散射
+            lightning: { unlocked: false, level: 0 },   // 闪电链
+            missile: { unlocked: false, level: 0 },     // 追踪导弹
+            laser: { unlocked: false, level: 0 },       // 激光束
+            shield: { unlocked: false, level: 0 },      // 护盾
+            plasma: { unlocked: false, level: 0 },      // 等离子
+            wingman: { unlocked: false, level: 0 }      // 僚机
+        };
+        
+        // 护盾相关
+        this.shieldAngle = 0;
+        
+        // 激光相关
+        this.laserActive = false;
+        this.laserWidth = 20;
+        
+        // 僚机位置
+        this.wingOffset = 50;
+        
+        // 各效果独立计时器
+        this.timers = {
+            missile: 0,
+            lightning: 0,
+            plasma: 0
+        };
     }
     
-    levelUp() { this.level++; }
-    
-    update() {
-        if (this.timer > 0) {
-            this.timer--;
-        } else {
-            this.fire();
-            this.timer = this.baseCooldown * this.player.cooldownMult;
+    // 解锁或升级效果
+    unlockEffect(effectId) {
+        if (this.effects[effectId]) {
+            if (!this.effects[effectId].unlocked) {
+                this.effects[effectId].unlocked = true;
+                this.effects[effectId].level = 1;
+            } else {
+                this.effects[effectId].level++;
+            }
         }
     }
     
-    fire() {}
-    
     getStats() {
         return {
-            dmg: 10 * this.player.damageMult,
-            area: 1 * this.player.areaMult,
-            speed: 1 * this.player.projSpeed,
-            duration: 60 * this.player.durationMult,
-            kb: 2 * this.player.knockback,
+            dmg: this.player.damageMult,
+            area: this.player.areaMult,
+            speed: this.player.projSpeed,
+            duration: this.player.durationMult,
+            kb: this.player.knockback,
             amount: this.player.amount
         };
     }
-}
-
-// ========== 基础武器 ==========
-
-// 直线射击 - 基础主武器，向前方发射子弹
-class WeaponBasicShot extends Weapon {
-    constructor(player) { 
-        super(player, 'basicshot', 12); 
+    
+    update() {
+        const stats = this.getStats();
+        
+        // 主射击计时
+        if (this.timer > 0) {
+            this.timer--;
+        } else {
+            this.fireBasic(stats);
+            this.timer = this.baseCooldown * this.player.cooldownMult;
+        }
+        
+        // 各效果更新
+        this.updateSpread(stats);
+        this.updateLightning(stats);
+        this.updateMissile(stats);
+        this.updateLaser(stats);
+        this.updateShield(stats);
+        this.updatePlasma(stats);
+        this.updateWingman(stats);
     }
     
-    fire() {
-        const stats = this.getStats();
+    // ========== 基础射击 ==========
+    fireBasic(stats) {
         const count = 1 + stats.amount;
-        
-        // 多发子弹时左右分布
         const spacing = 15;
         const startX = -(count - 1) * spacing / 2;
         
@@ -55,7 +91,7 @@ class WeaponBasicShot extends Weapon {
             const p = new Projectile(
                 this.player.x + offsetX, 
                 this.player.y - 15,
-                0, -1,  // 固定向上
+                0, -1,
                 14 * stats.speed,
                 80,
                 12 * stats.dmg,
@@ -66,57 +102,56 @@ class WeaponBasicShot extends Weapon {
             Game.projectiles.push(p);
         }
     }
-}
-
-// 散射攻击 - 扇形发射多发子弹
-class WeaponSpread extends Weapon {
-    constructor(player) { 
-        super(player, 'spread', 20); 
-    }
     
-    fire() {
-        const stats = this.getStats();
-        const baseCount = 3 + Math.floor(this.level / 2);
-        const count = baseCount + stats.amount;
-        const spreadAngle = Math.PI / 4; // 45度扇形
+    // ========== 散射效果 ==========
+    updateSpread(stats) {
+        if (!this.effects.spread.unlocked) return;
         
-        for (let i = 0; i < count; i++) {
-            const angle = -Math.PI / 2 + (i - (count - 1) / 2) * (spreadAngle / (count - 1 || 1));
-            const dx = Math.cos(angle);
-            const dy = Math.sin(angle);
+        // 散射跟随主射击一起发射
+        if (this.timer === 0) {
+            const level = this.effects.spread.level;
+            const count = 2 + level; // 2-5发散射
+            const spreadAngle = Math.PI / 5; // 36度扇形
             
-            const p = new Projectile(
-                this.player.x, 
-                this.player.y - 10,
-                dx, dy,
-                12 * stats.speed,
-                60,
-                8 * stats.dmg,
-                2 * stats.kb,
-                5, '#ffff00', 1
-            );
-            p.projectileType = 'spread';
-            Game.projectiles.push(p);
+            for (let i = 0; i < count; i++) {
+                const angle = -Math.PI / 2 + (i - (count - 1) / 2) * (spreadAngle / (count - 1 || 1));
+                const dx = Math.cos(angle);
+                const dy = Math.sin(angle);
+                
+                const p = new Projectile(
+                    this.player.x, 
+                    this.player.y - 10,
+                    dx, dy,
+                    10 * stats.speed,
+                    50,
+                    6 * stats.dmg * (1 + level * 0.1),
+                    1.5 * stats.kb,
+                    4, '#ffff00', 1
+                );
+                p.projectileType = 'spread';
+                Game.projectiles.push(p);
+            }
         }
     }
-}
-
-// 闪电链 - 攻击敌人后会跳跃到附近敌人
-class WeaponLightning extends Weapon {
-    constructor(player) { 
-        super(player, 'lightning', 35); 
-    }
     
-    fire() {
-        const stats = this.getStats();
-        const chainCount = 3 + Math.floor(this.level / 2); // 跳跃次数
+    // ========== 闪电链效果 ==========
+    updateLightning(stats) {
+        if (!this.effects.lightning.unlocked) return;
         
-        // 找到前方最近的敌人
+        this.timers.lightning--;
+        if (this.timers.lightning > 0) return;
+        
+        const level = this.effects.lightning.level;
+        this.timers.lightning = Math.max(20, 35 - level * 3);
+        
+        const chainCount = 2 + level;
+        
+        // 找前方最近敌人
         let target = null;
         let minDist = 600;
         
         Game.enemies.forEach(e => {
-            if (e.y < this.player.y) { // 只攻击前方敌人
+            if (e.y < this.player.y) {
                 const dist = Math.sqrt((e.x - this.player.x) ** 2 + (e.y - this.player.y) ** 2);
                 if (dist < minDist) {
                     minDist = dist;
@@ -127,24 +162,12 @@ class WeaponLightning extends Weapon {
         
         if (target) {
             this.chainLightning(this.player.x, this.player.y - 10, target, chainCount, stats, []);
-        } else {
-            // 没有目标时向前发射闪电
-            const p = new LightningProjectile(
-                this.player.x, this.player.y - 10,
-                0, -1,
-                18 * stats.speed,
-                40,
-                15 * stats.dmg,
-                1 * stats.kb
-            );
-            Game.projectiles.push(p);
         }
     }
     
-    chainLightning(fromX, fromY, target, remainingChains, stats, hitList) {
-        if (!target || remainingChains <= 0) return;
+    chainLightning(fromX, fromY, target, remaining, stats, hitList) {
+        if (!target || remaining <= 0) return;
         
-        // 创建闪电效果
         Game.lightningEffects = Game.lightningEffects || [];
         Game.lightningEffects.push({
             x1: fromX, y1: fromY,
@@ -152,14 +175,14 @@ class WeaponLightning extends Weapon {
             life: 15
         });
         
-        // 造成伤害
-        const damage = 20 * stats.dmg * (1 - (3 - remainingChains) * 0.15); // 每次跳跃伤害递减
+        const level = this.effects.lightning.level;
+        const damage = 18 * stats.dmg * (1 + level * 0.15);
         target.takeDamage(damage, 0, 0);
         hitList.push(target);
         
-        // 寻找下一个目标
+        // 找下一个目标
         let nextTarget = null;
-        let minDist = 200; // 跳跃范围
+        let minDist = 180 + level * 20;
         
         Game.enemies.forEach(e => {
             if (!hitList.includes(e) && !e.markedForDeletion) {
@@ -173,199 +196,155 @@ class WeaponLightning extends Weapon {
         
         if (nextTarget) {
             setTimeout(() => {
-                this.chainLightning(target.x, target.y, nextTarget, remainingChains - 1, stats, hitList);
+                this.chainLightning(target.x, target.y, nextTarget, remaining - 1, stats, hitList);
             }, 50);
         }
     }
-}
-
-// 导弹 - 追踪敌人的导弹
-class WeaponMissile extends Weapon {
-    constructor(player) { 
-        super(player, 'missile', 45); 
-    }
     
-    fire() {
-        const stats = this.getStats();
-        const count = 1 + Math.floor(stats.amount / 2);
+    // ========== 追踪导弹效果 ==========
+    updateMissile(stats) {
+        if (!this.effects.missile.unlocked) return;
+        
+        this.timers.missile--;
+        if (this.timers.missile > 0) return;
+        
+        const level = this.effects.missile.level;
+        this.timers.missile = Math.max(30, 50 - level * 5);
+        
+        const count = Math.ceil(level / 2);
         
         for (let i = 0; i < count; i++) {
             const offsetX = (i - (count - 1) / 2) * 20;
             const p = new MissileProjectile(
                 this.player.x + offsetX, 
                 this.player.y - 10,
-                25 * stats.dmg,
+                22 * stats.dmg * (1 + level * 0.1),
                 3 * stats.kb,
                 stats.speed
             );
             Game.projectiles.push(p);
         }
     }
-}
-
-// 激光束 - 持续伤害的激光
-class WeaponLaserBeam extends Weapon {
-    constructor(player) { 
-        super(player, 'laserbeam', 1); // 每帧更新
-        this.isActive = false;
-        this.beamWidth = 20;
-    }
     
-    fire() {
-        const stats = this.getStats();
-        this.beamWidth = 20 + this.level * 5;
+    // ========== 激光束效果 ==========
+    updateLaser(stats) {
+        if (!this.effects.laser.unlocked) {
+            this.laserActive = false;
+            return;
+        }
         
-        // 激光束从玩家位置向上延伸到屏幕顶部
+        const level = this.effects.laser.level;
+        this.laserWidth = 15 + level * 8;
+        this.laserActive = true;
+        
         const beamX = this.player.x;
         const beamTop = 0;
         const beamBottom = this.player.y - 20;
         
-        // 检测激光范围内的敌人
+        // 检测激光范围内敌人
         Game.enemies.forEach(e => {
             if (e.y < beamBottom && e.y > beamTop) {
-                if (Math.abs(e.x - beamX) < (this.beamWidth / 2 + e.radius)) {
-                    // 每帧造成少量伤害
-                    e.takeDamage(0.5 * stats.dmg, 0, 0);
+                if (Math.abs(e.x - beamX) < (this.laserWidth / 2 + e.radius)) {
+                    e.takeDamage(0.4 * stats.dmg * (1 + level * 0.2), 0, 0);
                 }
             }
         });
         
-        // 存储激光状态用于绘制
-        this.isActive = true;
-        this.beamX = beamX;
-        this.beamTop = beamTop;
-        this.beamBottom = beamBottom;
-    }
-}
-
-// 护盾 - 环绕玩家的防护罩，接触敌人造成伤害
-class WeaponShield extends Weapon {
-    constructor(player) { 
-        super(player, 'shield', 8); 
-        this.shieldAngle = 0;
+        this.laserX = beamX;
+        this.laserTop = beamTop;
+        this.laserBottom = beamBottom;
     }
     
-    fire() {
-        const stats = this.getStats();
-        const radius = 60 * stats.area;
-        this.shieldAngle += 0.1;
+    // ========== 护盾效果 ==========
+    updateShield(stats) {
+        if (!this.effects.shield.unlocked) return;
         
-        // 检测护盾范围内的敌人
+        const level = this.effects.shield.level;
+        const radius = (50 + level * 10) * stats.area;
+        this.shieldAngle += 0.08;
+        this.shieldRadius = radius;
+        
+        // 检测护盾范围内敌人
         Game.enemies.forEach(e => {
             const dist = Math.sqrt((e.x - this.player.x) ** 2 + (e.y - this.player.y) ** 2);
             if (dist < radius + e.radius) {
                 const kx = (e.x - this.player.x) / dist * stats.kb * 2;
                 const ky = (e.y - this.player.y) / dist * stats.kb * 2;
-                e.takeDamage(5 * stats.dmg, kx, ky);
+                e.takeDamage(4 * stats.dmg * (1 + level * 0.15), kx, ky);
             }
         });
     }
-}
-
-// 等离子炮 - 发射大型能量球，穿透敌人
-class WeaponPlasma extends Weapon {
-    constructor(player) { 
-        super(player, 'plasma', 50); 
-    }
     
-    fire() {
-        const stats = this.getStats();
+    // ========== 等离子炮效果 ==========
+    updatePlasma(stats) {
+        if (!this.effects.plasma.unlocked) return;
+        
+        this.timers.plasma--;
+        if (this.timers.plasma > 0) return;
+        
+        const level = this.effects.plasma.level;
+        this.timers.plasma = Math.max(35, 55 - level * 5);
         
         const p = new PlasmaProjectile(
             this.player.x, 
             this.player.y - 15,
             0, -1,
-            8 * stats.speed,
+            7 * stats.speed,
             120,
-            35 * stats.dmg,
+            30 * stats.dmg * (1 + level * 0.15),
             5 * stats.kb,
-            20 * stats.area
+            16 + level * 4
         );
         Game.projectiles.push(p);
     }
-}
-
-// 侧翼机 - 两侧的僚机同时开火
-class WeaponWingman extends Weapon {
-    constructor(player) { 
-        super(player, 'wingman', 15); 
-        this.wingOffset = 50;
-    }
     
-    fire() {
-        const stats = this.getStats();
-        const wingCount = 1 + Math.floor(this.level / 3);
+    // ========== 僚机效果 ==========
+    updateWingman(stats) {
+        if (!this.effects.wingman.unlocked) return;
         
-        for (let w = 0; w < wingCount; w++) {
-            const offset = this.wingOffset + w * 30;
+        // 僚机跟随主射击
+        if (this.timer === 0) {
+            const level = this.effects.wingman.level;
+            const wingCount = Math.ceil(level / 2);
             
-            // 左侧僚机
-            const pLeft = new Projectile(
-                this.player.x - offset, 
-                this.player.y - 5,
-                0, -1,
-                12 * stats.speed,
-                70,
-                8 * stats.dmg,
-                1 * stats.kb,
-                4, '#ff6600', 1
-            );
-            pLeft.projectileType = 'wingman';
-            Game.projectiles.push(pLeft);
-            
-            // 右侧僚机
-            const pRight = new Projectile(
-                this.player.x + offset, 
-                this.player.y - 5,
-                0, -1,
-                12 * stats.speed,
-                70,
-                8 * stats.dmg,
-                1 * stats.kb,
-                4, '#ff6600', 1
-            );
-            pRight.projectileType = 'wingman';
-            Game.projectiles.push(pRight);
+            for (let w = 0; w < wingCount; w++) {
+                const offset = this.wingOffset + w * 25;
+                
+                // 左僚机
+                const pLeft = new Projectile(
+                    this.player.x - offset, 
+                    this.player.y - 5,
+                    0, -1,
+                    12 * stats.speed,
+                    70,
+                    7 * stats.dmg * (1 + level * 0.1),
+                    1 * stats.kb,
+                    4, '#ff6600', 1
+                );
+                pLeft.projectileType = 'wingman';
+                Game.projectiles.push(pLeft);
+                
+                // 右僚机
+                const pRight = new Projectile(
+                    this.player.x + offset, 
+                    this.player.y - 5,
+                    0, -1,
+                    12 * stats.speed,
+                    70,
+                    7 * stats.dmg * (1 + level * 0.1),
+                    1 * stats.kb,
+                    4, '#ff6600', 1
+                );
+                pRight.projectileType = 'wingman';
+                Game.projectiles.push(pRight);
+            }
         }
     }
 }
 
 // ========== 特殊投射物类 ==========
 
-// 闪电投射物
-class LightningProjectile extends Projectile {
-    constructor(x, y, dx, dy, speed, duration, damage, knockback) {
-        super(x, y, dx, dy, speed, duration, damage, knockback, 8, '#00ffff', 3);
-        this.projectileType = 'lightning';
-    }
-    
-    draw(ctx, camX, camY) {
-        const x = this.x - camX;
-        const y = this.y - camY;
-        
-        ctx.save();
-        
-        // 闪电光晕
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, 20);
-        gradient.addColorStop(0, 'rgba(100, 200, 255, 0.8)');
-        gradient.addColorStop(0.5, 'rgba(100, 200, 255, 0.3)');
-        gradient.addColorStop(1, 'rgba(100, 200, 255, 0)');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, 20, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 闪电核心
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(x, y, 6, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.restore();
-    }
-}
-
-// 导弹投射物 - 追踪敌人
+// 导弹 - 追踪敌人
 class MissileProjectile extends Projectile {
     constructor(x, y, damage, knockback, speedMult) {
         super(x, y, 0, -1, 6, 180, damage, knockback, 8, '#ff4400', 1);
@@ -389,13 +368,12 @@ class MissileProjectile extends Projectile {
             });
         }
         
-        // 追踪目标
+        // 追踪
         if (this.target && !this.target.markedForDeletion) {
             const targetAngle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
             const currentAngle = Math.atan2(this.dy, this.dx);
             let angleDiff = targetAngle - currentAngle;
             
-            // 归一化角度差
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
             
@@ -406,12 +384,8 @@ class MissileProjectile extends Projectile {
             this.dy = Math.sin(newAngle);
         }
         
-        // 添加尾焰粒子
-        this.trailParticles.push({
-            x: this.x,
-            y: this.y + 5,
-            life: 10
-        });
+        // 尾焰
+        this.trailParticles.push({ x: this.x, y: this.y + 5, life: 10 });
         this.trailParticles = this.trailParticles.filter(p => p.life-- > 0);
         
         this.x += this.dx * this.speed * this.speedMult;
@@ -443,7 +417,6 @@ class MissileProjectile extends Projectile {
         ctx.translate(x, y);
         ctx.rotate(angle + Math.PI / 2);
         
-        // 导弹身体
         ctx.fillStyle = '#888888';
         ctx.beginPath();
         ctx.moveTo(0, -12);
@@ -452,7 +425,6 @@ class MissileProjectile extends Projectile {
         ctx.closePath();
         ctx.fill();
         
-        // 导弹头部
         ctx.fillStyle = '#ff4400';
         ctx.beginPath();
         ctx.arc(0, -8, 4, 0, Math.PI * 2);
@@ -462,7 +434,7 @@ class MissileProjectile extends Projectile {
     }
 }
 
-// 等离子投射物 - 大型穿透能量球
+// 等离子 - 大型穿透
 class PlasmaProjectile extends Projectile {
     constructor(x, y, dx, dy, speed, duration, damage, knockback, size) {
         super(x, y, dx, dy, speed, duration, damage, knockback, size, '#ff00ff', 999);
@@ -482,7 +454,6 @@ class PlasmaProjectile extends Projectile {
         
         ctx.save();
         
-        // 外层光晕
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.radius + 15 + pulse);
         gradient.addColorStop(0, 'rgba(255, 0, 255, 0.8)');
         gradient.addColorStop(0.5, 'rgba(255, 100, 255, 0.4)');
@@ -492,16 +463,14 @@ class PlasmaProjectile extends Projectile {
         ctx.arc(x, y, this.radius + 15 + pulse, 0, Math.PI * 2);
         ctx.fill();
         
-        // 核心
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(x, y, this.radius - 5, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 中层
         ctx.fillStyle = '#ff88ff';
         ctx.beginPath();
         ctx.arc(x, y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, y, this.radius - 5, 0, Math.PI * 2);
         ctx.fill();
         
         ctx.restore();
