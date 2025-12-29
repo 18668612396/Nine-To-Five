@@ -69,17 +69,39 @@ const CharacterRenderer = {
         ctx.ellipse(0, 6, 15, 12, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 肚皮
-        ctx.fillStyle = '#fff';
+        // 蓬松侧边（比身体稍亮一点的灰色）
+        ctx.fillStyle = '#a8bfc9';
+        ctx.beginPath(); ctx.arc(-13, 6, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(13, 6, 4, 0, Math.PI * 2); ctx.fill();
+
+        // 肚皮（稍微暗一点的白色）
+        ctx.fillStyle = '#f0f0f0';
         ctx.beginPath();
-        ctx.ellipse(0, 8, 9, 7.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 4, 9, 6, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 爪子
+        // 爪子 - 最后画，x坐标往外移到身体两侧
         const bob = Math.sin(frameCount * 0.2) * 2;
         ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.ellipse(-6, 13 + bob, 3.5, 3, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.ellipse(6, 13 - bob, 3.5, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(-10, 12 + bob, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(10, 12 - bob, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+        // 项圈（先画，会被头部部分遮挡）
+        ctx.strokeStyle = '#e53935';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, 12, 0, Math.PI);
+        ctx.stroke();
+        
+        // 金色圆球铃铛
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.arc(0, 12, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffb300';
+        ctx.beginPath();
+        ctx.arc(0, 13, 1.5, 0, Math.PI * 2);
+        ctx.fill();
 
         // 头部
         ctx.fillStyle = '#fff';
@@ -87,7 +109,7 @@ const CharacterRenderer = {
         ctx.arc(0, -6, 14.25, 0, Math.PI * 2);
         ctx.fill();
 
-        // 灰色面罩
+        // 灰色面罩 - 八字形
         ctx.fillStyle = COLORS.kuikui;
 
         // 耳朵
@@ -96,17 +118,16 @@ const CharacterRenderer = {
         ctx.beginPath();
         ctx.moveTo(10, -12); ctx.lineTo(14, -22); ctx.lineTo(2, -16); ctx.fill();
 
-        // 额头斑纹
-        ctx.beginPath();
-        ctx.arc(0, -6, 14.25, Math.PI, 0);
-        ctx.lineTo(0, -6);
-        ctx.fill();
-
+        // 额头斑纹 - 倒V形分割（灰色在上）
         ctx.beginPath();
         ctx.moveTo(-14, -6);
         ctx.quadraticCurveTo(-14, -20, 0, -20);
         ctx.quadraticCurveTo(14, -20, 14, -6);
+        // 倒V形下边缘 - 从两侧向中间上方汇聚
+        ctx.lineTo(12, -2);
         ctx.lineTo(0, -10);
+        ctx.lineTo(-12, -2);
+        ctx.lineTo(-14, -6);
         ctx.fill();
 
         // 眼睛

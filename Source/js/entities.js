@@ -1,4 +1,4 @@
-// --- 游戏实体类 (垂直滚动版) ---
+// --- 游戏实体类 (雷霆战机风格) ---
 
 class Entity {
     constructor(x, y, radius, color) {
@@ -49,12 +49,13 @@ class Player extends Entity {
         if (charType === 'guagua') {
             this.color = COLORS.guagua;
             this.speed = 6;
-            this.addWeapon('bounceball_blue'); // 瓜瓜用蓝色弹射球
+            this.addWeapon('basicshot'); // 瓜瓜用基础射击
         } else {
             this.color = COLORS.kuikui;
             this.maxHp = 150;
             this.hp = 150;
-            this.addWeapon('bounceball_orange'); // 葵葵用橙色弹射球
+            this.addWeapon('basicshot'); // 葵葵也用基础射击
+            this.addWeapon('shield'); // 葵葵额外有护盾
         }
 
         // 视觉
@@ -73,14 +74,14 @@ class Player extends Entity {
             w.levelUp();
         } else {
             switch(id) {
-                case 'fishbone': this.weapons.push(new WeaponFishbone(this)); break;
-                case 'aura': this.weapons.push(new WeaponAura(this)); break;
-                case 'garlic': this.weapons.push(new WeaponGarlic(this)); break;
-                case 'axe': this.weapons.push(new WeaponAxe(this)); break;
-                case 'wand': this.weapons.push(new WeaponWand(this)); break;
-                case 'orbit': this.weapons.push(new WeaponOrbit(this)); break;
-                case 'bounceball_blue': this.weapons.push(new WeaponBounceBall(this, '#4fc3f7')); break;
-                case 'bounceball_orange': this.weapons.push(new WeaponBounceBall(this, '#ffb74d')); break;
+                case 'basicshot': this.weapons.push(new WeaponBasicShot(this)); break;
+                case 'spread': this.weapons.push(new WeaponSpread(this)); break;
+                case 'lightning': this.weapons.push(new WeaponLightning(this)); break;
+                case 'missile': this.weapons.push(new WeaponMissile(this)); break;
+                case 'laserbeam': this.weapons.push(new WeaponLaserBeam(this)); break;
+                case 'shield': this.weapons.push(new WeaponShield(this)); break;
+                case 'plasma': this.weapons.push(new WeaponPlasma(this)); break;
+                case 'wingman': this.weapons.push(new WeaponWingman(this)); break;
             }
         }
     }
@@ -353,14 +354,12 @@ class Projectile extends Entity {
         this.knockback = knockback;
         this.penetrate = penetrate || 1;
         this.hitList = [];
-        this.angle = 0;
-        this.rotationSpeed = (Math.random() - 0.5) * 0.5;
+        this.angle = Math.atan2(dy, dx); // 固定朝向移动方向
     }
 
     update() {
         this.x += this.dx * this.speed;
         this.y += this.dy * this.speed;
-        this.angle += this.rotationSpeed;
         this.duration--;
         if (this.duration <= 0) this.markedForDeletion = true;
         
@@ -379,25 +378,28 @@ class Projectile extends Entity {
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 1;
 
-        if (this.ownerId === 'orbit') {
-            // 小鱼干
+        if (this.projectileType === 'laser') {
+            // 激光子弹
+            ctx.fillStyle = '#00ffff';
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = 10;
+            ctx.fillRect(-3, -8, 6, 16);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-1, -6, 2, 12);
+        } else if (this.projectileType === 'spread') {
+            // 散射子弹
+            ctx.fillStyle = '#ffff00';
+            ctx.shadowColor = '#ffff00';
+            ctx.shadowBlur = 8;
             ctx.beginPath();
-            ctx.ellipse(0, 0, 10, 5, 0, 0, Math.PI * 2);
+            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
             ctx.fill();
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(-10, 0); ctx.lineTo(-15, -5); ctx.lineTo(-15, 5); ctx.fill();
-        } else if (this.color === '#fff') {
-            // 鱼骨头
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(-8, 0); ctx.lineTo(8, 0);
-            ctx.moveTo(-8, -3); ctx.lineTo(-8, 3);
-            ctx.moveTo(8, -3); ctx.lineTo(8, 3);
-            ctx.moveTo(-4, -2); ctx.lineTo(-4, 2);
-            ctx.moveTo(4, -2); ctx.lineTo(4, 2);
-            ctx.stroke();
+        } else if (this.projectileType === 'wingman') {
+            // 僚机子弹
+            ctx.fillStyle = '#ff6600';
+            ctx.shadowColor = '#ff6600';
+            ctx.shadowBlur = 6;
+            ctx.fillRect(-2, -6, 4, 12);
         } else {
             // 普通投射物
             ctx.beginPath();
@@ -405,81 +407,6 @@ class Projectile extends Entity {
             ctx.fill();
             ctx.stroke();
         }
-        ctx.restore();
-    }
-}
-
-// 弹射球投射物 - 碰到屏幕边缘会弹射
-class BouncingProjectile extends Projectile {
-    constructor(x, y, dx, dy, speed, duration, damage, knockback, radius, color, penetrate) {
-        super(x, y, dx, dy, speed, duration, damage, knockback, radius, color, penetrate);
-        this.bounceCount = 0;
-        this.maxBounces = 10; // 最大弹射次数
-    }
-
-    update() {
-        this.x += this.dx * this.speed;
-        this.y += this.dy * this.speed;
-        this.angle += 0.1;
-        this.duration--;
-        
-        if (this.duration <= 0) {
-            this.markedForDeletion = true;
-            return;
-        }
-        
-        // 边缘弹射
-        const margin = this.radius;
-        
-        // 左右边缘弹射
-        if (this.x <= margin) {
-            this.x = margin;
-            this.dx = Math.abs(this.dx);
-            this.bounceCount++;
-        } else if (this.x >= CONFIG.GAME_WIDTH - margin) {
-            this.x = CONFIG.GAME_WIDTH - margin;
-            this.dx = -Math.abs(this.dx);
-            this.bounceCount++;
-        }
-        
-        // 上下边缘不弹射，飞出屏幕后销毁
-        if (this.y < -this.radius * 2 || this.y > CONFIG.GAME_HEIGHT + this.radius * 2) {
-            this.markedForDeletion = true;
-        }
-    }
-
-    draw(ctx, camX, camY) {
-        const x = this.x - camX;
-        const y = this.y - camY;
-        
-        ctx.save();
-        ctx.translate(x, y);
-        
-        // 外圈光晕
-        const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius * 1.5);
-        gradient.addColorStop(0, this.color);
-        gradient.addColorStop(0.6, this.color);
-        gradient.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(0, 0, this.radius * 1.5, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 主体圆球
-        ctx.fillStyle = this.color;
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        
-        // 高光
-        ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.beginPath();
-        ctx.arc(-this.radius * 0.3, -this.radius * 0.3, this.radius * 0.4, 0, Math.PI * 2);
-        ctx.fill();
-        
         ctx.restore();
     }
 }

@@ -130,8 +130,8 @@ const UI = {
                     <canvas id="panel-guagua-preview" class="char-panel-preview" width="80" height="80"></canvas>
                     <div class="char-panel-info">
                         <h3>瓜瓜 (Guagua)</h3>
-                        <p class="char-panel-desc">布偶猫</p>
-                        <p class="char-panel-stats">速度 +15% | 初始武器: 鱼骨飞镖</p>
+                        <p class="char-panel-desc">敏捷型战机</p>
+                        <p class="char-panel-stats">速度 +15% | 初始武器: 基础射击</p>
                     </div>
                     ${guaguaSelected ? '<span class="char-panel-check">✓</span>' : ''}
                 </div>
@@ -139,8 +139,8 @@ const UI = {
                     <canvas id="panel-kuikui-preview" class="char-panel-preview" width="80" height="80"></canvas>
                     <div class="char-panel-info">
                         <h3>葵葵 (Kuikui)</h3>
-                        <p class="char-panel-desc">蓝白英短</p>
-                        <p class="char-panel-stats">生命 +50% | 初始武器: 呼噜护盾</p>
+                        <p class="char-panel-desc">重装型战机</p>
+                        <p class="char-panel-stats">生命 +50% | 初始武器: 基础射击+护盾</p>
                     </div>
                     ${kuikuiSelected ? '<span class="char-panel-check">✓</span>' : ''}
                 </div>
@@ -283,9 +283,3 @@ window.showPanel = function(panelId) { UI.showPanel(panelId); };
 window.closePanel = function() { UI.closePanel(); };
 window.selectCharacter = function(charType) { UI.selectCharacter(charType); };
 window.startGameWithSelectedChar = function() { UI.startGameWithSelectedChar(); };
-window.toggleAutoBattle = function() {
-    CONFIG.AUTO_BATTLE = !CONFIG.AUTO_BATTLE;
-    const btn = document.getElementById('auto-battle-btn');
-    btn.innerText = CONFIG.AUTO_BATTLE ? '自动: 开' : '自动: 关';
-    btn.classList.toggle('off', !CONFIG.AUTO_BATTLE);
-};
