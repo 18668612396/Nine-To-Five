@@ -42,18 +42,22 @@ class Player extends Entity {
         this.amount = 0;
         this.knockback = 1.0;
 
-        // 主武器（单一武器系统）
-        this.weapon = new MainWeapon(this);
+        // 法杖系统（组合技能）
+        this.wand = new Wand(this, 8); // 8个技能槽
 
         // 角色特性
         if (charType === 'guagua') {
             this.color = COLORS.guagua;
             this.speed = 6;
+            // 瓜瓜初始：急速 + 电火花 装备在槽位
+            this.wand.slots[0] = { ...PASSIVE_SKILLS.rapid };
+            this.wand.slots[1] = { ...ACTIVE_SKILLS.spark };
         } else {
             this.color = COLORS.kuikui;
             this.maxHp = 150;
             this.hp = 150;
-            this.weapon.unlockEffect('shield'); // 葵葵初始有护盾
+            // 葵葵初始：火球 装备在槽位
+            this.wand.slots[0] = { ...ACTIVE_SKILLS.fireball };
         }
 
         // 视觉
@@ -66,9 +70,9 @@ class Player extends Entity {
         this.maxY = CONFIG.GAME_HEIGHT - this.radius;
     }
 
-    // 解锁/升级武器效果
-    unlockEffect(effectId) {
-        this.weapon.unlockEffect(effectId);
+    // 解锁/升级武器效果 (保留兼容)
+    addSkill(skillId) {
+        return this.wand.addSkill(skillId);
     }
 
     update() {
@@ -91,8 +95,8 @@ class Player extends Entity {
             if (this.hp > this.maxHp) this.hp = this.maxHp;
         }
 
-        // 武器更新
-        this.weapon.update();
+        // 法杖更新
+        this.wand.update();
     }
 
     draw(ctx, camX, camY) {
@@ -185,6 +189,9 @@ class Enemy extends Entity {
             this.markedForDeletion = true;
             Game.spawnGem(this.x, this.y, this.xpValue);
             Game.kills++;
+            
+            // 技能掉落
+            trySpawnSkillDrop(this.x, this.y, 0.1);
         }
     }
 

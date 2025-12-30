@@ -15,6 +15,7 @@
             <!-- HUD -->
             <div id="hud" class="hidden">
                 <button class="hud-back-btn" onclick="Game.backToMenu()">← 返回</button>
+                <button class="hud-inventory-btn" onclick="Game.openInventory()">📦 背包</button>
                 <div class="bar-container">
                     <div class="bar-label">HP</div>
                     <div id="hp-bar-bg"><div id="hp-bar-fill"></div></div>
@@ -138,6 +139,30 @@
                 <p>存活时间: <span id="final-time"></span></p>
                 <p>击杀数量: <span id="final-kills"></span></p>
                 <button onclick="location.reload()">再来一局</button>
+            </div>
+
+            <!-- 背包/技能编辑界面 -->
+            <div id="inventory-screen" class="screen hidden">
+                <div class="inventory-container">
+                    <div class="inventory-header">
+                        <h2>⚔️ 技能编辑</h2>
+                        <button class="inventory-close" onclick="Game.closeInventory()">✕ 关闭</button>
+                    </div>
+                    
+                    <div class="inventory-section">
+                        <h3>🔮 技能槽 (拖拽排列)</h3>
+                        <div id="wand-slots" class="slot-container"></div>
+                    </div>
+                    
+                    <div class="inventory-section">
+                        <h3>📦 背包</h3>
+                        <div id="inventory-items" class="inventory-grid"></div>
+                    </div>
+                    
+                    <div class="inventory-tip">
+                        💡 提示：点击背包技能放入槽位，点击槽位技能移回背包，拖拽槽位可交换顺序
+                    </div>
+                </div>
             </div>
         </div>
     </div>
