@@ -161,8 +161,9 @@ const Game = {
 
         this.enemies.forEach(e => {
             if (checkCircleCollide(e, this.player) && this.frameCount % 30 === 0) {
-                this.player.hp -= e.damage;
-                this.addFloatingText("-" + e.damage, this.player.x, this.player.y - 20, '#ff4444');
+                this.player.hp -= e.contactDamage;
+                const dmgText = e.contactDamage >= 1 ? '-1💔' : '-½💔';
+                this.addFloatingText(dmgText, this.player.x, this.player.y - 20, '#ff4444');
                 this.spawnParticles(this.player.x, this.player.y, '#ff0000', 5);
                 this.updateUI();
             }
@@ -343,9 +344,17 @@ const Game = {
             const x = roadX + Math.random() * roadWidth;
             let type = 1;
             if (this.time > 20 && Math.random() < 0.25) type = 2;
-            if (this.time > 45 && Math.random() < 0.15) type = 3;
+            if (this.time > 45 && Math.random() < 0.15) type = 3; // 精英
             this.enemies.push(new Enemy(x, CONFIG.ENEMY_SPAWN_Y, type));
         }
+        
+        // 每60秒生成一个Boss
+        if (this.time > 0 && this.time % 60 === 0 && this.frameCount % 60 === 0) {
+            const x = CONFIG.GAME_WIDTH / 2;
+            this.enemies.push(new Enemy(x, CONFIG.ENEMY_SPAWN_Y, 4));
+            this.addFloatingText('⚠️ BOSS来袭!', CONFIG.GAME_WIDTH / 2, 200, '#ff0000');
+        }
+        
         if (this.frameCount % 600 === 0) this.spawnWave();
     },
     
@@ -386,13 +395,23 @@ const Game = {
         container.innerHTML = '';
         const options = [];
         const pool = [...UPGRADES];
+        
         for (let i = 0; i < 3 && pool.length > 0; i++) {
             const idx = Math.floor(Math.random() * pool.length);
-            options.push(pool.splice(idx, 1)[0]);
+            let opt = pool.splice(idx, 1)[0];
+            
+            // 15%概率技能卡变成Lv2
+            if (opt.type === 'skill' && Math.random() < 0.15) {
+                opt = { ...opt, skillLevel: 2, name: opt.name + ' ★★', desc: opt.desc + ' (Lv.2)' };
+            }
+            
+            options.push(opt);
         }
+        
         options.forEach(opt => {
             const div = document.createElement('div');
             div.className = 'upgrade-card';
+            if (opt.skillLevel === 2) div.classList.add('rare-card');
             div.innerHTML = `<h3>${opt.name}</h3><p>${opt.desc}</p>`;
             div.onclick = () => this.selectUpgrade(opt);
             container.appendChild(div);
@@ -403,7 +422,10 @@ const Game = {
 
     selectUpgrade(opt) {
         if (opt.type === 'stat') {
-            if (opt.stat === 'maxHp') { this.player.maxHp += opt.val; this.player.hp += opt.val; }
+            if (opt.stat === 'maxHp') { 
+                this.player.maxHp += opt.val; 
+                this.player.hp += opt.val; // 同时恢复
+            }
             else if (opt.stat === 'regen') this.player.regen += opt.val;
             else if (opt.stat === 'cooldownMult') this.player.cooldownMult *= opt.val;
             else if (opt.stat === 'speed') this.player.speed *= opt.val;
@@ -413,8 +435,17 @@ const Game = {
             else this.player[opt.stat] *= opt.val;
         } else if (opt.type === 'skill') {
             // 添加技能到背包
-            this.player.wand.addSkillToInventory(opt.skillId);
-            this.addFloatingText('+' + ALL_SKILLS[opt.skillId].name, this.player.x, this.player.y - 30, '#00ff00');
+            const baseSkill = ALL_SKILLS[opt.skillId];
+            const level = opt.skillLevel || 1;
+            const skillToAdd = { 
+                ...baseSkill, 
+                level,
+                name: level > 1 ? baseSkill.name + '+'.repeat(level - 1) : baseSkill.name
+            };
+            this.player.wand.inventory.push(skillToAdd);
+            
+            const color = level >= 2 ? '#9b59b6' : '#00ff00';
+            this.addFloatingText('+' + skillToAdd.name, this.player.x, this.player.y - 30, color);
         }
         document.getElementById('levelup-screen').classList.add('hidden');
         this.state = 'PLAYING';
@@ -425,9 +456,22 @@ const Game = {
     addFloatingText(text, x, y, color) { this.floatingTexts.push({ text, x, y, color, life: 30 }); },
 
     updateUI() {
-        const hpPct = Math.max(0, (this.player.hp / this.player.maxHp) * 100);
-        document.getElementById('hp-bar-fill').style.width = hpPct + '%';
-        document.getElementById('hp-text').innerText = `${Math.floor(this.player.hp)}/${this.player.maxHp}`;
+        // 血量心形显示
+        const fullHearts = Math.floor(this.player.hp);
+        const halfHeart = (this.player.hp % 1) >= 0.5;
+        let hpHtml = '';
+        
+        for (let i = 0; i < Math.floor(this.player.maxHp); i++) {
+            if (i < fullHearts) {
+                hpHtml += '<span class="heart full">❤️</span>';
+            } else if (i === fullHearts && halfHeart) {
+                hpHtml += '<span class="heart half">💔</span>';
+            } else {
+                hpHtml += '<span class="heart empty">🖤</span>';
+            }
+        }
+        
+        document.getElementById('hp-hearts').innerHTML = hpHtml;
         document.getElementById('xp-bar-fill').style.width = (this.xp / this.xpToNext) * 100 + '%';
         document.getElementById('level-text').innerText = 'Lv. ' + this.level;
         document.getElementById('kill-count').innerText = '击杀: ' + this.kills;
@@ -473,6 +517,8 @@ const Game = {
     
     renderInventory() {
         const wand = this.player.wand;
+        const mergeableSkills = wand.getMergeableSkills();
+        const mergeableIds = mergeableSkills.map(m => m.id + '_' + m.level);
         
         // 渲染技能槽
         const slotsContainer = document.getElementById('wand-slots');
@@ -488,8 +534,9 @@ const Game = {
             if (slot) {
                 div.classList.add('has-skill');
                 div.classList.add(slot.type === 'active' ? 'active-type' : 'passive-type');
-                div.innerHTML = `<span class="slot-index">${i + 1}</span><span class="slot-icon">${slot.icon}</span>`;
-                div.title = `${slot.name}\n${slot.desc || ''}`;
+                const levelStr = slot.level > 1 ? `<span class="skill-level skill-level-${slot.level}">${'★'.repeat(slot.level)}</span>` : '';
+                div.innerHTML = `<span class="slot-index">${i + 1}</span><span class="slot-icon">${slot.icon}</span>${levelStr}`;
+                div.title = `${slot.name} (Lv.${slot.level || 1})\n${slot.desc || ''}`;
             } else {
                 div.innerHTML = `<span class="slot-index">${i + 1}</span>`;
             }
@@ -502,21 +549,38 @@ const Game = {
                 }
             };
             
-            // 拖拽事件
+            // 拖拽事件 - 槽位拖出
             div.ondragstart = (e) => {
-                e.dataTransfer.setData('slotIndex', i);
-                div.classList.add('dragging');
+                if (wand.slots[i]) {
+                    e.dataTransfer.setData('type', 'slot');
+                    e.dataTransfer.setData('slotIndex', i);
+                    div.classList.add('dragging');
+                }
             };
             div.ondragend = () => div.classList.remove('dragging');
+            
+            // 拖拽事件 - 接收拖入
             div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over'); };
             div.ondragleave = () => div.classList.remove('drag-over');
             div.ondrop = (e) => {
                 e.preventDefault();
                 div.classList.remove('drag-over');
-                const fromIndex = parseInt(e.dataTransfer.getData('slotIndex'));
-                if (!isNaN(fromIndex) && fromIndex !== i) {
-                    wand.swapSlots(fromIndex, i);
-                    this.renderInventory();
+                const type = e.dataTransfer.getData('type');
+                
+                if (type === 'slot') {
+                    // 槽位之间交换
+                    const fromIndex = parseInt(e.dataTransfer.getData('slotIndex'));
+                    if (!isNaN(fromIndex) && fromIndex !== i) {
+                        wand.swapSlots(fromIndex, i);
+                        this.renderInventory();
+                    }
+                } else if (type === 'inventory') {
+                    // 从背包拖入
+                    const invIndex = parseInt(e.dataTransfer.getData('inventoryIndex'));
+                    if (!isNaN(invIndex)) {
+                        wand.equipSkill(invIndex, i);
+                        this.renderInventory();
+                    }
                 }
             };
             
@@ -532,13 +596,25 @@ const Game = {
         } else {
             wand.inventory.forEach((skill, idx) => {
                 const div = document.createElement('div');
+                const isMergeable = mergeableIds.includes(skill.id + '_' + skill.level);
                 div.className = 'inventory-item ' + (skill.type === 'active' ? 'active-type' : 'passive-type');
-                div.innerHTML = `<span class="item-icon">${skill.icon}</span><span class="item-name">${skill.name}</span>`;
-                div.title = `${skill.name}\n${skill.desc || ''}`;
+                if (isMergeable) div.classList.add('mergeable');
+                div.draggable = true;
+                
+                const levelStr = skill.level > 1 ? `<span class="skill-level skill-level-${skill.level}">${'★'.repeat(skill.level)}</span>` : '';
+                div.innerHTML = `<span class="item-icon">${skill.icon}</span><span class="item-name">${skill.name}</span>${levelStr}`;
+                div.title = `${skill.name} (Lv.${skill.level || 1})\n${skill.desc || ''}\n${isMergeable ? '💡 可合成!' : ''}`;
+                
+                // 拖拽事件 - 背包物品拖出
+                div.ondragstart = (e) => {
+                    e.dataTransfer.setData('type', 'inventory');
+                    e.dataTransfer.setData('inventoryIndex', idx);
+                    div.classList.add('dragging');
+                };
+                div.ondragend = () => div.classList.remove('dragging');
                 
                 // 点击背包物品：装备到第一个空槽
                 div.onclick = () => {
-                    // 找第一个空槽
                     let targetSlot = -1;
                     for (let i = 0; i < wand.slotCount; i++) {
                         if (wand.slots[i] === null) {
@@ -550,7 +626,6 @@ const Game = {
                     if (targetSlot >= 0) {
                         wand.equipSkill(idx, targetSlot);
                     } else {
-                        // 没有空槽，替换最后一个
                         wand.equipSkill(idx, wand.slotCount - 1);
                     }
                     this.renderInventory();
@@ -558,6 +633,31 @@ const Game = {
                 
                 inventoryContainer.appendChild(div);
             });
+        }
+    },
+    
+    // 一键合成所有可合成的技能
+    autoMerge() {
+        const wand = this.player.wand;
+        let merged = 0;
+        
+        while (true) {
+            const mergeableSkills = wand.getMergeableSkills();
+            if (mergeableSkills.length === 0) break;
+            
+            const result = wand.mergeSkills(mergeableSkills[0].id);
+            if (result.success) {
+                merged++;
+                this.addFloatingText(`合成 Lv.${result.newLevel}!`, this.player.x, this.player.y - 30 - merged * 20, '#9b59b6');
+            } else {
+                break;
+            }
+        }
+        
+        if (merged > 0) {
+            this.renderInventory();
+        } else {
+            this.addFloatingText('没有可合成的技能', this.player.x, this.player.y - 30, '#999');
         }
     }
 };

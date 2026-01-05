@@ -25,10 +25,10 @@ class Player extends Entity {
         super(CONFIG.GAME_WIDTH / 2, CONFIG.GAME_HEIGHT * 0.8, 20, '#fff');
         this.charType = charType;
         
-        // 基础属性
+        // 基础属性 - 4格血量系统
         this.speed = 5;
-        this.maxHp = 100;
-        this.hp = 100;
+        this.maxHp = 4;  // 4格血
+        this.hp = 4;
         this.regen = 0;
         this.pickupRange = 80;
         
@@ -54,8 +54,8 @@ class Player extends Entity {
             this.wand.slots[1] = { ...ACTIVE_SKILLS.spark };
         } else {
             this.color = COLORS.kuikui;
-            this.maxHp = 150;
-            this.hp = 150;
+            this.maxHp = 5;  // 葵葵多1格血
+            this.hp = 5;
             // 葵葵初始：火球 装备在槽位
             this.wand.slots[0] = { ...ACTIVE_SKILLS.fireball };
         }
@@ -125,6 +125,9 @@ class Player extends Entity {
 class Enemy extends Entity {
     constructor(x, y, type) {
         let r = 18, c = COLORS.enemy_1, hp = 15, speed = 2, xp = 1;
+        let contactDamage = 0.5; // 默认小怪伤害半格
+        let isElite = false;
+        let isBoss = false;
 
         if (type === 2) {
             // 快速型
@@ -133,13 +136,25 @@ class Enemy extends Entity {
             speed = 4;
             hp = 8;
             xp = 2;
+            contactDamage = 0.5;
         } else if (type === 3) {
-            // 重型
+            // 重型/精英
             c = COLORS.enemy_3;
             r = 28;
             speed = 1.5;
             hp = 40;
             xp = 5;
+            contactDamage = 1; // 精英伤害1格
+            isElite = true;
+        } else if (type === 4) {
+            // Boss
+            c = '#ff0000';
+            r = 45;
+            speed = 1;
+            hp = 200;
+            xp = 20;
+            contactDamage = 1; // Boss伤害1格
+            isBoss = true;
         }
 
         const diffMult = 1 + (Game.time / 60) * 0.15;
@@ -152,7 +167,9 @@ class Enemy extends Entity {
         this.speed = speed;
         this.baseSpeed = speed;
         this.xpValue = xp;
-        this.damage = 8;
+        this.contactDamage = contactDamage;
+        this.isElite = isElite;
+        this.isBoss = isBoss;
         this.knockbackX = 0;
         this.knockbackY = 0;
     }
@@ -189,9 +206,6 @@ class Enemy extends Entity {
             this.markedForDeletion = true;
             Game.spawnGem(this.x, this.y, this.xpValue);
             Game.kills++;
-            
-            // 技能掉落
-            trySpawnSkillDrop(this.x, this.y, 0.1);
         }
     }
 

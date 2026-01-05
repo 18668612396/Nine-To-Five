@@ -16,11 +16,7 @@
             <div id="hud" class="hidden">
                 <button class="hud-back-btn" onclick="Game.backToMenu()">← 返回</button>
                 <button class="hud-inventory-btn" onclick="Game.openInventory()">📦 背包</button>
-                <div class="bar-container">
-                    <div class="bar-label">HP</div>
-                    <div id="hp-bar-bg"><div id="hp-bar-fill"></div></div>
-                    <div id="hp-text">100/100</div>
-                </div>
+                <div id="hp-hearts"></div>
                 <div class="bar-container">
                     <div class="bar-label">EXP</div>
                     <div id="xp-bar-bg"><div id="xp-bar-fill"></div></div>
@@ -155,7 +151,7 @@
                     </div>
                     
                     <div class="inventory-section">
-                        <h3>📦 背包</h3>
+                        <h3>📦 背包 <button class="merge-btn" onclick="Game.autoMerge()">🔮 一键合成</button></h3>
                         <div id="inventory-items" class="inventory-grid"></div>
                     </div>
                     

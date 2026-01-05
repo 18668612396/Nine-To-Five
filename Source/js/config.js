@@ -25,8 +25,8 @@ const COLORS = {
 const UPGRADES = [
     // 属性强化
     { id: 'speed', name: '推进器强化', desc: '移动速度 +10%', type: 'stat', stat: 'speed', val: 1.1 },
-    { id: 'max_hp', name: '装甲强化', desc: '最大生命值 +20', type: 'stat', stat: 'maxHp', val: 20 },
-    { id: 'regen', name: '纳米修复', desc: '每秒恢复 +1', type: 'stat', stat: 'regen', val: 1 },
+    { id: 'max_hp', name: '装甲强化', desc: '最大血量 +1格', type: 'stat', stat: 'maxHp', val: 1 },
+    { id: 'regen', name: '纳米修复', desc: '每10秒恢复半格', type: 'stat', stat: 'regen', val: 0.05 },
     { id: 'might', name: '火力增幅', desc: '伤害 +10%', type: 'stat', stat: 'damageMult', val: 0.1 },
     { id: 'haste', name: '射速提升', desc: '冷却 -10%', type: 'stat', stat: 'cooldownMult', val: 0.9 },
     { id: 'proj_speed', name: '弹道加速', desc: '弹速 +15%', type: 'stat', stat: 'projSpeed', val: 1.15 },
@@ -51,7 +51,7 @@ const UPGRADES = [
     
     // 高级属性
     { id: 'speed_2', name: '超级推进', desc: '移动速度 +15%', type: 'stat', stat: 'speed', val: 1.15 },
-    { id: 'max_hp_2', name: '重型装甲', desc: '最大生命值 +30', type: 'stat', stat: 'maxHp', val: 30 },
+    { id: 'max_hp_2', name: '重型装甲', desc: '最大血量 +2格', type: 'stat', stat: 'maxHp', val: 2 },
     { id: 'might_2', name: '超载火力', desc: '伤害 +15%', type: 'stat', stat: 'damageMult', val: 0.15 },
-    { id: 'regen_2', name: '高级修复', desc: '每秒恢复 +2', type: 'stat', stat: 'regen', val: 2 },
+    { id: 'regen_2', name: '高级修复', desc: '每5秒恢复半格', type: 'stat', stat: 'regen', val: 0.1 },
 ];

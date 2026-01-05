@@ -11,6 +11,8 @@ const ACTIVE_SKILLS = {
         icon: '🔥',
         cooldown: 25,
         manaCost: 5,
+        // 等级加成：伤害+30%，范围+20%
+        levelBonus: { damage: 0.3, radius: 0.2 },
         create: (caster, mods) => new FireballProjectile(caster, mods)
     },
     laser: {
@@ -20,6 +22,7 @@ const ACTIVE_SKILLS = {
         icon: '⚡',
         cooldown: 15,
         manaCost: 3,
+        levelBonus: { damage: 0.25, speed: 0.2 },
         create: (caster, mods) => new LaserProjectile(caster, mods)
     },
     missile: {
@@ -29,6 +32,7 @@ const ACTIVE_SKILLS = {
         icon: '🚀',
         cooldown: 40,
         manaCost: 8,
+        levelBonus: { damage: 0.35, explosionRadius: 0.25 },
         create: (caster, mods) => new MissileProjectile(caster, mods)
     },
     spark: {
@@ -38,6 +42,7 @@ const ACTIVE_SKILLS = {
         icon: '✨',
         cooldown: 8,
         manaCost: 2,
+        levelBonus: { damage: 0.2, speed: 0.15 },
         create: (caster, mods) => new SparkProjectile(caster, mods)
     },
     plasma: {
@@ -47,6 +52,7 @@ const ACTIVE_SKILLS = {
         icon: '💠',
         cooldown: 50,
         manaCost: 12,
+        levelBonus: { damage: 0.4, penetrate: 0.5 },
         create: (caster, mods) => new PlasmaProjectile(caster, mods)
     }
 };
@@ -59,7 +65,12 @@ const PASSIVE_SKILLS = {
         type: 'passive',
         icon: '🔀',
         desc: '投射物分裂成3个',
-        modify: (mods) => { mods.splitCount = (mods.splitCount || 1) * 3; mods.damage *= 0.5; }
+        levelBonus: { splitCount: 1 }, // 每级多1个分裂
+        modify: (mods, level = 1) => { 
+            const extraSplit = (level - 1);
+            mods.splitCount = (mods.splitCount || 1) * (3 + extraSplit); 
+            mods.damage *= 0.5; 
+        }
     },
     homing: {
         id: 'homing',
@@ -67,7 +78,11 @@ const PASSIVE_SKILLS = {
         type: 'passive',
         icon: '🎯',
         desc: '投射物追踪敌人',
-        modify: (mods) => { mods.homing = true; mods.turnSpeed = (mods.turnSpeed || 0) + 0.05; }
+        levelBonus: { turnSpeed: 0.02 },
+        modify: (mods, level = 1) => { 
+            mods.homing = true; 
+            mods.turnSpeed = (mods.turnSpeed || 0) + 0.05 + (level - 1) * 0.02; 
+        }
     },
     pierce: {
         id: 'pierce',
@@ -75,7 +90,10 @@ const PASSIVE_SKILLS = {
         type: 'passive',
         icon: '📍',
         desc: '穿透多个敌人',
-        modify: (mods) => { mods.penetrate = (mods.penetrate || 1) + 3; }
+        levelBonus: { penetrate: 2 },
+        modify: (mods, level = 1) => { 
+            mods.penetrate = (mods.penetrate || 1) + 3 + (level - 1) * 2; 
+        }
     },
     chain: {
         id: 'chain',
@@ -83,7 +101,10 @@ const PASSIVE_SKILLS = {
         type: 'passive',
         icon: '⛓️',
         desc: '命中后跳跃到附近敌人',
-        modify: (mods) => { mods.chainCount = (mods.chainCount || 0) + 2; }
+        levelBonus: { chainCount: 1 },
+        modify: (mods, level = 1) => { 
+            mods.chainCount = (mods.chainCount || 0) + 2 + (level - 1); 
+        }
     },
     rapid: {
         id: 'rapid',
@@ -91,7 +112,10 @@ const PASSIVE_SKILLS = {
         type: 'passive',
         icon: '💨',
         desc: '减少冷却时间',
-        modify: (mods) => { mods.cooldownMult = (mods.cooldownMult || 1) * 0.6; }
+        levelBonus: { cooldownMult: -0.1 },
+        modify: (mods, level = 1) => { 
+            mods.cooldownMult = (mods.cooldownMult || 1) * (0.6 - (level - 1) * 0.1); 
+        }
     },
     heavy: {
         id: 'heavy',
@@ -99,7 +123,11 @@ const PASSIVE_SKILLS = {
         type: 'passive',
         icon: '💪',
         desc: '伤害翻倍但速度减半',
-        modify: (mods) => { mods.damage *= 2; mods.speed *= 0.5; }
+        levelBonus: { damage: 0.5 },
+        modify: (mods, level = 1) => { 
+            mods.damage *= 2 + (level - 1) * 0.5; 
+            mods.speed *= 0.5; 
+        }
     },
     explosive: {
         id: 'explosive',
@@ -107,15 +135,24 @@ const PASSIVE_SKILLS = {
         type: 'passive',
         icon: '💥',
         desc: '命中时产生爆炸',
-        modify: (mods) => { mods.explosive = true; mods.explosionRadius = (mods.explosionRadius || 30) + 20; }
+        levelBonus: { explosionRadius: 15 },
+        modify: (mods, level = 1) => { 
+            mods.explosive = true; 
+            mods.explosionRadius = (mods.explosionRadius || 30) + 20 + (level - 1) * 15; 
+        }
     },
     bounce: {
         id: 'bounce',
         name: '弹射',
         type: 'passive',
         icon: '🔄',
-        desc: '碰到边界反弹',
-        modify: (mods) => { mods.bounceCount = (mods.bounceCount || 0) + 2; }
+        desc: '在敌人和边界间弹射，持续时间+50%',
+        levelBonus: { bounceCount: 2, durationMult: 0.25 },
+        modify: (mods, level = 1) => { 
+            mods.bounceCount = (mods.bounceCount || 0) + 3 + (level - 1) * 2; 
+            mods.durationMult = (mods.durationMult || 1) * (1.5 + (level - 1) * 0.25);
+            mods.bounceOnEnemy = true;
+        }
     }
 };
 
@@ -141,8 +178,74 @@ class Wand {
     addSkillToInventory(skillId) {
         const skill = ALL_SKILLS[skillId];
         if (!skill) return false;
-        this.inventory.push({ ...skill });
+        this.inventory.push({ ...skill, level: 1 });
         return true;
+    }
+    
+    // 合成技能：3个相同技能合成1个高级技能
+    canMerge(skillId) {
+        const sameSkills = this.inventory.filter(s => s.id === skillId && s.level < 3);
+        return sameSkills.length >= 3;
+    }
+    
+    mergeSkills(skillId) {
+        // 找到3个相同且等级相同的技能（优先合成低等级的）
+        const levels = [1, 2]; // 只有1级和2级可以合成
+        
+        for (const targetLevel of levels) {
+            const sameSkills = [];
+            const indices = [];
+            
+            for (let i = 0; i < this.inventory.length; i++) {
+                const s = this.inventory[i];
+                if (s.id === skillId && s.level === targetLevel) {
+                    sameSkills.push(s);
+                    indices.push(i);
+                    if (sameSkills.length >= 3) break;
+                }
+            }
+            
+            if (sameSkills.length >= 3) {
+                // 移除3个技能（从后往前删避免索引问题）
+                indices.sort((a, b) => b - a);
+                for (let i = 0; i < 3; i++) {
+                    this.inventory.splice(indices[i], 1);
+                }
+                
+                // 添加高一级的技能
+                const baseSkill = ALL_SKILLS[skillId];
+                const newLevel = targetLevel + 1;
+                this.inventory.push({ 
+                    ...baseSkill, 
+                    level: newLevel,
+                    name: baseSkill.name + (newLevel === 2 ? '+' : '++')
+                });
+                
+                return { success: true, newLevel };
+            }
+        }
+        
+        return { success: false };
+    }
+    
+    // 获取可合成的技能列表
+    getMergeableSkills() {
+        const counts = {};
+        this.inventory.forEach(s => {
+            if (s.level < 3) {
+                const key = s.id + '_' + s.level;
+                counts[key] = (counts[key] || 0) + 1;
+            }
+        });
+        
+        const mergeable = [];
+        for (const key in counts) {
+            if (counts[key] >= 3) {
+                const [id, level] = key.split('_');
+                mergeable.push({ id, level: parseInt(level), count: counts[key] });
+            }
+        }
+        return mergeable;
     }
     
     // 从背包装备技能到指定槽位
@@ -221,11 +324,24 @@ class Wand {
             
             if (slot.type === 'passive') {
                 // 被动：累积修饰效果，继续往右
-                slot.modify(mods);
+                slot.modify(mods, slot.level || 1);
                 index = (index + 1) % this.slotCount;
                 loopCount++;
             } else if (slot.type === 'active') {
                 // 主动：用累积的被动发射，然后停止
+                // 应用主动技能等级加成
+                const level = slot.level || 1;
+                if (level > 1 && slot.levelBonus) {
+                    for (const key in slot.levelBonus) {
+                        const bonus = slot.levelBonus[key] * (level - 1);
+                        if (key === 'damage' || key === 'speed' || key === 'radius') {
+                            mods[key] = (mods[key] || 1) * (1 + bonus);
+                        } else {
+                            mods[key] = (mods[key] || 0) + bonus;
+                        }
+                    }
+                }
+                
                 this.fireSkill(slot, mods);
                 const cooldown = Math.max(this.baseCooldown, slot.cooldown * (mods.cooldownMult || 1));
                 const nextIndex = (index + 1) % this.slotCount;
@@ -247,6 +363,7 @@ class Wand {
             turnSpeed: 0,
             chainCount: 0,
             cooldownMult: this.player.cooldownMult,
+            durationMult: this.player.durationMult,
             explosive: false,
             explosionRadius: 0,
             bounceCount: 0,
@@ -301,10 +418,13 @@ class SkillProjectile {
         this.explosionRadius = mods.explosionRadius || 30;
         this.bounceCount = mods.bounceCount || 0;
         
-        this.duration = 120;
+        this.baseDuration = 120;
+        this.duration = this.baseDuration * (mods.durationMult || 1);
         this.radius = 6;
         this.color = '#fff';
         this.markedForDeletion = false;
+        this.durationMult = mods.durationMult || 1;
+        this.bounceOnEnemy = mods.bounceOnEnemy || false;
     }
     
     update() {
@@ -378,6 +498,11 @@ class SkillProjectile {
     }
     
     onHit(enemy) {
+        // 敌人弹射
+        if (this.bounceOnEnemy && this.bounceCount > 0) {
+            this.bounceToEnemy(enemy);
+        }
+        
         // 爆炸效果
         if (this.explosive) {
             this.explode();
@@ -386,6 +511,42 @@ class SkillProjectile {
         // 连锁效果
         if (this.chainCount > 0) {
             this.chainToNext(enemy);
+        }
+    }
+    
+    bounceToEnemy(fromEnemy) {
+        // 找最近的其他敌人
+        let nextTarget = null;
+        let minDist = 300;
+        
+        Game.enemies.forEach(e => {
+            if (!e.markedForDeletion && e !== fromEnemy && !this.hitList.includes(e)) {
+                const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nextTarget = e;
+                }
+            }
+        });
+        
+        if (nextTarget) {
+            // 改变方向朝向新目标
+            const dx = nextTarget.x - this.x;
+            const dy = nextTarget.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            this.dx = dx / dist;
+            this.dy = dy / dist;
+            this.angle = Math.atan2(this.dy, this.dx);
+            this.bounceCount--;
+            
+            // 弹射特效
+            Game.particles.push({
+                x: this.x, y: this.y,
+                vx: 0, vy: 0,
+                life: 10,
+                color: '#ffff00',
+                size: 8
+            });
         }
     }
     
@@ -461,7 +622,7 @@ class FireballProjectile extends SkillProjectile {
         this.speed = 8 * (mods.speed || 1);
         this.radius = 8;
         this.color = '#ff6600';
-        this.duration = 90;
+        this.duration = 90 * (mods.durationMult || 1);
         this.trailTimer = 0;
     }
     
@@ -513,7 +674,7 @@ class LaserProjectile extends SkillProjectile {
         this.speed = 18 * (mods.speed || 1);
         this.radius = 4;
         this.color = '#00ffff';
-        this.duration = 60;
+        this.duration = 60 * (mods.durationMult || 1);
         this.length = 20;
     }
     
@@ -538,7 +699,7 @@ class LaserProjectile extends SkillProjectile {
     }
 }
 
-// 导弹 - 慢速高伤害，自带追踪
+// 导弹 - 慢速高伤害，自带追踪和爆炸
 class MissileProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
@@ -546,10 +707,15 @@ class MissileProjectile extends SkillProjectile {
         this.speed = 5 * (mods.speed || 1);
         this.radius = 6;
         this.color = '#ff4400';
-        this.duration = 180;
-        this.homing = true; // 导弹默认追踪
+        this.duration = 180 * (mods.durationMult || 1);
+        this.homing = true;
         this.turnSpeed = Math.max(0.03, mods.turnSpeed || 0.03);
         this.trailParticles = [];
+        
+        // 导弹自带爆炸
+        this.explosive = true;
+        this.explosionRadius = Math.max(60, (mods.explosionRadius || 0) + 60);
+        this.penetrate = 1; // 导弹命中即爆炸消失
     }
     
     update() {
@@ -608,7 +774,7 @@ class SparkProjectile extends SkillProjectile {
         this.speed = 14 * (mods.speed || 1);
         this.radius = 3;
         this.color = '#ffff00';
-        this.duration = 45;
+        this.duration = 45 * (mods.durationMult || 1);
     }
     
     draw(ctx, camX, camY) {
@@ -638,8 +804,8 @@ class PlasmaProjectile extends SkillProjectile {
         this.speed = 6 * (mods.speed || 1);
         this.radius = 14;
         this.color = '#ff00ff';
-        this.duration = 120;
-        this.penetrate = Math.max(5, mods.penetrate || 5); // 等离子默认高穿透
+        this.duration = 120 * (mods.durationMult || 1);
+        this.penetrate = Math.max(5, mods.penetrate || 5);
         this.pulsePhase = 0;
     }
     

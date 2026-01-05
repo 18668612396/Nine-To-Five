@@ -946,3 +946,124 @@ button:active {
     padding: 30px;
     font-size: 14px;
 }
+
+
+/* 背包物品拖拽状态 */
+.inventory-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+    border-color: #ffd700;
+}
+
+.inventory-item[draggable="true"] {
+    cursor: grab;
+}
+
+.inventory-item[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+
+/* 合成按钮 */
+.merge-btn {
+    float: right;
+    padding: 5px 12px;
+    font-size: 12px;
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 2px 0 #6c3483;
+}
+
+.merge-btn:hover {
+    background: linear-gradient(135deg, #a569bd, #9b59b6);
+    transform: translateY(-1px);
+}
+
+.merge-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 0 0 #6c3483;
+}
+
+/* 技能等级显示 */
+.skill-level {
+    position: absolute;
+    bottom: 2px;
+    right: 3px;
+    font-size: 10px;
+    font-weight: bold;
+    color: #ffd700;
+    text-shadow: 1px 1px 1px #000;
+}
+
+.skill-level-1 { color: #fff; }
+.skill-level-2 { color: #4fc3f7; }
+.skill-level-3 { color: #ffd700; }
+
+/* 可合成提示 */
+.inventory-item.mergeable {
+    animation: mergeGlow 1s ease-in-out infinite;
+}
+
+@keyframes mergeGlow {
+    0%, 100% { box-shadow: 0 0 5px #9b59b6; }
+    50% { box-shadow: 0 0 15px #9b59b6, 0 0 25px #9b59b6; }
+}
+
+.wand-slot .skill-level {
+    bottom: 1px;
+    right: 2px;
+}
+
+
+/* 心形血量显示 */
+#hp-hearts {
+    display: flex;
+    gap: 4px;
+    background: rgba(0,0,0,0.4);
+    padding: 8px 12px;
+    border-radius: 15px;
+}
+
+#hp-hearts .heart {
+    font-size: 20px;
+    transition: transform 0.2s;
+}
+
+#hp-hearts .heart.full {
+    animation: heartBeat 1s ease-in-out infinite;
+}
+
+#hp-hearts .heart.half {
+    opacity: 0.8;
+}
+
+#hp-hearts .heart.empty {
+    opacity: 0.4;
+}
+
+@keyframes heartBeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+
+/* 稀有升级卡牌 */
+.upgrade-card.rare-card {
+    border: 2px solid #9b59b6;
+    background: linear-gradient(to bottom right, #f8f0ff, #e8d5f5);
+}
+
+.upgrade-card.rare-card::before {
+    background: linear-gradient(90deg, #9b59b6, #8e44ad);
+}
+
+.upgrade-card.rare-card:hover {
+    box-shadow: 0 15px 30px rgba(155, 89, 182, 0.4);
+}
+
+.upgrade-card.rare-card h3 {
+    color: #8e44ad;
+}
