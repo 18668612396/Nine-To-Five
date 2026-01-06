@@ -2,7 +2,7 @@
 
 const SceneManager = {
     currentScene: null,
-    scenes: ['grass', 'space', 'ocean', 'desert'],
+    scenes: ['grass', 'ocean', 'desert'],  // 移除星空场景
     
     // 随机选择场景
     randomScene() {
@@ -17,9 +17,6 @@ const SceneManager = {
         switch (this.currentScene) {
             case 'grass':
                 this.initGrass();
-                break;
-            case 'space':
-                this.initSpace();
                 break;
             case 'ocean':
                 this.initOcean();
@@ -418,9 +415,6 @@ const SceneManager = {
             case 'grass':
                 this.updateGrass(scrollSpeed);
                 break;
-            case 'space':
-                this.updateSpace();
-                break;
             case 'ocean':
                 this.updateOcean(scrollSpeed, frameCount);
                 break;
@@ -435,9 +429,6 @@ const SceneManager = {
             case 'grass':
                 this.drawGrass(ctx, scrollY);
                 break;
-            case 'space':
-                this.drawSpace(ctx, scrollY, frameCount);
-                break;
             case 'ocean':
                 this.drawOcean(ctx, scrollY, frameCount);
                 break;
@@ -451,7 +442,6 @@ const SceneManager = {
     getBackgroundColor() {
         switch (this.currentScene) {
             case 'grass': return '#8ccf7e';
-            case 'space': return '#0a0a1a';
             case 'ocean': return '#1a5276';
             case 'desert': return '#f4d03f';
             default: return '#8ccf7e';

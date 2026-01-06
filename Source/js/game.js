@@ -1,37 +1,17 @@
-// --- 游戏引擎 (葵瓜战记 - 垂直滚动射击) ---
+// --- 游戏引擎 (类幸存者风格 + 场景系统) ---
 
 const CANVAS = document.getElementById('gameCanvas');
 const CTX = CANVAS.getContext('2d');
 
-// 游戏缩放相关
-let gameScale = 1;
-let offsetX = 0;
-let offsetY = 0;
+// 相机位置（跟随玩家）
+let cameraX = 0;
+let cameraY = 0;
 
 function resize() {
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    
-    const targetRatio = CONFIG.GAME_WIDTH / CONFIG.GAME_HEIGHT;
-    const windowRatio = windowWidth / windowHeight;
-    
-    if (windowRatio > targetRatio) {
-        gameScale = windowHeight / CONFIG.GAME_HEIGHT;
-        CANVAS.height = windowHeight;
-        CANVAS.width = CONFIG.GAME_WIDTH * gameScale;
-        offsetX = (windowWidth - CANVAS.width) / 2;
-        offsetY = 0;
-    } else {
-        gameScale = windowWidth / CONFIG.GAME_WIDTH;
-        CANVAS.width = windowWidth;
-        CANVAS.height = CONFIG.GAME_HEIGHT * gameScale;
-        offsetX = 0;
-        offsetY = (windowHeight - CANVAS.height) / 2;
-    }
-    
-    CANVAS.style.position = 'absolute';
-    CANVAS.style.left = offsetX + 'px';
-    CANVAS.style.top = offsetY + 'px';
+    CANVAS.width = window.innerWidth;
+    CANVAS.height = window.innerHeight;
+    CONFIG.GAME_WIDTH = CANVAS.width;
+    CONFIG.GAME_HEIGHT = CANVAS.height;
 }
 window.addEventListener('resize', resize);
 resize();
@@ -47,8 +27,8 @@ const Game = {
     particles: [],
     lightningEffects: [],
     
-    scrollY: 0,
-    scrollSpeed: CONFIG.SCROLL_SPEED,
+    // 场景元素（基于玩家位置生成）
+    sceneElements: [],
     
     frameCount: 0,
     time: 0,
@@ -56,7 +36,6 @@ const Game = {
     level: 1,
     xp: 0,
     xpToNext: 10,
-    wave: 1,
     
     init() {
         Input.init();
@@ -68,8 +47,8 @@ const Game = {
 
     start(charType) {
         this.player = new Player(charType);
-        this.player.x = CONFIG.GAME_WIDTH / 2;
-        this.player.y = CONFIG.GAME_HEIGHT * 0.8;
+        this.player.x = 0;
+        this.player.y = 0;
         
         this.enemies = [];
         this.gems = [];
@@ -78,22 +57,64 @@ const Game = {
         this.floatingTexts = [];
         this.particles = [];
         this.lightningEffects = [];
+        this.sceneElements = [];
         this.frameCount = 0;
         this.time = 0;
         this.kills = 0;
         this.level = 1;
         this.xp = 0;
         this.xpToNext = 10;
-        this.scrollY = 0;
-        this.wave = 1;
         
+        // 随机选择场景
         SceneManager.randomScene();
+        this.generateSceneElements();
         
         document.getElementById('hud').classList.remove('hidden');
         document.getElementById('gameover-screen').classList.add('hidden');
         
         this.state = 'PLAYING';
         this.updateUI();
+    },
+    
+    // 生成场景装饰元素
+    generateSceneElements() {
+        this.sceneElements = [];
+        const range = 1500;
+        const count = 40;
+        
+        for (let i = 0; i < count; i++) {
+            this.sceneElements.push(this.createSceneElement(
+                this.player.x + (Math.random() - 0.5) * range * 2,
+                this.player.y + (Math.random() - 0.5) * range * 2
+            ));
+        }
+    },
+    
+    createSceneElement(x, y) {
+        const scene = SceneManager.currentScene;
+        if (scene === 'grass') {
+            return {
+                x, y,
+                type: Math.random() > 0.3 ? 'tree' : 'rock',
+                size: 25 + Math.random() * 20
+            };
+        } else if (scene === 'ocean') {
+            return {
+                x, y,
+                type: 'seaweed',
+                height: 60 + Math.random() * 40,
+                phase: Math.random() * Math.PI * 2
+            };
+        } else if (scene === 'desert') {
+            return {
+                x, y,
+                type: Math.random() > 0.5 ? 'cactus' : 'dune',
+                size: 20 + Math.random() * 15,
+                width: 150 + Math.random() * 100,
+                height: 30 + Math.random() * 20
+            };
+        }
+        return { x, y, type: 'tree', size: 30 };
     },
 
     loop() {
@@ -111,216 +132,335 @@ const Game = {
             document.getElementById('timer').innerText = this.formatTime(this.time);
         }
         
-        this.scrollY += this.scrollSpeed;
-        SceneManager.update(this.scrollSpeed, this.frameCount);
+        // 生成敌人
         this.spawnEnemies();
+        
+        // 更新场景元素（保持在玩家周围）
+        this.updateSceneElements();
 
         // 更新粒子
         this.particles.forEach(p => {
             p.x += p.vx;
-            p.y += p.vy + this.scrollSpeed * 0.5;
+            p.y += p.vy;
             p.life--;
             p.vx *= 0.95;
             p.vy *= 0.95;
         });
         this.particles = this.particles.filter(p => p.life > 0);
+        
+        // 更新闪电效果
         this.lightningEffects = this.lightningEffects.filter(l => l.life-- > 0);
 
+        // 更新光之柱
+        this.lightPillars = this.lightPillars || [];
+        this.lightPillars.forEach(pillar => {
+            pillar.life--;
+            // 每10帧造成一次伤害
+            if (Game.frameCount % 10 === 0) {
+                this.enemies.forEach(e => {
+                    if (!e.markedForDeletion) {
+                        const dist = Math.sqrt((e.x - pillar.x) ** 2 + (e.y - pillar.y) ** 2);
+                        if (dist < pillar.radius) {
+                            e.takeDamage(pillar.damage, 0, 0);
+                        }
+                    }
+                });
+            }
+        });
+        this.lightPillars = this.lightPillars.filter(p => p.life > 0);
+
+        // 更新玩家
         this.player.update();
         if (this.player.hp <= 0) {
             this.gameOver();
         }
 
+        // 更新相机（跟随玩家）
+        cameraX = this.player.x - CONFIG.GAME_WIDTH / 2;
+        cameraY = this.player.y - CONFIG.GAME_HEIGHT / 2;
+
+        // 更新敌人
         this.enemies.forEach(e => e.update(this.player));
-        this.gems.forEach(g => {
-            g.y += this.scrollSpeed * 0.5;
-            g.update(this.player);
-        });
+        
+        // 更新宝石
+        this.gems.forEach(g => g.update(this.player));
+        
+        // 更新技能掉落
         this.skillDrops.forEach(s => s.update(this.player));
+        
+        // 更新投射物
         this.projectiles.forEach(p => p.update());
 
-        // 碰撞检测
+        // 碰撞检测：投射物 vs 敌人
         this.projectiles.forEach(p => {
             this.enemies.forEach(e => {
-                if (!e.markedForDeletion && !p.markedForDeletion && checkCircleCollide(p, e)) {
-                    if (!p.hitList.includes(e)) {
-                        e.takeDamage(p.damage, p.dx * p.knockback, p.dy * p.knockback);
-                        p.hitList.push(e);
-                        this.spawnParticles(e.x, e.y, e.color, 3);
-                        
-                        // 触发命中效果（爆炸、连锁等）
-                        if (p.onHit) p.onHit(e);
-                        
-                        if (p.hitList.length >= p.penetrate) {
-                            p.markedForDeletion = true;
+                if (!e.markedForDeletion && !p.markedForDeletion) {
+                    if (this.checkCollision(p, e)) {
+                        if (!p.hitList.includes(e)) {
+                            const dmg = p.getFinalDamage ? p.getFinalDamage() : p.damage;
+                            e.takeDamage(dmg, p.dx * p.knockback, p.dy * p.knockback, p);
+                            p.hitList.push(e);
+                            this.spawnParticles(e.x, e.y, e.color, 3);
+                            
+                            // 触发命中效果
+                            if (p.onHit) p.onHit(e);
+                            
+                            if (p.hitList.length >= p.penetrate && !p.isHovering) {
+                                p.markedForDeletion = true;
+                            }
                         }
                     }
                 }
             });
         });
 
+        // 碰撞检测：敌人 vs 玩家
         this.enemies.forEach(e => {
-            if (checkCircleCollide(e, this.player) && this.frameCount % 30 === 0) {
-                this.player.hp -= e.contactDamage;
-                const dmgText = e.contactDamage >= 1 ? '-1💔' : '-½💔';
-                this.addFloatingText(dmgText, this.player.x, this.player.y - 20, '#ff4444');
-                this.spawnParticles(this.player.x, this.player.y, '#ff0000', 5);
-                this.updateUI();
+            if (this.checkCollision(e, this.player)) {
+                if (this.frameCount % 30 === 0) {
+                    this.player.hp -= e.damage;
+                    this.addFloatingText("-" + e.damage, this.player.x, this.player.y - 30, '#ff4444');
+                    this.spawnParticles(this.player.x, this.player.y, '#ff0000', 5);
+                    this.updateUI();
+                }
             }
         });
 
-        // 清理
-        this.enemies = this.enemies.filter(e => !e.markedForDeletion && e.y < CONFIG.GAME_HEIGHT * CONFIG.ENEMY_DESPAWN_Y);
-        this.gems = this.gems.filter(g => !g.markedForDeletion && g.y < CONFIG.GAME_HEIGHT + 50);
-        this.skillDrops = this.skillDrops.filter(s => !s.markedForDeletion);
-        this.projectiles = this.projectiles.filter(p => !p.markedForDeletion);
+        // 清理（基于与玩家的距离）
+        const despawnDist = CONFIG.ENEMY_SPAWN_DISTANCE * 2;
+        this.enemies = this.enemies.filter(e => {
+            if (e.markedForDeletion) return false;
+            const dist = Math.sqrt((e.x - this.player.x) ** 2 + (e.y - this.player.y) ** 2);
+            return dist < despawnDist;
+        });
+        this.gems = this.gems.filter(g => {
+            if (g.markedForDeletion) return false;
+            const dist = Math.sqrt((g.x - this.player.x) ** 2 + (g.y - this.player.y) ** 2);
+            return dist < despawnDist;
+        });
+        this.skillDrops = this.skillDrops.filter(s => {
+            if (s.markedForDeletion) return false;
+            const dist = Math.sqrt((s.x - this.player.x) ** 2 + (s.y - this.player.y) ** 2);
+            return dist < despawnDist;
+        });
+        this.projectiles = this.projectiles.filter(p => {
+            if (p.markedForDeletion) return false;
+            const dist = Math.sqrt((p.x - this.player.x) ** 2 + (p.y - this.player.y) ** 2);
+            return dist < despawnDist;
+        });
         this.floatingTexts = this.floatingTexts.filter(t => t.life > 0);
-        this.floatingTexts.forEach(t => { t.y -= 0.5; t.life--; });
+        this.floatingTexts.forEach(t => {
+            t.y -= 0.5;
+            t.life--;
+        });
+    },
+    
+    updateSceneElements() {
+        const range = 1000;
+        this.sceneElements = this.sceneElements.filter(el => {
+            const dist = Math.sqrt((el.x - this.player.x) ** 2 + (el.y - this.player.y) ** 2);
+            return dist < range * 1.5;
+        });
+        
+        // 补充新元素
+        while (this.sceneElements.length < 40) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = range * 0.8 + Math.random() * range * 0.4;
+            this.sceneElements.push(this.createSceneElement(
+                this.player.x + Math.cos(angle) * dist,
+                this.player.y + Math.sin(angle) * dist
+            ));
+        }
+    },
+
+    checkCollision(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        return dist < a.radius + b.radius;
     },
 
     draw() {
+        // 清空画布
         CTX.fillStyle = SceneManager.getBackgroundColor();
         CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
         
-        CTX.save();
-        CTX.scale(gameScale, gameScale);
-        SceneManager.draw(CTX, this.scrollY, this.frameCount);
+        // 绘制背景网格
+        this.drawBackground();
         
-        if (!this.player) {
-            CTX.restore();
-            return;
-        }
+        // 绘制场景元素
+        this.drawSceneElements();
         
-        this.gems.forEach(g => g.draw(CTX, 0, 0));
-        this.skillDrops.forEach(s => s.draw(CTX, 0, 0));
+        if (!this.player) return;
         
+        // 绘制宝石
+        this.gems.forEach(g => g.draw(CTX, cameraX, cameraY));
+        
+        // 绘制技能掉落
+        this.skillDrops.forEach(s => s.draw(CTX, cameraX, cameraY));
+        
+        // 绘制粒子
         this.particles.forEach(p => {
             CTX.fillStyle = p.color;
             CTX.globalAlpha = p.life / 30;
             CTX.beginPath();
-            CTX.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            CTX.arc(p.x - cameraX, p.y - cameraY, p.size, 0, Math.PI * 2);
             CTX.fill();
             CTX.globalAlpha = 1.0;
         });
 
-        this.enemies.forEach(e => e.draw(CTX, 0, 0));
-        this.player.draw(CTX, 0, 0);
-        this.projectiles.forEach(p => p.draw(CTX, 0, 0));
+        // 绘制敌人
+        this.enemies.forEach(e => e.draw(CTX, cameraX, cameraY));
         
+        // 绘制玩家
+        this.player.draw(CTX, cameraX, cameraY);
+        
+        // 绘制投射物
+        this.projectiles.forEach(p => p.draw(CTX, cameraX, cameraY));
+        
+        // 绘制闪电效果
         this.drawLightningEffects();
+        
+        // 绘制光之柱
+        this.drawLightPillars();
+        
+        // 绘制技能槽UI
         this.drawWandSlots();
 
+        // 浮动文字
         this.floatingTexts.forEach(t => {
             CTX.fillStyle = t.color;
-            CTX.font = 'bold 24px Fredoka';
+            CTX.font = 'bold 20px Arial';
+            CTX.textAlign = 'center';
             CTX.strokeStyle = 'black';
             CTX.lineWidth = 3;
-            CTX.strokeText(t.text, t.x, t.y);
-            CTX.fillText(t.text, t.x, t.y);
+            CTX.strokeText(t.text, t.x - cameraX, t.y - cameraY);
+            CTX.fillText(t.text, t.x - cameraX, t.y - cameraY);
         });
-        
-        CTX.restore();
     },
     
-    drawWeaponEffects() {
-        const weapon = this.player.weapon;
+    drawBackground() {
+        const scene = SceneManager.currentScene;
+        const gridSize = 100;
+        const startX = Math.floor(cameraX / gridSize) * gridSize;
+        const startY = Math.floor(cameraY / gridSize) * gridSize;
         
-        // 护盾效果
-        if (weapon.effects.shield.unlocked) {
-            const r = weapon.shieldRadius || 60;
-            CTX.save();
-            CTX.translate(this.player.x, this.player.y);
-            CTX.rotate(weapon.shieldAngle);
-            const gradient = CTX.createRadialGradient(0, 0, r - 10, 0, 0, r + 10);
-            gradient.addColorStop(0, 'rgba(0, 200, 255, 0)');
-            gradient.addColorStop(0.5, 'rgba(0, 200, 255, 0.3)');
-            gradient.addColorStop(1, 'rgba(0, 200, 255, 0)');
-            CTX.fillStyle = gradient;
-            CTX.beginPath();
-            CTX.arc(0, 0, r, 0, Math.PI * 2);
-            CTX.fill();
-            CTX.strokeStyle = 'rgba(0, 200, 255, 0.6)';
+        if (scene === 'grass') {
+            // 草地棋盘格
+            CTX.fillStyle = '#83c276';
+            for (let x = startX; x < cameraX + CONFIG.GAME_WIDTH + gridSize; x += gridSize) {
+                for (let y = startY; y < cameraY + CONFIG.GAME_HEIGHT + gridSize; y += gridSize) {
+                    if ((Math.floor(x / gridSize) + Math.floor(y / gridSize)) % 2 === 0) {
+                        CTX.fillRect(x - cameraX, y - cameraY, gridSize / 2, gridSize / 2);
+                    }
+                }
+            }
+        } else if (scene === 'ocean') {
+            // 海洋波纹
+            CTX.strokeStyle = 'rgba(255,255,255,0.1)';
             CTX.lineWidth = 2;
-            CTX.setLineDash([10, 5]);
-            CTX.stroke();
-            CTX.setLineDash([]);
-            CTX.restore();
-        }
-        
-        // 僚机效果
-        if (weapon.effects.wingman.unlocked) {
-            const level = weapon.effects.wingman.level;
-            const wingCount = Math.ceil(level / 2);
-            for (let i = 0; i < wingCount; i++) {
-                const offset = weapon.wingOffset + i * 25;
-                this.drawWingman(this.player.x - offset, this.player.y - 5);
-                this.drawWingman(this.player.x + offset, this.player.y - 5);
+            for (let y = startY; y < cameraY + CONFIG.GAME_HEIGHT + gridSize; y += gridSize) {
+                CTX.beginPath();
+                for (let x = startX; x < cameraX + CONFIG.GAME_WIDTH + gridSize; x += 20) {
+                    const waveY = y + Math.sin((x + this.frameCount * 2) * 0.02) * 10;
+                    if (x === startX) {
+                        CTX.moveTo(x - cameraX, waveY - cameraY);
+                    } else {
+                        CTX.lineTo(x - cameraX, waveY - cameraY);
+                    }
+                }
+                CTX.stroke();
+            }
+        } else if (scene === 'desert') {
+            // 沙漠网格
+            CTX.strokeStyle = 'rgba(0,0,0,0.1)';
+            CTX.lineWidth = 1;
+            for (let x = startX; x < cameraX + CONFIG.GAME_WIDTH + gridSize; x += gridSize) {
+                CTX.beginPath();
+                CTX.moveTo(x - cameraX, 0);
+                CTX.lineTo(x - cameraX, CONFIG.GAME_HEIGHT);
+                CTX.stroke();
+            }
+            for (let y = startY; y < cameraY + CONFIG.GAME_HEIGHT + gridSize; y += gridSize) {
+                CTX.beginPath();
+                CTX.moveTo(0, y - cameraY);
+                CTX.lineTo(CONFIG.GAME_WIDTH, y - cameraY);
+                CTX.stroke();
             }
         }
     },
     
-    drawLightningEffects() {
-        this.lightningEffects.forEach(l => {
-            const alpha = l.life / 15;
-            CTX.strokeStyle = `rgba(100, 200, 255, ${alpha})`;
-            CTX.lineWidth = 3;
-            CTX.beginPath();
-            const segments = 5;
-            const dx = (l.x2 - l.x1) / segments;
-            const dy = (l.y2 - l.y1) / segments;
-            CTX.moveTo(l.x1, l.y1);
-            for (let i = 1; i < segments; i++) {
-                CTX.lineTo(l.x1 + dx * i + (Math.random() - 0.5) * 20, l.y1 + dy * i + (Math.random() - 0.5) * 20);
+    drawSceneElements() {
+        const scene = SceneManager.currentScene;
+        
+        this.sceneElements.forEach(el => {
+            const x = el.x - cameraX;
+            const y = el.y - cameraY;
+            
+            // 跳过屏幕外的元素
+            if (x < -100 || x > CONFIG.GAME_WIDTH + 100 || y < -100 || y > CONFIG.GAME_HEIGHT + 100) return;
+            
+            if (scene === 'grass') {
+                if (el.type === 'tree') {
+                    // 阴影
+                    CTX.fillStyle = 'rgba(0,0,0,0.2)';
+                    CTX.beginPath();
+                    CTX.arc(x, y + 10, el.size, 0, Math.PI * 2);
+                    CTX.fill();
+                    // 树干
+                    CTX.fillStyle = '#8d6e63';
+                    CTX.fillRect(x - 5, y - 10, 10, 20);
+                    // 树冠
+                    CTX.fillStyle = '#4caf50';
+                    CTX.beginPath();
+                    CTX.arc(x, y - 20, el.size, 0, Math.PI * 2);
+                    CTX.fill();
+                    CTX.fillStyle = '#66bb6a';
+                    CTX.beginPath();
+                    CTX.arc(x - 5, y - 25, el.size * 0.7, 0, Math.PI * 2);
+                    CTX.fill();
+                } else {
+                    // 石头
+                    CTX.fillStyle = 'rgba(0,0,0,0.2)';
+                    CTX.beginPath();
+                    CTX.arc(x, y + 5, el.size * 0.8, 0, Math.PI * 2);
+                    CTX.fill();
+                    CTX.fillStyle = '#9e9e9e';
+                    CTX.beginPath();
+                    CTX.moveTo(x - el.size, y);
+                    CTX.lineTo(x, y - el.size);
+                    CTX.lineTo(x + el.size, y);
+                    CTX.lineTo(x, y + el.size * 0.6);
+                    CTX.fill();
+                }
+            } else if (scene === 'ocean') {
+                // 海草
+                CTX.strokeStyle = '#2e7d32';
+                CTX.lineWidth = 4;
+                CTX.beginPath();
+                CTX.moveTo(x, y + el.height);
+                const segments = 5;
+                for (let i = 0; i <= segments; i++) {
+                    const t = i / segments;
+                    const waveOffset = Math.sin(this.frameCount * 0.03 + el.phase + t * 3) * 15 * t;
+                    CTX.lineTo(x + waveOffset, y + el.height * (1 - t));
+                }
+                CTX.stroke();
+            } else if (scene === 'desert') {
+                if (el.type === 'cactus') {
+                    CTX.fillStyle = '#2d5a27';
+                    CTX.fillRect(x - 5, y - el.size, 10, el.size);
+                    CTX.fillRect(x - 15, y - el.size * 0.7, 10, el.size * 0.4);
+                    CTX.fillRect(x + 5, y - el.size * 0.5, 10, el.size * 0.3);
+                } else {
+                    // 沙丘
+                    CTX.fillStyle = '#c9a227';
+                    CTX.beginPath();
+                    CTX.ellipse(x, y, el.width, el.height, 0, 0, Math.PI * 2);
+                    CTX.fill();
+                }
             }
-            CTX.lineTo(l.x2, l.y2);
-            CTX.stroke();
         });
-    },
-    
-    // 绘制技能槽UI
-    drawWandSlots() {
-        const wand = this.player.wand;
-        const slotSize = 36;
-        const padding = 4;
-        const startX = (CONFIG.GAME_WIDTH - (wand.slotCount * (slotSize + padding))) / 2;
-        const startY = CONFIG.GAME_HEIGHT - 60;
-        
-        for (let i = 0; i < wand.slotCount; i++) {
-            const x = startX + i * (slotSize + padding);
-            const y = startY;
-            const slot = wand.slots[i];
-            const isCurrent = i === wand.currentIndex;
-            
-            // 槽位背景
-            CTX.fillStyle = isCurrent ? 'rgba(255, 255, 0, 0.3)' : 'rgba(0, 0, 0, 0.5)';
-            CTX.strokeStyle = isCurrent ? '#ffff00' : '#666666';
-            CTX.lineWidth = isCurrent ? 3 : 1;
-            CTX.fillRect(x, y, slotSize, slotSize);
-            CTX.strokeRect(x, y, slotSize, slotSize);
-            
-            if (slot) {
-                // 技能类型颜色
-                const isActive = slot.type === 'active';
-                CTX.fillStyle = isActive ? 'rgba(255, 150, 0, 0.3)' : 'rgba(100, 150, 255, 0.3)';
-                CTX.fillRect(x + 2, y + 2, slotSize - 4, slotSize - 4);
-                
-                // 图标
-                CTX.font = '20px Arial';
-                CTX.textAlign = 'center';
-                CTX.textBaseline = 'middle';
-                CTX.fillStyle = '#fff';
-                CTX.fillText(slot.icon, x + slotSize / 2, y + slotSize / 2);
-            }
-        }
-        
-        // 冷却指示
-        if (wand.cooldownTimer > 0) {
-            const cdPct = wand.cooldownTimer / 30;
-            CTX.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            CTX.font = '14px Arial';
-            CTX.textAlign = 'center';
-            CTX.fillText('CD', CONFIG.GAME_WIDTH / 2, startY - 10);
-        }
     },
 
     spawnParticles(x, y, color, count) {
@@ -335,47 +475,115 @@ const Game = {
             });
         }
     },
-
-    spawnEnemies() {
-        const baseRate = Math.max(15, 45 - Math.floor(this.time / 5));
-        if (this.frameCount % baseRate === 0) {
-            const roadWidth = CONFIG.GAME_WIDTH * 0.6;
-            const roadX = (CONFIG.GAME_WIDTH - roadWidth) / 2;
-            const x = roadX + Math.random() * roadWidth;
-            let type = 1;
-            if (this.time > 20 && Math.random() < 0.25) type = 2;
-            if (this.time > 45 && Math.random() < 0.15) type = 3; // 精英
-            this.enemies.push(new Enemy(x, CONFIG.ENEMY_SPAWN_Y, type));
-        }
-        
-        // 每60秒生成一个Boss
-        if (this.time > 0 && this.time % 60 === 0 && this.frameCount % 60 === 0) {
-            const x = CONFIG.GAME_WIDTH / 2;
-            this.enemies.push(new Enemy(x, CONFIG.ENEMY_SPAWN_Y, 4));
-            this.addFloatingText('⚠️ BOSS来袭!', CONFIG.GAME_WIDTH / 2, 200, '#ff0000');
-        }
-        
-        if (this.frameCount % 600 === 0) this.spawnWave();
+    
+    drawLightningEffects() {
+        this.lightningEffects.forEach(l => {
+            const alpha = l.life / 15;
+            CTX.strokeStyle = `rgba(100, 200, 255, ${alpha})`;
+            CTX.lineWidth = 3;
+            CTX.beginPath();
+            const segments = 5;
+            const dx = (l.x2 - l.x1) / segments;
+            const dy = (l.y2 - l.y1) / segments;
+            CTX.moveTo(l.x1 - cameraX, l.y1 - cameraY);
+            for (let i = 1; i < segments; i++) {
+                CTX.lineTo(
+                    l.x1 + dx * i + (Math.random() - 0.5) * 20 - cameraX,
+                    l.y1 + dy * i + (Math.random() - 0.5) * 20 - cameraY
+                );
+            }
+            CTX.lineTo(l.x2 - cameraX, l.y2 - cameraY);
+            CTX.stroke();
+        });
     },
     
-    spawnWave() {
-        this.wave++;
-        const enemyCount = 5 + this.wave * 2;
-        const roadWidth = CONFIG.GAME_WIDTH * 0.6;
-        const roadX = (CONFIG.GAME_WIDTH - roadWidth) / 2;
-        for (let i = 0; i < enemyCount; i++) {
-            setTimeout(() => {
-                if (this.state === 'PLAYING') {
-                    const x = roadX + (i / enemyCount) * roadWidth;
-                    this.enemies.push(new Enemy(x, CONFIG.ENEMY_SPAWN_Y - Math.random() * 100, Math.random() < 0.3 ? 2 : 1));
-                }
-            }, i * 100);
+    drawLightPillars() {
+        this.lightPillars = this.lightPillars || [];
+        this.lightPillars.forEach(pillar => {
+            const x = pillar.x - cameraX;
+            const y = pillar.y - cameraY;
+            const alpha = pillar.life / 60;
+            
+            // 光柱效果
+            const gradient = CTX.createRadialGradient(x, y, 0, x, y, pillar.radius);
+            gradient.addColorStop(0, `rgba(255, 255, 200, ${alpha * 0.8})`);
+            gradient.addColorStop(0.5, `rgba(255, 220, 100, ${alpha * 0.4})`);
+            gradient.addColorStop(1, `rgba(255, 200, 50, 0)`);
+            
+            CTX.fillStyle = gradient;
+            CTX.beginPath();
+            CTX.arc(x, y, pillar.radius, 0, Math.PI * 2);
+            CTX.fill();
+            
+            // 中心光点
+            CTX.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            CTX.beginPath();
+            CTX.arc(x, y, 5, 0, Math.PI * 2);
+            CTX.fill();
+        });
+    },
+    
+    drawWandSlots() {
+        const wand = this.player.wand;
+        const slotSize = 36;
+        const padding = 4;
+        const startX = (CONFIG.GAME_WIDTH - (wand.slotCount * (slotSize + padding))) / 2;
+        const startY = CONFIG.GAME_HEIGHT - 60;
+        
+        for (let i = 0; i < wand.slotCount; i++) {
+            const x = startX + i * (slotSize + padding);
+            const y = startY;
+            const slot = wand.slots[i];
+            const isCurrent = i === wand.currentIndex;
+            
+            CTX.fillStyle = isCurrent ? 'rgba(255, 255, 0, 0.3)' : 'rgba(0, 0, 0, 0.5)';
+            CTX.strokeStyle = isCurrent ? '#ffff00' : '#666666';
+            CTX.lineWidth = isCurrent ? 3 : 1;
+            CTX.fillRect(x, y, slotSize, slotSize);
+            CTX.strokeRect(x, y, slotSize, slotSize);
+            
+            if (slot) {
+                const isActive = slot.type === 'active';
+                CTX.fillStyle = isActive ? 'rgba(255, 150, 0, 0.3)' : 'rgba(100, 150, 255, 0.3)';
+                CTX.fillRect(x + 2, y + 2, slotSize - 4, slotSize - 4);
+                
+                CTX.font = '20px Arial';
+                CTX.textAlign = 'center';
+                CTX.textBaseline = 'middle';
+                CTX.fillStyle = '#fff';
+                CTX.fillText(slot.icon, x + slotSize / 2, y + slotSize / 2);
+            }
+        }
+        
+        // 冷却指示
+        if (wand.cooldownTimer > 0) {
+            CTX.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            CTX.font = '14px Arial';
+            CTX.textAlign = 'center';
+            CTX.fillText('CD', CONFIG.GAME_WIDTH / 2, startY - 10);
+        }
+    },
+
+    spawnEnemies() {
+        const baseRate = Math.max(10, 40 - Math.floor(this.time / 3));
+        
+        if (this.frameCount % baseRate === 0) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = CONFIG.ENEMY_SPAWN_DISTANCE + Math.random() * 100;
+            const x = this.player.x + Math.cos(angle) * dist;
+            const y = this.player.y + Math.sin(angle) * dist;
+            
+            let type = 1;
+            if (this.time > 30 && Math.random() < 0.2) type = 2;
+            if (this.time > 60 && Math.random() < 0.1) type = 3;
+
+            this.enemies.push(new Enemy(x, y, type));
         }
     },
 
     addXp(amount) {
         this.xp += amount;
-        if (this.xp >= this.xpToNext) {
+        while (this.xp >= this.xpToNext) {
             this.xp -= this.xpToNext;
             this.levelUp();
         }
@@ -384,7 +592,7 @@ const Game = {
 
     levelUp() {
         this.level++;
-        this.xpToNext = Math.floor(this.xpToNext * 1.2);
+        this.xpToNext = Math.floor(this.xpToNext * 1.15);
         this.state = 'LEVEL_UP';
         this.showUpgradeMenu();
         this.updateUI();
@@ -393,92 +601,70 @@ const Game = {
     showUpgradeMenu() {
         const container = document.getElementById('cards-container');
         container.innerHTML = '';
+        
+        // 随机选3个祝福
         const options = [];
         const pool = [...UPGRADES];
-        
-        for (let i = 0; i < 3 && pool.length > 0; i++) {
+        for (let i = 0; i < 3; i++) {
+            if (pool.length === 0) break;
             const idx = Math.floor(Math.random() * pool.length);
-            let opt = pool.splice(idx, 1)[0];
-            
-            // 15%概率技能卡变成Lv2
-            if (opt.type === 'skill' && Math.random() < 0.15) {
-                opt = { ...opt, skillLevel: 2, name: opt.name + ' ★★', desc: opt.desc + ' (Lv.2)' };
-            }
-            
-            options.push(opt);
+            const opt = pool[idx];
+            // 显示当前等级
+            const currentLevel = this.player.perkManager.getPerkLevel(opt.perkId);
+            options.push({ ...opt, currentLevel });
+            pool.splice(idx, 1);
         }
-        
+
         options.forEach(opt => {
             const div = document.createElement('div');
             div.className = 'upgrade-card';
-            if (opt.skillLevel === 2) div.classList.add('rare-card');
-            div.innerHTML = `<h3>${opt.name}</h3><p>${opt.desc}</p>`;
+            const levelText = opt.currentLevel > 0 ? ` (Lv.${opt.currentLevel + 1})` : '';
+            div.innerHTML = `<h3>${opt.name}${levelText}</h3><p>${opt.desc}</p>`;
             div.onclick = () => this.selectUpgrade(opt);
             container.appendChild(div);
         });
+
         document.getElementById('levelup-screen').classList.remove('hidden');
         document.getElementById('levelup-level').innerText = this.level;
     },
 
     selectUpgrade(opt) {
-        if (opt.type === 'stat') {
-            if (opt.stat === 'maxHp') { 
-                this.player.maxHp += opt.val; 
-                this.player.hp += opt.val; // 同时恢复
+        if (opt.type === 'perk') {
+            const result = this.player.perkManager.addPerk(opt.perkId);
+            if (result) {
+                this.addFloatingText('+' + result.perk.name + ' Lv.' + result.level, this.player.x, this.player.y - 40, '#ffcc00');
             }
-            else if (opt.stat === 'regen') this.player.regen += opt.val;
-            else if (opt.stat === 'cooldownMult') this.player.cooldownMult *= opt.val;
-            else if (opt.stat === 'speed') this.player.speed *= opt.val;
-            else if (opt.stat === 'pickupRange') this.player.pickupRange *= opt.val;
-            else if (opt.stat === 'projSpeed') this.player.projSpeed *= opt.val;
-            else if (opt.val < 1) this.player[opt.stat] += opt.val;
-            else this.player[opt.stat] *= opt.val;
-        } else if (opt.type === 'skill') {
-            // 添加技能到背包
-            const baseSkill = ALL_SKILLS[opt.skillId];
-            const level = opt.skillLevel || 1;
-            const skillToAdd = { 
-                ...baseSkill, 
-                level,
-                name: level > 1 ? baseSkill.name + '+'.repeat(level - 1) : baseSkill.name
-            };
-            this.player.wand.inventory.push(skillToAdd);
-            
-            const color = level >= 2 ? '#9b59b6' : '#00ff00';
-            this.addFloatingText('+' + skillToAdd.name, this.player.x, this.player.y - 30, color);
         }
+
         document.getElementById('levelup-screen').classList.add('hidden');
         this.state = 'PLAYING';
         this.updateUI();
     },
 
-    spawnGem(x, y, val) { this.gems.push(new Gem(x, y, val)); },
-    addFloatingText(text, x, y, color) { this.floatingTexts.push({ text, x, y, color, life: 30 }); },
+    spawnGem(x, y, val) {
+        this.gems.push(new Gem(x, y, val));
+    },
+
+    addFloatingText(text, x, y, color) {
+        this.floatingTexts.push({ text, x, y, color, life: 40 });
+    },
 
     updateUI() {
-        // 血量心形显示
-        const fullHearts = Math.floor(this.player.hp);
-        const halfHeart = (this.player.hp % 1) >= 0.5;
-        let hpHtml = '';
+        const hpPct = Math.max(0, (this.player.hp / this.player.maxHp) * 100);
+        document.getElementById('hp-bar-fill').style.width = hpPct + '%';
+        document.getElementById('hp-text').innerText = `${Math.ceil(this.player.hp)}/${this.player.maxHp}`;
         
-        for (let i = 0; i < Math.floor(this.player.maxHp); i++) {
-            if (i < fullHearts) {
-                hpHtml += '<span class="heart full">❤️</span>';
-            } else if (i === fullHearts && halfHeart) {
-                hpHtml += '<span class="heart half">💔</span>';
-            } else {
-                hpHtml += '<span class="heart empty">🖤</span>';
-            }
-        }
+        const xpPct = (this.xp / this.xpToNext) * 100;
+        document.getElementById('xp-bar-fill').style.width = xpPct + '%';
+        document.getElementById('level-text').innerText = 'Lv.' + this.level;
         
-        document.getElementById('hp-hearts').innerHTML = hpHtml;
-        document.getElementById('xp-bar-fill').style.width = (this.xp / this.xpToNext) * 100 + '%';
-        document.getElementById('level-text').innerText = 'Lv. ' + this.level;
         document.getElementById('kill-count').innerText = '击杀: ' + this.kills;
     },
 
     formatTime(sec) {
-        return Math.floor(sec / 60).toString().padStart(2, '0') + ':' + (sec % 60).toString().padStart(2, '0');
+        const m = Math.floor(sec / 60).toString().padStart(2, '0');
+        const s = (sec % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
     },
 
     gameOver() {
@@ -494,15 +680,19 @@ const Game = {
         this.enemies = [];
         this.gems = [];
         this.projectiles = [];
+        this.skillDrops = [];
         this.floatingTexts = [];
         this.particles = [];
+        this.lightningEffects = [];
+        
         document.getElementById('hud').classList.add('hidden');
         document.getElementById('levelup-screen').classList.add('hidden');
         document.getElementById('gameover-screen').classList.add('hidden');
+        document.getElementById('inventory-screen').classList.add('hidden');
         document.getElementById('main-menu').classList.remove('hidden');
     },
     
-    // ========== 背包系统 ==========
+    // 背包系统
     openInventory() {
         this.previousState = this.state;
         this.state = 'INVENTORY';
@@ -517,8 +707,6 @@ const Game = {
     
     renderInventory() {
         const wand = this.player.wand;
-        const mergeableSkills = wand.getMergeableSkills();
-        const mergeableIds = mergeableSkills.map(m => m.id + '_' + m.level);
         
         // 渲染技能槽
         const slotsContainer = document.getElementById('wand-slots');
@@ -532,11 +720,13 @@ const Game = {
             div.draggable = true;
             
             if (slot) {
+                const star = slot.star || 1;
                 div.classList.add('has-skill');
-                div.classList.add(slot.type === 'active' ? 'active-type' : 'passive-type');
-                const levelStr = slot.level > 1 ? `<span class="skill-level skill-level-${slot.level}">${'★'.repeat(slot.level)}</span>` : '';
-                div.innerHTML = `<span class="slot-index">${i + 1}</span><span class="slot-icon">${slot.icon}</span>${levelStr}`;
-                div.title = `${slot.name} (Lv.${slot.level || 1})\n${slot.desc || ''}`;
+                div.classList.add(slot.type === 'magic' ? 'magic-type' : 'modifier-type');
+                if (star >= 2) div.classList.add(`star-${star}`);
+                const starText = '⭐'.repeat(star);
+                div.innerHTML = `<span class="slot-index">${i + 1}</span><span class="slot-icon">${slot.icon}</span><span class="star-badge">${starText}</span>`;
+                div.title = `${slot.name} (${star}星)\n${slot.desc || ''}`;
             } else {
                 div.innerHTML = `<span class="slot-index">${i + 1}</span>`;
             }
@@ -553,8 +743,10 @@ const Game = {
             div.ondragstart = (e) => {
                 if (wand.slots[i]) {
                     e.dataTransfer.setData('type', 'slot');
-                    e.dataTransfer.setData('slotIndex', i);
+                    e.dataTransfer.setData('slotIndex', i.toString());
                     div.classList.add('dragging');
+                } else {
+                    e.preventDefault();
                 }
             };
             div.ondragend = () => div.classList.remove('dragging');
@@ -587,79 +779,158 @@ const Game = {
             slotsContainer.appendChild(div);
         }
         
-        // 渲染背包
+        // 渲染背包（格子样式）
         const inventoryContainer = document.getElementById('inventory-items');
         inventoryContainer.innerHTML = '';
         
-        if (wand.inventory.length === 0) {
-            inventoryContainer.innerHTML = '<div class="inventory-empty">背包空空如也~<br>击败敌人或升级获取技能</div>';
+        const totalSlots = 100; // 背包总格子数 10x10
+        
+        // 先渲染已有物品
+        wand.inventory.forEach((skill, idx) => {
+            const star = skill.star || 1;
+            const div = document.createElement('div');
+            div.className = 'inventory-item ' + (skill.type === 'magic' ? 'magic-type' : 'modifier-type');
+            if (star >= 2) div.classList.add(`star-${star}`);
+            div.draggable = true;
+            div.dataset.inventoryIndex = idx;
+            const starText = '⭐'.repeat(star);
+            div.innerHTML = `<span class="item-icon">${skill.icon}</span><span class="star-badge">${starText}</span>`;
+            div.title = `${skill.name} (${star}星)\n${skill.desc || ''}`;
+            
+            // 拖拽事件 - 背包物品拖出
+            div.ondragstart = (e) => {
+                e.dataTransfer.setData('type', 'inventory');
+                e.dataTransfer.setData('inventoryIndex', idx.toString());
+                div.classList.add('dragging');
+            };
+            div.ondragend = () => div.classList.remove('dragging');
+            
+            // 点击背包物品：装备到第一个空槽
+            div.onclick = () => {
+                let targetSlot = -1;
+                for (let i = 0; i < wand.slotCount; i++) {
+                    if (wand.slots[i] === null) {
+                        targetSlot = i;
+                        break;
+                    }
+                }
+                
+                if (targetSlot >= 0) {
+                    wand.equipSkill(idx, targetSlot);
+                } else {
+                    wand.equipSkill(idx, wand.slotCount - 1);
+                }
+                this.renderInventory();
+            };
+            
+            inventoryContainer.appendChild(div);
+        });
+        
+        // 填充空槽位
+        const emptySlots = totalSlots - wand.inventory.length;
+        for (let i = 0; i < emptySlots; i++) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'inventory-slot-empty';
+            
+            // 空槽位接收从技能槽拖入的技能
+            emptyDiv.ondragover = (e) => { e.preventDefault(); emptyDiv.classList.add('drag-over'); };
+            emptyDiv.ondragleave = () => emptyDiv.classList.remove('drag-over');
+            emptyDiv.ondrop = (e) => {
+                e.preventDefault();
+                emptyDiv.classList.remove('drag-over');
+                const type = e.dataTransfer.getData('type');
+                
+                if (type === 'slot') {
+                    // 从技能槽拖回背包
+                    const slotIndex = parseInt(e.dataTransfer.getData('slotIndex'));
+                    if (!isNaN(slotIndex) && wand.slots[slotIndex]) {
+                        wand.unequipSkill(slotIndex);
+                        this.renderInventory();
+                    }
+                }
+            };
+            
+            inventoryContainer.appendChild(emptyDiv);
+        }
+        
+        // 渲染已获得的祝福
+        const perksContainer = document.getElementById('perks-display');
+        perksContainer.innerHTML = '';
+        
+        const perks = this.player.perkManager.getAllPerks();
+        if (perks.length === 0) {
+            perksContainer.innerHTML = '<div class="perks-empty">暂无祝福，升级后可获得</div>';
         } else {
-            wand.inventory.forEach((skill, idx) => {
+            perks.forEach(perk => {
                 const div = document.createElement('div');
-                const isMergeable = mergeableIds.includes(skill.id + '_' + skill.level);
-                div.className = 'inventory-item ' + (skill.type === 'active' ? 'active-type' : 'passive-type');
-                if (isMergeable) div.classList.add('mergeable');
-                div.draggable = true;
-                
-                const levelStr = skill.level > 1 ? `<span class="skill-level skill-level-${skill.level}">${'★'.repeat(skill.level)}</span>` : '';
-                div.innerHTML = `<span class="item-icon">${skill.icon}</span><span class="item-name">${skill.name}</span>${levelStr}`;
-                div.title = `${skill.name} (Lv.${skill.level || 1})\n${skill.desc || ''}\n${isMergeable ? '💡 可合成!' : ''}`;
-                
-                // 拖拽事件 - 背包物品拖出
-                div.ondragstart = (e) => {
-                    e.dataTransfer.setData('type', 'inventory');
-                    e.dataTransfer.setData('inventoryIndex', idx);
-                    div.classList.add('dragging');
-                };
-                div.ondragend = () => div.classList.remove('dragging');
-                
-                // 点击背包物品：装备到第一个空槽
-                div.onclick = () => {
-                    let targetSlot = -1;
-                    for (let i = 0; i < wand.slotCount; i++) {
-                        if (wand.slots[i] === null) {
-                            targetSlot = i;
-                            break;
-                        }
-                    }
-                    
-                    if (targetSlot >= 0) {
-                        wand.equipSkill(idx, targetSlot);
-                    } else {
-                        wand.equipSkill(idx, wand.slotCount - 1);
-                    }
-                    this.renderInventory();
-                };
-                
-                inventoryContainer.appendChild(div);
+                div.className = 'perk-item';
+                div.innerHTML = `
+                    <span class="perk-icon">${perk.icon}</span>
+                    <div class="perk-info">
+                        <span class="perk-name">${perk.name}</span>
+                        <span class="perk-level">Lv.${perk.level}</span>
+                    </div>
+                `;
+                div.title = perk.desc;
+                perksContainer.appendChild(div);
             });
         }
     },
     
-    // 一键合成所有可合成的技能
-    autoMerge() {
-        const wand = this.player.wand;
-        let merged = 0;
+    // 合成面板
+    showMergePanel() {
+        document.getElementById('merge-modal').classList.remove('hidden');
+        this.renderMergePanel();
+    },
+    
+    closeMergePanel() {
+        document.getElementById('merge-modal').classList.add('hidden');
+    },
+    
+    renderMergePanel() {
+        const mergeList = document.getElementById('merge-list');
+        mergeList.innerHTML = '';
         
-        while (true) {
-            const mergeableSkills = wand.getMergeableSkills();
-            if (mergeableSkills.length === 0) break;
-            
-            const result = wand.mergeSkills(mergeableSkills[0].id);
-            if (result.success) {
-                merged++;
-                this.addFloatingText(`合成 Lv.${result.newLevel}!`, this.player.x, this.player.y - 30 - merged * 20, '#9b59b6');
-            } else {
-                break;
-            }
+        const mergeable = this.player.wand.canMergeSkills();
+        
+        if (mergeable.length === 0) {
+            mergeList.innerHTML = '<div class="merge-empty">没有可合成的技能<br>需要3个相同星级的技能</div>';
+            return;
         }
         
-        if (merged > 0) {
+        mergeable.forEach(item => {
+            const skill = item.skill;
+            const star = item.star;
+            const count = item.indices.length;
+            const starText = '⭐'.repeat(star);
+            const nextStarText = '⭐'.repeat(star + 1);
+            
+            const div = document.createElement('div');
+            div.className = 'merge-item';
+            div.innerHTML = `
+                <div class="merge-item-info">
+                    <span class="merge-item-icon">${skill.icon}</span>
+                    <div>
+                        <div class="merge-item-name">${skill.name}</div>
+                        <div class="merge-item-stars">${starText} → ${nextStarText}</div>
+                        <div class="merge-item-count">数量: ${count}</div>
+                    </div>
+                </div>
+                <button class="merge-do-btn" onclick="Game.doMerge('${skill.id}', ${star})">合成</button>
+            `;
+            mergeList.appendChild(div);
+        });
+    },
+    
+    doMerge(skillId, star) {
+        if (this.player.wand.mergeSkill(skillId, star)) {
+            this.addFloatingText('合成成功!', this.player.x, this.player.y - 40, '#00ff00');
+            this.renderMergePanel();
             this.renderInventory();
-        } else {
-            this.addFloatingText('没有可合成的技能', this.player.x, this.player.y - 30, '#999');
         }
     }
 };
 
-window.startGame = function(charType) { Game.start(charType); };
+window.startGame = function(charType) {
+    Game.start(charType);
+};

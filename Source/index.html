@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>葵瓜战记 (KuiGua Chronicles)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>葵瓜幸存者</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -14,118 +14,62 @@
         <div id="ui-layer">
             <!-- HUD -->
             <div id="hud" class="hidden">
-                <button class="hud-back-btn" onclick="Game.backToMenu()">← 返回</button>
-                <button class="hud-inventory-btn" onclick="Game.openInventory()">📦 背包</button>
-                <div id="hp-hearts"></div>
-                <div class="bar-container">
-                    <div class="bar-label">EXP</div>
-                    <div id="xp-bar-bg"><div id="xp-bar-fill"></div></div>
-                    <div id="level-text">Lv. 1</div>
+                <div class="hud-top">
+                    <div class="hud-left">
+                        <div id="hp-bar-container">
+                            <div id="hp-bar-bg">
+                                <div id="hp-bar-fill"></div>
+                            </div>
+                            <div id="hp-text">100/100</div>
+                        </div>
+                        <div id="xp-bar-container">
+                            <div id="xp-bar-bg">
+                                <div id="xp-bar-fill"></div>
+                            </div>
+                            <div id="level-text">Lv.1</div>
+                        </div>
+                    </div>
+                    <div class="hud-right">
+                        <div id="timer">00:00</div>
+                        <div id="kill-count">击杀: 0</div>
+                        <button class="inventory-btn" onclick="Game.openInventory()">📦 背包</button>
+                    </div>
                 </div>
-                <div id="timer">00:00</div>
-                <div id="kill-count">击杀: 0</div>
-            </div>
-
-            <!-- 加载界面 -->
-            <div id="loading-screen" class="screen">
-                <h1 class="loading-title">葵瓜战记</h1>
-                <p class="loading-subtitle">KuiGua Chronicles</p>
-                <canvas id="loading-cat" width="120" height="120"></canvas>
-                <button id="start-btn" class="menu-btn">开始游戏</button>
             </div>
 
             <!-- 主菜单 -->
-            <div id="main-menu" class="screen hidden">
-                <div class="main-top-bar">
-                    <div class="player-info">
-                        <div class="player-avatar">
-                            <canvas id="avatar-preview" width="50" height="50"></canvas>
+            <div id="main-menu" class="screen">
+                <h1 class="game-title">葵瓜幸存者</h1>
+                <p class="game-subtitle">KuiGua Survivors</p>
+                
+                <div class="char-select">
+                    <h3>选择角色</h3>
+                    <div class="char-options">
+                        <div class="char-option selected" onclick="selectChar('guagua', this)">
+                            <div class="char-preview guagua"></div>
+                            <span>瓜瓜</span>
+                            <small>速度+10%</small>
                         </div>
-                        <div class="player-details">
-                            <span class="player-name">喵喵玩家</span>
-                            <span class="player-level">Lv. 1</span>
-                        </div>
-                    </div>
-                    <div class="currency-bar">
-                        <div class="currency-item">
-                            <span class="currency-icon">🐟</span>
-                            <span class="currency-value">0</span>
-                        </div>
-                        <div class="currency-item">
-                            <span class="currency-icon">💎</span>
-                            <span class="currency-value">0</span>
+                        <div class="char-option" onclick="selectChar('kuikui', this)">
+                            <div class="char-preview kuikui"></div>
+                            <span>葵葵</span>
+                            <small>血量+20%</small>
                         </div>
                     </div>
                 </div>
-
-                <div class="main-center">
-                    <canvas id="main-character" width="200" height="200"></canvas>
-                    <h2 class="current-char-name">瓜瓜</h2>
-                </div>
-
-                <div class="main-bottom">
-                    <div class="bottom-nav">
-                        <div class="nav-btn" onclick="showCharacterSelect()">
-                            <span class="nav-icon">🐱</span>
-                            <span class="nav-label">角色</span>
-                        </div>
-                        <div class="nav-btn" onclick="showPanel('talents')">
-                            <span class="nav-icon">⭐</span>
-                            <span class="nav-label">天赋</span>
-                        </div>
-                        <div class="nav-btn start-btn-main" onclick="startGameWithSelectedChar()">
-                            <span class="nav-icon">⚔️</span>
-                            <span class="nav-label">开始</span>
-                        </div>
-                        <div class="nav-btn" onclick="showPanel('collection')">
-                            <span class="nav-icon">📖</span>
-                            <span class="nav-label">图鉴</span>
-                        </div>
-                        <div class="nav-btn" onclick="showPanel('settings')">
-                            <span class="nav-icon">⚙️</span>
-                            <span class="nav-label">设置</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="side-buttons left">
-                    <div class="side-btn" onclick="showPanel('achievements')">
-                        <span>🏆</span><span>成就</span>
-                    </div>
-                    <div class="side-btn" onclick="showPanel('daily')">
-                        <span>📅</span><span>每日</span>
-                    </div>
-                </div>
-
-                <div class="side-buttons right">
-                    <div class="side-btn" onclick="showPanel('shop')">
-                        <span>🛒</span><span>商店</span>
-                    </div>
-                    <div class="side-btn" onclick="showPanel('mail')">
-                        <span>📬</span><span>邮件</span>
-                    </div>
-                </div>
-
-                <p class="menu-footer">© 2024 葵瓜战记 v0.1</p>
-            </div>
-
-            <!-- 面板容器 -->
-            <div id="panel-overlay" class="screen hidden" onclick="closePanel()">
-                <div class="panel-container" onclick="event.stopPropagation()">
-                    <div class="panel-header">
-                        <h2 id="panel-title">面板标题</h2>
-                        <button class="panel-close" onclick="closePanel()">✕</button>
-                    </div>
-                    <div id="panel-content" class="panel-body"></div>
+                
+                <button class="start-btn" onclick="startGame(selectedChar)">开始游戏</button>
+                
+                <div class="controls-hint">
+                    <p>WASD / 方向键 移动</p>
+                    <p>自动攻击最近敌人</p>
                 </div>
             </div>
-
-
 
             <!-- 升级界面 -->
             <div id="levelup-screen" class="screen hidden">
-                <h2>升级了! (Lv. <span id="levelup-level"></span>)</h2>
-                <p>选择一个升级</p>
+                <h2>升级! Lv.<span id="levelup-level"></span></h2>
+                <p>选择一个强化</p>
                 <div id="cards-container"></div>
             </div>
 
@@ -134,36 +78,79 @@
                 <h1>游戏结束</h1>
                 <p>存活时间: <span id="final-time"></span></p>
                 <p>击杀数量: <span id="final-kills"></span></p>
-                <button onclick="location.reload()">再来一局</button>
+                <button onclick="Game.backToMenu()">返回菜单</button>
+                <button onclick="startGame(selectedChar)">再来一局</button>
             </div>
-
-            <!-- 背包/技能编辑界面 -->
+            
+            <!-- 背包界面 -->
             <div id="inventory-screen" class="screen hidden">
                 <div class="inventory-container">
                     <div class="inventory-header">
                         <h2>⚔️ 技能编辑</h2>
-                        <button class="inventory-close" onclick="Game.closeInventory()">✕ 关闭</button>
+                        <div class="inventory-header-btns">
+                            <button class="merge-btn" onclick="Game.showMergePanel()">🔄 合成</button>
+                            <button class="gm-header-btn" onclick="GM.openPanel()">🛠️ GM</button>
+                            <button class="inventory-close" onclick="Game.closeInventory()">ESC 关闭</button>
+                        </div>
                     </div>
                     
                     <div class="inventory-section">
-                        <h3>🔮 技能槽 (拖拽排列)</h3>
+                        <h3>🔮 技能槽 (点击槽位卸下技能)</h3>
                         <div id="wand-slots" class="slot-container"></div>
                     </div>
                     
                     <div class="inventory-section">
-                        <h3>📦 背包 <button class="merge-btn" onclick="Game.autoMerge()">🔮 一键合成</button></h3>
+                        <h3>📦 背包 (点击装备到空槽位) <span class="star-hint">⭐=1星 ⭐⭐=2星 ⭐⭐⭐=3星</span></h3>
                         <div id="inventory-items" class="inventory-grid"></div>
                     </div>
                     
+                    <div class="inventory-section">
+                        <h3>🎁 已获得的祝福</h3>
+                        <div id="perks-display" class="perks-grid"></div>
+                    </div>
+                    
                     <div class="inventory-tip">
-                        💡 提示：点击背包技能放入槽位，点击槽位技能移回背包，拖拽槽位可交换顺序
+                        💡 被动技能(蓝色)放在魔法技能(黄色)前面会修饰它！3个同星级技能可合成升星！
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 合成面板 -->
+            <div id="merge-modal" class="screen hidden">
+                <div class="merge-container">
+                    <div class="merge-header">
+                        <h2>🔄 技能合成</h2>
+                        <button class="merge-close-btn" onclick="Game.closeMergePanel()">✕ 关闭</button>
+                    </div>
+                    <div class="merge-tip">3个相同星级的技能可以合成为更高星级 (最高3星)</div>
+                    <div id="merge-list" class="merge-list"></div>
+                </div>
+            </div>
+            
+            <!-- GM面板弹窗 -->
+            <div id="gm-modal" class="screen hidden">
+                <div class="gm-modal-container">
+                    <div class="gm-header">
+                        <h2>🛠️ GM指令面板</h2>
+                        <button class="gm-close-btn" onclick="GM.closePanel()">✕ 关闭</button>
+                    </div>
+                    <div class="gm-section">
+                        <h4>🔥 魔法技能</h4>
+                        <div id="gm-magic-list" class="gm-list"></div>
+                    </div>
+                    <div class="gm-section">
+                        <h4>💠 被动技能</h4>
+                        <div id="gm-modifier-list" class="gm-list"></div>
+                    </div>
+                    <div class="gm-section">
+                        <h4>🎁 祝福</h4>
+                        <div id="gm-perk-list" class="gm-list"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 脚本加载顺序很重要 -->
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/input.js"></script>
@@ -171,12 +158,24 @@
     <script src="js/scenes.js"></script>
     <script src="js/entities.js"></script>
     <script src="js/weapons.js"></script>
-    <script src="js/ui.js"></script>
     <script src="js/game.js"></script>
+    <script src="js/gm.js"></script>
     <script>
-        // 初始化
-        UI.init();
+        let selectedChar = 'guagua';
+        
+        function selectChar(charType, element) {
+            selectedChar = charType;
+            document.querySelectorAll('.char-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+        
+        function startGame(charType) {
+            document.getElementById('main-menu').classList.add('hidden');
+            Game.start(charType);
+        }
+        
         Game.init();
+        GM.init();
     </script>
 </body>
 </html>

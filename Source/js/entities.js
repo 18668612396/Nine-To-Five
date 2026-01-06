@@ -1,4 +1,4 @@
-// --- 游戏实体类 (雷霆战机风格) ---
+// --- 游戏实体类 (类幸存者风格 + 魔法工艺技能系统) ---
 
 class Entity {
     constructor(x, y, radius, color) {
@@ -14,77 +14,66 @@ class Entity {
         ctx.arc(this.x - camX, this.y - camY, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = this.color;
         ctx.fill();
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
-        ctx.stroke();
     }
 }
 
 class Player extends Entity {
     constructor(charType) {
-        super(CONFIG.GAME_WIDTH / 2, CONFIG.GAME_HEIGHT * 0.8, 20, '#fff');
+        super(0, 0, 20, '#fff');
         this.charType = charType;
         
-        // 基础属性 - 4格血量系统
-        this.speed = 5;
-        this.maxHp = 4;  // 4格血
-        this.hp = 4;
+        // 基础属性
+        this.speed = 4;
+        this.maxHp = 100;
+        this.hp = 100;
         this.regen = 0;
-        this.pickupRange = 80;
+        this.pickupRange = 100;
         
         // 战斗属性
         this.damageMult = 1.0;
-        this.areaMult = 1.0;
         this.cooldownMult = 1.0;
         this.projSpeed = 1.0;
-        this.durationMult = 1.0;
-        this.critChance = 0.05;
-        this.amount = 0;
         this.knockback = 1.0;
 
         // 法杖系统（组合技能）
-        this.wand = new Wand(this, 8); // 8个技能槽
+        this.wand = new Wand(this, 8);
+        
+        // 祝福系统
+        this.perkManager = new PerkManager(this);
+        
+        // 额外属性
+        this.vampirism = 0;
+        this.critChance = 0;
+        this.xpMult = 1;
+        this.damageAura = 0;
+        this.extraProjectiles = 0;
+        this.dropRate = 1;
+        this.projSpeed = 1;
+        this.knockback = 1;
 
-        // 角色特性
+        // 角色特性 + 初始技能
         if (charType === 'guagua') {
             this.color = COLORS.guagua;
-            this.speed = 6;
-            // 瓜瓜初始：急速 + 电火花 装备在槽位
-            this.wand.slots[0] = { ...PASSIVE_SKILLS.rapid };
-            this.wand.slots[1] = { ...ACTIVE_SKILLS.spark };
+            this.speed = 4.5;
+            // 瓜瓜初始：急速施法 + 火花弹
+            this.wand.slots[0] = { ...MODIFIER_SKILLS.reduce_cooldown, star: 1 };
+            this.wand.slots[1] = { ...MAGIC_SKILLS.spark_bolt, star: 1 };
         } else {
             this.color = COLORS.kuikui;
-            this.maxHp = 5;  // 葵葵多1格血
-            this.hp = 5;
-            // 葵葵初始：火球 装备在槽位
-            this.wand.slots[0] = { ...ACTIVE_SKILLS.fireball };
+            this.maxHp = 120;
+            this.hp = 120;
+            // 葵葵初始：火球术
+            this.wand.slots[0] = { ...MAGIC_SKILLS.fireball, star: 1 };
         }
 
-        // 视觉
         this.facingRight = true;
-        
-        // 移动边界（不能超出屏幕）
-        this.minX = this.radius;
-        this.maxX = CONFIG.GAME_WIDTH - this.radius;
-        this.minY = this.radius;
-        this.maxY = CONFIG.GAME_HEIGHT - this.radius;
-    }
-
-    // 解锁/升级武器效果 (保留兼容)
-    addSkill(skillId) {
-        return this.wand.addSkill(skillId);
     }
 
     update() {
         const input = Input.getAxis();
         
-        // 移动
         this.x += input.x * this.speed;
         this.y += input.y * this.speed;
-        
-        // 限制在活动区域内
-        this.x = Math.max(this.minX, Math.min(this.maxX, this.x));
-        this.y = Math.max(this.minY, Math.min(this.maxY, this.y));
         
         if (input.x > 0) this.facingRight = true;
         if (input.x < 0) this.facingRight = false;
@@ -95,7 +84,7 @@ class Player extends Entity {
             if (this.hp > this.maxHp) this.hp = this.maxHp;
         }
 
-        // 法杖更新
+        // 法杖更新（自动施法）
         this.wand.update();
     }
 
@@ -104,60 +93,39 @@ class Player extends Entity {
         const y = this.y - camY;
         const r = this.radius;
         const input = Input.getAxis();
-        const isFlipped = !this.facingRight && input.x !== 0;
+        const isFlipped = !this.facingRight;
         
-        const tailState = CharacterRenderer.draw(this.charType, ctx, x, y, r, Game.frameCount, {
+        CharacterRenderer.draw(this.charType, ctx, x, y, r, Game.frameCount, {
             input,
             isFlipped,
             lastTailX: this.lastTailX,
             lastTailY: this.lastTailY,
             lastTailAngle: this.lastTailAngle
         });
-        
-        if (tailState) {
-            this.lastTailX = tailState.tailX;
-            this.lastTailY = tailState.tailY;
-            this.lastTailAngle = tailState.tailBaseAngle;
-        }
     }
 }
 
 class Enemy extends Entity {
     constructor(x, y, type) {
-        let r = 18, c = COLORS.enemy_1, hp = 15, speed = 2, xp = 1;
-        let contactDamage = 0.5; // 默认小怪伤害半格
-        let isElite = false;
-        let isBoss = false;
+        let r = 18, c = COLORS.enemy_1, hp = 20, speed = 1.5, xp = 1, damage = 10;
 
         if (type === 2) {
-            // 快速型
             c = COLORS.enemy_2;
-            r = 15;
-            speed = 4;
-            hp = 8;
+            r = 14;
+            speed = 2.5;
+            hp = 12;
             xp = 2;
-            contactDamage = 0.5;
+            damage = 8;
         } else if (type === 3) {
-            // 重型/精英
             c = COLORS.enemy_3;
-            r = 28;
-            speed = 1.5;
-            hp = 40;
-            xp = 5;
-            contactDamage = 1; // 精英伤害1格
-            isElite = true;
-        } else if (type === 4) {
-            // Boss
-            c = '#ff0000';
-            r = 45;
+            r = 30;
             speed = 1;
-            hp = 200;
-            xp = 20;
-            contactDamage = 1; // Boss伤害1格
-            isBoss = true;
+            hp = 80;
+            xp = 5;
+            damage = 15;
         }
 
-        const diffMult = 1 + (Game.time / 60) * 0.15;
+        const diffMult = 1 + (Game.time / 60) * 0.2;
         hp *= diffMult;
 
         super(x, y, r, c);
@@ -165,47 +133,104 @@ class Enemy extends Entity {
         this.hp = hp;
         this.maxHp = hp;
         this.speed = speed;
-        this.baseSpeed = speed;
         this.xpValue = xp;
-        this.contactDamage = contactDamage;
-        this.isElite = isElite;
-        this.isBoss = isBoss;
+        this.damage = damage;
         this.knockbackX = 0;
         this.knockbackY = 0;
+        
+        // 状态效果
+        this.burnDamage = 0;
+        this.burnDuration = 0;
+        this.poisonStacks = 0;
+        this.poisonTimer = 0;
+    }
+
+    addBurn(damage, duration) {
+        this.burnDamage = Math.max(this.burnDamage, damage);
+        this.burnDuration = Math.max(this.burnDuration, duration);
+    }
+
+    addPoison(stacks) {
+        this.poisonStacks += stacks;
+        this.poisonTimer = 60; // 每秒触发一次
     }
 
     update(player) {
-        // 击退效果
         this.knockbackX *= 0.9;
         this.knockbackY *= 0.9;
         if (Math.abs(this.knockbackX) < 0.1) this.knockbackX = 0;
         if (Math.abs(this.knockbackY) < 0.1) this.knockbackY = 0;
 
         if (this.knockbackX === 0 && this.knockbackY === 0) {
-            // 基础向下移动（跟随地图滚动）
-            this.y += Game.scrollSpeed + this.speed;
-            
-            // 轻微追踪玩家（横向）
             const dx = player.x - this.x;
-            if (Math.abs(dx) > 10) {
-                this.x += Math.sign(dx) * this.speed * 0.3;
+            const dy = player.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0) {
+                this.x += (dx / dist) * this.speed;
+                this.y += (dy / dist) * this.speed;
             }
         } else {
             this.x += this.knockbackX;
             this.y += this.knockbackY;
         }
+
+        // 灼烧伤害
+        if (this.burnDuration > 0) {
+            this.burnDuration--;
+            if (Game.frameCount % 20 === 0) {
+                this.hp -= this.burnDamage;
+                Game.addFloatingText(Math.floor(this.burnDamage), this.x, this.y - 30, '#ff6600');
+                Game.spawnParticles(this.x, this.y, '#ff6600', 2);
+                if (this.hp <= 0 && !this.markedForDeletion) {
+                    this.die();
+                }
+            }
+        }
+
+        // 中毒伤害
+        if (this.poisonStacks > 0) {
+            this.poisonTimer--;
+            if (this.poisonTimer <= 0) {
+                const poisonDmg = this.poisonStacks * 2;
+                this.hp -= poisonDmg;
+                Game.addFloatingText(Math.floor(poisonDmg), this.x, this.y - 30, '#00ff00');
+                Game.spawnParticles(this.x, this.y, '#00ff00', 2);
+                this.poisonStacks = Math.max(0, this.poisonStacks - 1);
+                this.poisonTimer = 60;
+                if (this.hp <= 0 && !this.markedForDeletion) {
+                    this.die();
+                }
+            }
+        }
     }
 
-    takeDamage(amt, kbX, kbY) {
+    die(killerProjectile) {
+        this.markedForDeletion = true;
+        Game.spawnGem(this.x, this.y, this.xpValue);
+        Game.kills++;
+        
+        // 吸血效果
+        if (Game.player.vampirism > 0) {
+            Game.player.hp = Math.min(Game.player.maxHp, Game.player.hp + Game.player.vampirism);
+        }
+        
+        // 掉落技能
+        trySpawnSkillDrop(this.x, this.y, Game.player);
+        
+        // 触发击杀效果
+        if (killerProjectile && killerProjectile.onKill) {
+            killerProjectile.onKill(this);
+        }
+    }
+
+    takeDamage(amt, kbX, kbY, projectile) {
         this.hp -= amt;
         this.knockbackX = kbX || 0;
         this.knockbackY = kbY || 0;
-        Game.addFloatingText(Math.floor(amt), this.x, this.y, '#fff');
+        Game.addFloatingText(Math.floor(amt), this.x, this.y - 20, '#fff');
 
-        if (this.hp <= 0) {
-            this.markedForDeletion = true;
-            Game.spawnGem(this.x, this.y, this.xpValue);
-            Game.kills++;
+        if (this.hp <= 0 && !this.markedForDeletion) {
+            this.die(projectile);
         }
     }
 
@@ -213,91 +238,56 @@ class Enemy extends Entity {
         const x = this.x - camX;
         const y = this.y - camY;
         const r = this.radius;
-        const bounce = Math.sin(Game.frameCount * 0.2 + this.x) * 2;
+        const bounce = Math.sin(Game.frameCount * 0.15 + this.x) * 2;
         
         ctx.save();
         ctx.translate(x, y + bounce);
+        
         ctx.fillStyle = this.color;
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
 
         if (this.type === 2) {
-            // 蝙蝠型 - 快速敌人
             ctx.beginPath();
             ctx.arc(0, 0, r, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
-            const wingFlap = Math.sin(Game.frameCount * 0.5) * 8;
+            const wingFlap = Math.sin(Game.frameCount * 0.4) * 6;
             ctx.beginPath();
-            ctx.moveTo(-r, -5);
-            ctx.lineTo(-r - 15, -20 + wingFlap);
-            ctx.lineTo(-r - 8, 0);
-            ctx.moveTo(r, -5);
-            ctx.lineTo(r + 15, -20 + wingFlap);
-            ctx.lineTo(r + 8, 0);
+            ctx.moveTo(-r, -3);
+            ctx.lineTo(-r - 12, -15 + wingFlap);
+            ctx.lineTo(-r - 6, 0);
+            ctx.moveTo(r, -3);
+            ctx.lineTo(r + 12, -15 + wingFlap);
+            ctx.lineTo(r + 6, 0);
             ctx.fill();
-            ctx.stroke();
         } else if (this.type === 3) {
-            // 岩石怪 - 重型敌人
             ctx.beginPath();
-            ctx.rect(-r, -r, r * 2, r * 2);
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
             ctx.fill();
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(-r, -r); ctx.lineTo(-r - 8, -r - 8); ctx.lineTo(0, -r);
-            ctx.moveTo(r, -r); ctx.lineTo(r + 8, -r - 8); ctx.lineTo(0, -r);
             ctx.stroke();
         } else {
-            // 史莱姆 - 普通敌人
-            const wobble = Math.sin(Game.frameCount * 0.1 + this.y) * 3;
+            const wobble = Math.sin(Game.frameCount * 0.1 + this.y) * 2;
             ctx.beginPath();
             ctx.ellipse(0, 0, r + wobble, r - wobble, 0, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
         }
 
-        // 表情
-        if (this.knockbackX !== 0 || this.knockbackY !== 0) {
-            // 受伤表情
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(-6, -6); ctx.lineTo(-3, -3); ctx.lineTo(-6, 0);
-            ctx.moveTo(6, -6); ctx.lineTo(3, -3); ctx.lineTo(6, 0);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(0, 6, 4, 0, Math.PI * 2);
-            ctx.stroke();
-        } else {
-            // 正常表情
-            ctx.fillStyle = '#000';
-            ctx.beginPath();
-            ctx.arc(-5, -3, 3, 0, Math.PI * 2);
-            ctx.arc(5, -3, 3, 0, Math.PI * 2);
-            ctx.fill();
-            // 腮红
-            ctx.fillStyle = 'rgba(255, 100, 100, 0.3)';
-            ctx.beginPath();
-            ctx.arc(-8, 3, 4, 0, Math.PI * 2);
-            ctx.arc(8, 3, 4, 0, Math.PI * 2);
-            ctx.fill();
-            // 嘴巴
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(0, 4, 4, 0, Math.PI, false);
-            ctx.stroke();
-        }
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(-r * 0.3, -r * 0.2, r * 0.15, 0, Math.PI * 2);
+        ctx.arc(r * 0.3, -r * 0.2, r * 0.15, 0, Math.PI * 2);
+        ctx.fill();
         
-        // 血条
         if (this.hp < this.maxHp) {
             const barWidth = r * 2;
             const barHeight = 4;
             const hpPct = this.hp / this.maxHp;
             ctx.fillStyle = '#333';
-            ctx.fillRect(-barWidth/2, -r - 10, barWidth, barHeight);
+            ctx.fillRect(-barWidth/2, -r - 12, barWidth, barHeight);
             ctx.fillStyle = '#ff4444';
-            ctx.fillRect(-barWidth/2, -r - 10, barWidth * hpPct, barHeight);
+            ctx.fillRect(-barWidth/2, -r - 12, barWidth * hpPct, barHeight);
         }
         
         ctx.restore();
@@ -306,7 +296,7 @@ class Enemy extends Entity {
 
 class Gem extends Entity {
     constructor(x, y, val) {
-        super(x, y, 8, COLORS.gem);
+        super(x, y, 10, COLORS.gem);
         this.val = val;
         this.floatOffset = Math.random() * Math.PI * 2;
     }
@@ -317,10 +307,11 @@ class Gem extends Entity {
         const dist = Math.sqrt(dx * dx + dy * dy);
         
         if (dist < player.pickupRange) {
-            this.x += (dx / dist) * 10;
-            this.y += (dy / dist) * 10;
+            const speed = 8;
+            this.x += (dx / dist) * speed;
+            this.y += (dy / dist) * speed;
             
-            if (dist < player.radius) {
+            if (dist < player.radius + this.radius) {
                 Game.addXp(this.val);
                 this.markedForDeletion = true;
             }
@@ -328,91 +319,25 @@ class Gem extends Entity {
     }
     
     draw(ctx, camX, camY) {
+        const x = this.x - camX;
+        const y = this.y - camY;
         const float = Math.sin(Game.frameCount * 0.1 + this.floatOffset) * 3;
+        
         ctx.fillStyle = this.color;
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(this.x - camX, this.y - camY - 8 + float);
-        ctx.lineTo(this.x - camX + 8, this.y - camY + float);
-        ctx.lineTo(this.x - camX, this.y - camY + 8 + float);
-        ctx.lineTo(this.x - camX - 8, this.y - camY + float);
+        ctx.moveTo(x, y - 10 + float);
+        ctx.lineTo(x + 8, y + float);
+        ctx.lineTo(x, y + 10 + float);
+        ctx.lineTo(x - 8, y + float);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
         
-        // 闪光效果
         ctx.fillStyle = 'rgba(255,255,255,0.5)';
         ctx.beginPath();
-        ctx.arc(this.x - camX - 2, this.y - camY - 2 + float, 2, 0, Math.PI * 2);
+        ctx.arc(x - 2, y - 3 + float, 3, 0, Math.PI * 2);
         ctx.fill();
-    }
-}
-
-class Projectile extends Entity {
-    constructor(x, y, dx, dy, speed, duration, damage, knockback, radius, color, penetrate) {
-        super(x, y, radius, color);
-        this.dx = dx;
-        this.dy = dy;
-        this.speed = speed;
-        this.duration = duration;
-        this.damage = damage;
-        this.knockback = knockback;
-        this.penetrate = penetrate || 1;
-        this.hitList = [];
-        this.angle = Math.atan2(dy, dx); // 固定朝向移动方向
-    }
-
-    update() {
-        this.x += this.dx * this.speed;
-        this.y += this.dy * this.speed;
-        this.duration--;
-        if (this.duration <= 0) this.markedForDeletion = true;
-        
-        // 超出屏幕边界
-        if (this.x < -50 || this.x > CONFIG.GAME_WIDTH + 50 || 
-            this.y < -50 || this.y > CONFIG.GAME_HEIGHT + 50) {
-            this.markedForDeletion = true;
-        }
-    }
-
-    draw(ctx, camX, camY) {
-        ctx.save();
-        ctx.translate(this.x - camX, this.y - camY);
-        ctx.rotate(this.angle);
-        ctx.fillStyle = this.color;
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
-
-        if (this.projectileType === 'laser') {
-            // 激光子弹
-            ctx.fillStyle = '#00ffff';
-            ctx.shadowColor = '#00ffff';
-            ctx.shadowBlur = 10;
-            ctx.fillRect(-3, -8, 6, 16);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(-1, -6, 2, 12);
-        } else if (this.projectileType === 'spread') {
-            // 散射子弹
-            ctx.fillStyle = '#ffff00';
-            ctx.shadowColor = '#ffff00';
-            ctx.shadowBlur = 8;
-            ctx.beginPath();
-            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (this.projectileType === 'wingman') {
-            // 僚机子弹
-            ctx.fillStyle = '#ff6600';
-            ctx.shadowColor = '#ff6600';
-            ctx.shadowBlur = 6;
-            ctx.fillRect(-2, -6, 4, 12);
-        } else {
-            // 普通投射物
-            ctx.beginPath();
-            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-        }
-        ctx.restore();
     }
 }

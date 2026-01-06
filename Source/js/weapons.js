@@ -1,620 +1,1010 @@
-// --- 魔法工艺风格组合技能系统 ---
+// --- 魔法工艺风格技能系统 (类幸存者版) ---
+// 技能分为三类：
+// 1. 魔法技能 (Magic) - 主动技能，产生投射物
+// 2. 被动技能 (Modifier) - 修饰魔法技能
+// 3. 祝福 (Perk) - 角色永久增益，升级获取
 
-// ========== 技能定义 ==========
-
-// 主动技能 - 产生投射物
-const ACTIVE_SKILLS = {
-    fireball: {
-        id: 'fireball',
-        name: '火球',
-        type: 'active',
-        icon: '🔥',
-        cooldown: 25,
-        manaCost: 5,
-        // 等级加成：伤害+30%，范围+20%
-        levelBonus: { damage: 0.3, radius: 0.2 },
-        create: (caster, mods) => new FireballProjectile(caster, mods)
-    },
-    laser: {
-        id: 'laser',
-        name: '激光',
-        type: 'active',
-        icon: '⚡',
-        cooldown: 15,
-        manaCost: 3,
-        levelBonus: { damage: 0.25, speed: 0.2 },
-        create: (caster, mods) => new LaserProjectile(caster, mods)
-    },
-    missile: {
-        id: 'missile',
-        name: '导弹',
-        type: 'active',
-        icon: '🚀',
-        cooldown: 40,
-        manaCost: 8,
-        levelBonus: { damage: 0.35, explosionRadius: 0.25 },
-        create: (caster, mods) => new MissileProjectile(caster, mods)
-    },
-    spark: {
-        id: 'spark',
-        name: '电火花',
-        type: 'active',
+// ========== 魔法技能 (主动) ==========
+const MAGIC_SKILLS = {
+    spark_bolt: {
+        id: 'spark_bolt',
+        name: '火花弹',
+        type: 'magic',
         icon: '✨',
         cooldown: 8,
-        manaCost: 2,
-        levelBonus: { damage: 0.2, speed: 0.15 },
+        desc: '快速的小型魔法弹',
         create: (caster, mods) => new SparkProjectile(caster, mods)
     },
-    plasma: {
-        id: 'plasma',
-        name: '等离子',
-        type: 'active',
+    fireball: {
+        id: 'fireball',
+        name: '火球术',
+        type: 'magic',
+        icon: '🔥',
+        cooldown: 25,
+        desc: '燃烧的火球',
+        create: (caster, mods) => new FireballProjectile(caster, mods)
+    },
+    magic_arrow: {
+        id: 'magic_arrow',
+        name: '魔法箭',
+        type: 'magic',
+        icon: '➤',
+        cooldown: 12,
+        desc: '精准的魔法箭矢',
+        create: (caster, mods) => new LaserProjectile(caster, mods)
+    },
+    energy_orb: {
+        id: 'energy_orb',
+        name: '能量球',
+        type: 'magic',
         icon: '💠',
-        cooldown: 50,
-        manaCost: 12,
-        levelBonus: { damage: 0.4, penetrate: 0.5 },
+        cooldown: 40,
+        desc: '缓慢但强力的能量球',
         create: (caster, mods) => new PlasmaProjectile(caster, mods)
+    },
+    magic_missile: {
+        id: 'magic_missile',
+        name: '魔导弹',
+        type: 'magic',
+        icon: '🚀',
+        cooldown: 35,
+        desc: '追踪敌人的导弹',
+        create: (caster, mods) => new MissileProjectile(caster, mods)
     }
 };
 
-// 被动技能 - 修饰投射物
-const PASSIVE_SKILLS = {
-    split: {
-        id: 'split',
-        name: '分裂',
-        type: 'passive',
-        icon: '🔀',
-        desc: '投射物分裂成3个',
-        levelBonus: { splitCount: 1 }, // 每级多1个分裂
-        modify: (mods, level = 1) => { 
-            const extraSplit = (level - 1);
-            mods.splitCount = (mods.splitCount || 1) * (3 + extraSplit); 
-            mods.damage *= 0.5; 
-        }
+
+// ========== 被动技能 (修饰符) ==========
+const MODIFIER_SKILLS = {
+    double_cast: {
+        id: 'double_cast',
+        name: '双重施法',
+        type: 'modifier',
+        icon: '⚡',
+        desc: '同时发射2个投射物',
+        modify: (mods) => { mods.splitCount = (mods.splitCount || 1) + 1; }
+    },
+    triple_cast: {
+        id: 'triple_cast',
+        name: '三重施法',
+        type: 'modifier',
+        icon: '⚡⚡',
+        desc: '同时发射3个投射物',
+        modify: (mods) => { mods.splitCount = (mods.splitCount || 1) + 2; }
     },
     homing: {
         id: 'homing',
         name: '追踪',
-        type: 'passive',
+        type: 'modifier',
         icon: '🎯',
         desc: '投射物追踪敌人',
-        levelBonus: { turnSpeed: 0.02 },
-        modify: (mods, level = 1) => { 
-            mods.homing = true; 
-            mods.turnSpeed = (mods.turnSpeed || 0) + 0.05 + (level - 1) * 0.02; 
-        }
+        modify: (mods) => { mods.homing = true; mods.turnSpeed = (mods.turnSpeed || 0) + 0.05; }
     },
-    pierce: {
-        id: 'pierce',
+    piercing: {
+        id: 'piercing',
         name: '穿透',
-        type: 'passive',
+        type: 'modifier',
         icon: '📍',
         desc: '穿透多个敌人',
-        levelBonus: { penetrate: 2 },
-        modify: (mods, level = 1) => { 
-            mods.penetrate = (mods.penetrate || 1) + 3 + (level - 1) * 2; 
-        }
+        modify: (mods) => { mods.penetrate = (mods.penetrate || 1) + 2; }
     },
-    chain: {
-        id: 'chain',
-        name: '连锁',
-        type: 'passive',
+    chainsaw: {
+        id: 'chainsaw',
+        name: '链锯',
+        type: 'modifier',
         icon: '⛓️',
-        desc: '命中后跳跃到附近敌人',
-        levelBonus: { chainCount: 1 },
-        modify: (mods, level = 1) => { 
-            mods.chainCount = (mods.chainCount || 0) + 2 + (level - 1); 
-        }
+        desc: '命中后跳跃攻击',
+        modify: (mods) => { mods.chainCount = (mods.chainCount || 0) + 2; }
     },
-    rapid: {
-        id: 'rapid',
-        name: '急速',
-        type: 'passive',
+    speed_up: {
+        id: 'speed_up',
+        name: '加速',
+        type: 'modifier',
         icon: '💨',
-        desc: '减少冷却时间',
-        levelBonus: { cooldownMult: -0.1 },
-        modify: (mods, level = 1) => { 
-            mods.cooldownMult = (mods.cooldownMult || 1) * (0.6 - (level - 1) * 0.1); 
-        }
+        desc: '投射物速度+50%',
+        modify: (mods) => { mods.speed = (mods.speed || 1) * 1.5; }
     },
-    heavy: {
-        id: 'heavy',
-        name: '重击',
-        type: 'passive',
+    damage_plus: {
+        id: 'damage_plus',
+        name: '伤害增幅',
+        type: 'modifier',
         icon: '💪',
-        desc: '伤害翻倍但速度减半',
-        levelBonus: { damage: 0.5 },
-        modify: (mods, level = 1) => { 
-            mods.damage *= 2 + (level - 1) * 0.5; 
-            mods.speed *= 0.5; 
-        }
+        desc: '伤害+50%',
+        modify: (mods) => { mods.damage = (mods.damage || 1) * 1.5; }
     },
     explosive: {
         id: 'explosive',
         name: '爆炸',
-        type: 'passive',
+        type: 'modifier',
         icon: '💥',
-        desc: '命中时产生爆炸',
-        levelBonus: { explosionRadius: 15 },
-        modify: (mods, level = 1) => { 
-            mods.explosive = true; 
-            mods.explosionRadius = (mods.explosionRadius || 30) + 20 + (level - 1) * 15; 
-        }
+        desc: '命中时爆炸，速度-20%',
+        modify: (mods) => { mods.explosive = true; mods.explosionRadius = (mods.explosionRadius || 30) + 30; mods.speed = (mods.speed || 1) * 0.8; }
     },
-    bounce: {
-        id: 'bounce',
+    bouncing: {
+        id: 'bouncing',
         name: '弹射',
-        type: 'passive',
+        type: 'modifier',
         icon: '🔄',
-        desc: '在敌人和边界间弹射，持续时间+50%',
-        levelBonus: { bounceCount: 2, durationMult: 0.25 },
-        modify: (mods, level = 1) => { 
-            mods.bounceCount = (mods.bounceCount || 0) + 3 + (level - 1) * 2; 
-            mods.durationMult = (mods.durationMult || 1) * (1.5 + (level - 1) * 0.25);
-            mods.bounceOnEnemy = true;
-        }
+        desc: '弹射到其他敌人',
+        modify: (mods) => { mods.bounceCount = (mods.bounceCount || 0) + 2; }
+    },
+    reduce_cooldown: {
+        id: 'reduce_cooldown',
+        name: '急速施法',
+        type: 'modifier',
+        icon: '⏱️',
+        desc: '冷却时间-30%',
+        modify: (mods) => { mods.cooldownMult = (mods.cooldownMult || 1) * 0.7; }
+    },
+    // 新增被动技能
+    flame_crystal: {
+        id: 'flame_crystal',
+        name: '炽焰晶石',
+        type: 'modifier',
+        icon: '🔶',
+        desc: '附带灼烧效果，持续伤害',
+        modify: (mods) => { mods.burning = true; mods.burnDamage = (mods.burnDamage || 0) + 3; }
+    },
+    power_pull: {
+        id: 'power_pull',
+        name: '强力牵引',
+        type: 'modifier',
+        icon: '🌀',
+        desc: '暴击时周围敌人受同等伤害',
+        modify: (mods) => { mods.critAoe = true; mods.critChance = (mods.critChance || 0) + 0.15; }
+    },
+    thunder_crystal: {
+        id: 'thunder_crystal',
+        name: '雷霆晶石',
+        type: 'modifier',
+        icon: '⚡',
+        desc: '附带雷电效果，几率落雷',
+        modify: (mods) => { mods.lightning = true; mods.lightningChance = (mods.lightningChance || 0) + 0.2; }
+    },
+    collapse_crystal: {
+        id: 'collapse_crystal',
+        name: '坍缩晶石',
+        type: 'modifier',
+        icon: '🕳️',
+        desc: '击杀爆炸，伤害-15%',
+        modify: (mods) => { mods.deathExplosion = true; mods.deathExplosionRadius = (mods.deathExplosionRadius || 0) + 50; mods.damage = (mods.damage || 1) * 0.85; }
+    },
+    flying_sword: {
+        id: 'flying_sword',
+        name: '狴犴飞剑',
+        type: 'modifier',
+        icon: '🗡️',
+        desc: '施法时附加飞剑攻击',
+        modify: (mods) => { mods.flyingSword = true; mods.swordCount = (mods.swordCount || 0) + 2; }
+    },
+    poison_crystal: {
+        id: 'poison_crystal',
+        name: '毒液晶石',
+        type: 'modifier',
+        icon: '☠️',
+        desc: '附带中毒效果，叠加伤害',
+        modify: (mods) => { mods.poison = true; mods.poisonStacks = (mods.poisonStacks || 0) + 4; }
+    },
+    arcane_barrier: {
+        id: 'arcane_barrier',
+        name: '奥术屏障',
+        type: 'modifier',
+        icon: '🛡️',
+        desc: '命中时产生护盾效果',
+        modify: (mods) => { mods.shieldOnHit = true; mods.shieldAmount = (mods.shieldAmount || 0) + 5; }
+    },
+    rune_hammer: {
+        id: 'rune_hammer',
+        name: '符文战锤',
+        type: 'modifier',
+        icon: '🔨',
+        desc: '法术环绕角色攻击',
+        modify: (mods) => { mods.orbital = true; mods.orbitalCount = (mods.orbitalCount || 0) + 1; }
+    },
+    prism_core: {
+        id: 'prism_core',
+        name: '棱镜核心',
+        type: 'modifier',
+        icon: '💎',
+        desc: '持续命中伤害递增',
+        modify: (mods) => { mods.rampingDamage = true; mods.rampingRate = (mods.rampingRate || 0) + 0.1; }
+    },
+    reflect: {
+        id: 'reflect',
+        name: '反弹',
+        type: 'modifier',
+        icon: '↩️',
+        desc: '反弹3次，每次伤害-20%',
+        modify: (mods) => { mods.reflect = true; mods.reflectCount = (mods.reflectCount || 0) + 3; mods.reflectDamageDecay = 0.8; }
+    },
+    split: {
+        id: 'split',
+        name: '分裂',
+        type: 'modifier',
+        icon: '✴️',
+        desc: '消失时分裂3个小弹(30%伤害)',
+        modify: (mods) => { mods.splitOnDeath = true; mods.splitAmount = (mods.splitAmount || 0) + 3; mods.splitDamageMult = 0.3; }
+    },
+    hover: {
+        id: 'hover',
+        name: '悬停',
+        type: 'modifier',
+        icon: '⏸️',
+        desc: '命中后停留0.5秒，伤害-30%',
+        modify: (mods) => { mods.hover = true; mods.hoverDuration = (mods.hoverDuration || 0) + 30; mods.damage = (mods.damage || 1) * 0.7; }
+    },
+    lightning_chain: {
+        id: 'lightning_chain',
+        name: '闪电链',
+        type: 'modifier',
+        icon: '⛓️‍💥',
+        desc: '连接附近敌人造成15点伤害',
+        modify: (mods) => { mods.chainLightning = true; mods.chainDamage = (mods.chainDamage || 0) + 15; }
+    },
+    light_pillar: {
+        id: 'light_pillar',
+        name: '光之柱',
+        type: 'modifier',
+        icon: '🌟',
+        desc: '召唤光柱1秒，冷却+20%',
+        modify: (mods) => { mods.lightPillar = true; mods.pillarDamage = (mods.pillarDamage || 0) + 8; mods.cooldownMult = (mods.cooldownMult || 1) * 1.2; }
     }
 };
 
-// 合并所有技能供掉落使用
-const ALL_SKILLS = { ...ACTIVE_SKILLS, ...PASSIVE_SKILLS };
+
+// ========== 祝福 (Perks) - 升级获取 ==========
+const PERKS = {
+    // 生存类
+    extra_hp: {
+        id: 'extra_hp',
+        name: '生命强化',
+        icon: '❤️',
+        desc: '最大生命+20',
+        stackable: true,
+        apply: (player, level) => { 
+            player.maxHp += 20 * level; 
+            player.hp += 20 * level; 
+        }
+    },
+    regeneration: {
+        id: 'regeneration',
+        name: '生命再生',
+        icon: '💚',
+        desc: '每秒恢复生命',
+        stackable: true,
+        apply: (player, level) => { player.regen += 0.5 * level; }
+    },
+    vampirism: {
+        id: 'vampirism',
+        name: '吸血',
+        icon: '🧛',
+        desc: '击杀敌人恢复生命',
+        stackable: true,
+        apply: (player, level) => { player.vampirism = (player.vampirism || 0) + 2 * level; }
+    },
+    
+    // 攻击类
+    damage_boost: {
+        id: 'damage_boost',
+        name: '伤害提升',
+        icon: '⚔️',
+        desc: '所有伤害+15%',
+        stackable: true,
+        apply: (player, level) => { player.damageMult *= Math.pow(1.15, level); }
+    },
+    attack_speed: {
+        id: 'attack_speed',
+        name: '攻击速度',
+        icon: '⚡',
+        desc: '施法冷却-10%',
+        stackable: true,
+        apply: (player, level) => { player.cooldownMult *= Math.pow(0.9, level); }
+    },
+    critical_hit: {
+        id: 'critical_hit',
+        name: '暴击',
+        icon: '💢',
+        desc: '10%几率双倍伤害',
+        stackable: true,
+        apply: (player, level) => { player.critChance = (player.critChance || 0) + 0.1 * level; }
+    },
+    
+    // 移动类
+    movement_speed: {
+        id: 'movement_speed',
+        name: '疾风',
+        icon: '🏃',
+        desc: '移动速度+15%',
+        stackable: true,
+        apply: (player, level) => { player.speed *= Math.pow(1.15, level); }
+    },
+    
+    // 拾取类
+    greed: {
+        id: 'greed',
+        name: '贪婪',
+        icon: '💰',
+        desc: '经验获取+20%',
+        stackable: true,
+        apply: (player, level) => { player.xpMult = (player.xpMult || 1) * Math.pow(1.2, level); }
+    },
+    magnet: {
+        id: 'magnet',
+        name: '磁铁',
+        icon: '🧲',
+        desc: '拾取范围+30%',
+        stackable: true,
+        apply: (player, level) => { player.pickupRange *= Math.pow(1.3, level); }
+    },
+    
+    // 特殊类
+    projectile_repulsion: {
+        id: 'projectile_repulsion',
+        name: '弹幕屏障',
+        icon: '🛡️',
+        desc: '周围产生伤害光环',
+        stackable: true,
+        apply: (player, level) => { player.damageAura = (player.damageAura || 0) + 5 * level; }
+    },
+    luck: {
+        id: 'luck',
+        name: '幸运',
+        icon: '🍀',
+        desc: '技能掉落率+25%',
+        stackable: true,
+        apply: (player, level) => { player.dropRate = (player.dropRate || 1) * Math.pow(1.25, level); }
+    }
+};
+
+
+// 合并魔法和被动技能供掉落使用
+const ALL_SKILLS = { ...MAGIC_SKILLS, ...MODIFIER_SKILLS };
+
+// 升级选项 - 祝福(Perks)
+const UPGRADES = Object.values(PERKS).map(perk => ({
+    id: perk.id,
+    name: perk.icon + ' ' + perk.name,
+    desc: perk.desc,
+    type: 'perk',
+    perkId: perk.id
+}));
 
 // ========== 法杖/技能槽系统 ==========
-
 class Wand {
     constructor(player, slotCount = 8) {
         this.player = player;
-        this.slots = new Array(slotCount).fill(null); // 技能槽
+        this.slots = new Array(slotCount).fill(null);
         this.slotCount = slotCount;
-        this.currentIndex = 0; // 当前执行位置
+        this.currentIndex = 0;
         this.cooldownTimer = 0;
-        this.baseCooldown = 5; // 基础施法间隔
-        
-        // 背包 - 存放未装备的技能
+        this.baseCooldown = 5;
         this.inventory = [];
     }
-    
-    // 添加技能到背包
-    addSkillToInventory(skillId) {
+
+    addSkillToInventory(skillId, star = 1) {
         const skill = ALL_SKILLS[skillId];
         if (!skill) return false;
-        this.inventory.push({ ...skill, level: 1 });
+        this.inventory.push({ ...skill, star: star });
         return true;
     }
-    
-    // 合成技能：3个相同技能合成1个高级技能
-    canMerge(skillId) {
-        const sameSkills = this.inventory.filter(s => s.id === skillId && s.level < 3);
-        return sameSkills.length >= 3;
-    }
-    
-    mergeSkills(skillId) {
-        // 找到3个相同且等级相同的技能（优先合成低等级的）
-        const levels = [1, 2]; // 只有1级和2级可以合成
-        
-        for (const targetLevel of levels) {
-            const sameSkills = [];
-            const indices = [];
-            
-            for (let i = 0; i < this.inventory.length; i++) {
-                const s = this.inventory[i];
-                if (s.id === skillId && s.level === targetLevel) {
-                    sameSkills.push(s);
-                    indices.push(i);
-                    if (sameSkills.length >= 3) break;
-                }
-            }
-            
-            if (sameSkills.length >= 3) {
-                // 移除3个技能（从后往前删避免索引问题）
-                indices.sort((a, b) => b - a);
-                for (let i = 0; i < 3; i++) {
-                    this.inventory.splice(indices[i], 1);
-                }
-                
-                // 添加高一级的技能
-                const baseSkill = ALL_SKILLS[skillId];
-                const newLevel = targetLevel + 1;
-                this.inventory.push({ 
-                    ...baseSkill, 
-                    level: newLevel,
-                    name: baseSkill.name + (newLevel === 2 ? '+' : '++')
-                });
-                
-                return { success: true, newLevel };
-            }
-        }
-        
-        return { success: false };
-    }
-    
-    // 获取可合成的技能列表
-    getMergeableSkills() {
+
+    // 合成技能：3个同类型同星级合成为高一星级
+    canMergeSkills() {
+        // 统计背包中每种技能每个星级的数量
         const counts = {};
-        this.inventory.forEach(s => {
-            if (s.level < 3) {
-                const key = s.id + '_' + s.level;
-                counts[key] = (counts[key] || 0) + 1;
+        this.inventory.forEach((skill, idx) => {
+            const key = `${skill.id}_${skill.star || 1}`;
+            if (!counts[key]) {
+                counts[key] = { skill, indices: [], star: skill.star || 1 };
             }
+            counts[key].indices.push(idx);
         });
         
+        // 找出可以合成的技能（数量>=3且星级<3）
         const mergeable = [];
-        for (const key in counts) {
-            if (counts[key] >= 3) {
-                const [id, level] = key.split('_');
-                mergeable.push({ id, level: parseInt(level), count: counts[key] });
+        Object.values(counts).forEach(item => {
+            if (item.indices.length >= 3 && item.star < 3) {
+                mergeable.push(item);
             }
-        }
+        });
         return mergeable;
     }
-    
-    // 从背包装备技能到指定槽位
+
+    mergeSkill(skillId, star) {
+        // 找到3个相同技能
+        const indices = [];
+        for (let i = 0; i < this.inventory.length && indices.length < 3; i++) {
+            const skill = this.inventory[i];
+            if (skill.id === skillId && (skill.star || 1) === star) {
+                indices.push(i);
+            }
+        }
+        
+        if (indices.length < 3) return false;
+        if (star >= 3) return false;
+        
+        // 从后往前删除，避免索引变化
+        indices.sort((a, b) => b - a);
+        indices.forEach(idx => this.inventory.splice(idx, 1));
+        
+        // 添加高星级技能
+        this.addSkillToInventory(skillId, star + 1);
+        return true;
+    }
+
     equipSkill(inventoryIndex, slotIndex) {
         if (inventoryIndex < 0 || inventoryIndex >= this.inventory.length) return false;
         if (slotIndex < 0 || slotIndex >= this.slotCount) return false;
-        
         const skill = this.inventory[inventoryIndex];
-        
-        // 如果槽位有技能，先放回背包
         if (this.slots[slotIndex] !== null) {
             this.inventory.push(this.slots[slotIndex]);
         }
-        
-        // 装备技能
         this.slots[slotIndex] = skill;
         this.inventory.splice(inventoryIndex, 1);
         return true;
     }
-    
-    // 从槽位卸下技能到背包
+
     unequipSkill(slotIndex) {
         if (slotIndex < 0 || slotIndex >= this.slotCount) return false;
         if (this.slots[slotIndex] === null) return false;
-        
         this.inventory.push(this.slots[slotIndex]);
         this.slots[slotIndex] = null;
         return true;
     }
-    
-    // 交换两个槽位
+
     swapSlots(i, j) {
         if (i >= 0 && i < this.slotCount && j >= 0 && j < this.slotCount) {
             [this.slots[i], this.slots[j]] = [this.slots[j], this.slots[i]];
         }
     }
-    
-    // 添加技能（兼容旧接口，现在放入背包）
-    addSkill(skillId) {
-        return this.addSkillToInventory(skillId);
-    }
-    
+
     update() {
         if (this.cooldownTimer > 0) {
             this.cooldownTimer--;
             return;
         }
-        
-        // 从当前位置执行一次施法
         const result = this.castFromIndex(this.currentIndex);
         if (result.fired) {
             this.currentIndex = result.nextIndex;
             this.cooldownTimer = result.cooldown;
         } else {
-            // 没有可用技能，重置到开头
             this.currentIndex = 0;
         }
     }
-    
-    // 从指定位置开始施法，返回 { fired, nextIndex, cooldown }
+
     castFromIndex(startIndex) {
         const mods = this.getDefaultMods();
         let index = startIndex;
         let loopCount = 0;
-        
-        // 从左到右扫描：收集被动，遇到主动就发射
+
         while (loopCount < this.slotCount) {
             const slot = this.slots[index];
-            
             if (slot === null) {
-                // 空槽，跳过
                 index = (index + 1) % this.slotCount;
                 loopCount++;
                 continue;
             }
-            
-            if (slot.type === 'passive') {
-                // 被动：累积修饰效果，继续往右
-                slot.modify(mods, slot.level || 1);
+            if (slot.type === 'modifier') {
+                // 被动技能星级加成
+                const starMult = this.getStarMultiplier(slot.star || 1);
+                const originalModify = slot.modify;
+                // 临时增强modify效果
+                const enhancedMods = { ...mods };
+                originalModify(enhancedMods);
+                // 根据星级增强效果
+                Object.keys(enhancedMods).forEach(key => {
+                    if (typeof enhancedMods[key] === 'number' && key !== 'cooldownMult') {
+                        const diff = enhancedMods[key] - mods[key];
+                        if (diff > 0) {
+                            mods[key] = mods[key] + diff * starMult;
+                        } else {
+                            mods[key] = enhancedMods[key];
+                        }
+                    } else {
+                        mods[key] = enhancedMods[key];
+                    }
+                });
                 index = (index + 1) % this.slotCount;
                 loopCount++;
-            } else if (slot.type === 'active') {
-                // 主动：用累积的被动发射，然后停止
-                // 应用主动技能等级加成
-                const level = slot.level || 1;
-                if (level > 1 && slot.levelBonus) {
-                    for (const key in slot.levelBonus) {
-                        const bonus = slot.levelBonus[key] * (level - 1);
-                        if (key === 'damage' || key === 'speed' || key === 'radius') {
-                            mods[key] = (mods[key] || 1) * (1 + bonus);
-                        } else {
-                            mods[key] = (mods[key] || 0) + bonus;
-                        }
-                    }
-                }
-                
+            } else if (slot.type === 'magic') {
+                // 主动技能星级加成
+                const starMult = this.getStarMultiplier(slot.star || 1);
+                mods.damage *= starMult;
                 this.fireSkill(slot, mods);
-                const cooldown = Math.max(this.baseCooldown, slot.cooldown * (mods.cooldownMult || 1));
-                const nextIndex = (index + 1) % this.slotCount;
-                return { fired: true, nextIndex, cooldown };
+                const cooldown = Math.max(this.baseCooldown, slot.cooldown * (mods.cooldownMult || 1) / starMult);
+                return { fired: true, nextIndex: (index + 1) % this.slotCount, cooldown };
             }
         }
-        
-        // 遍历完没找到主动技能
         return { fired: false, nextIndex: 0, cooldown: this.baseCooldown };
     }
-    
+
+    getStarMultiplier(star) {
+        // 1星=1x, 2星=1.5x, 3星=2.5x
+        const multipliers = { 1: 1, 2: 1.5, 3: 2.5 };
+        return multipliers[star] || 1;
+    }
+
     getDefaultMods() {
         return {
             damage: 1.0 * this.player.damageMult,
             speed: 1.0 * this.player.projSpeed,
             penetrate: 1,
-            splitCount: 1,
+            splitCount: 1 + (this.player.extraProjectiles || 0),
             homing: false,
             turnSpeed: 0,
             chainCount: 0,
             cooldownMult: this.player.cooldownMult,
-            durationMult: this.player.durationMult,
             explosive: false,
             explosionRadius: 0,
             bounceCount: 0,
-            knockback: this.player.knockback
+            knockback: this.player.knockback || 1
         };
     }
-    
+
     fireSkill(skill, mods) {
-        const projectiles = [];
-        const baseAngle = -Math.PI / 2; // 向上
-        
-        // 处理分裂
+        let targetAngle = 0;
+        let nearest = null;
+        let minDist = 800;
+
+        Game.enemies.forEach(e => {
+            const dist = Math.sqrt((e.x - this.player.x) ** 2 + (e.y - this.player.y) ** 2);
+            if (dist < minDist) {
+                minDist = dist;
+                nearest = e;
+            }
+        });
+
+        if (nearest) {
+            targetAngle = Math.atan2(nearest.y - this.player.y, nearest.x - this.player.x);
+        }
+
         const count = mods.splitCount || 1;
-        const spreadAngle = count > 1 ? Math.PI / 6 : 0; // 分裂时扩散30度
-        
+        const spreadAngle = count > 1 ? Math.PI / 6 : 0;
+
         for (let i = 0; i < count; i++) {
-            let angle = baseAngle;
+            let angle = targetAngle;
             if (count > 1) {
-                angle = baseAngle + (i - (count - 1) / 2) * (spreadAngle / (count - 1));
+                angle = targetAngle + (i - (count - 1) / 2) * (spreadAngle / (count - 1 || 1));
             }
-            
             const proj = skill.create(this.player, { ...mods, angle });
-            if (proj) {
-                Game.projectiles.push(proj);
-            }
+            if (proj) Game.projectiles.push(proj);
         }
     }
 }
 
-// ========== 投射物基类 ==========
 
+// ========== 祝福管理系统 ==========
+class PerkManager {
+    constructor(player) {
+        this.player = player;
+        this.perks = {}; // { perkId: level }
+    }
+    
+    addPerk(perkId) {
+        const perk = PERKS[perkId];
+        if (!perk) return false;
+        
+        const currentLevel = this.perks[perkId] || 0;
+        const newLevel = currentLevel + 1;
+        
+        // 应用效果（增量）
+        perk.apply(this.player, 1);
+        this.perks[perkId] = newLevel;
+        
+        return { perk, level: newLevel };
+    }
+    
+    getPerkLevel(perkId) {
+        return this.perks[perkId] || 0;
+    }
+    
+    getAllPerks() {
+        return Object.entries(this.perks).map(([id, level]) => ({
+            ...PERKS[id],
+            level
+        }));
+    }
+}
+
+// ========== 投射物基类 ==========
 class SkillProjectile {
     constructor(caster, mods) {
         this.x = caster.x;
-        this.y = caster.y - 15;
-        this.angle = mods.angle || -Math.PI / 2;
+        this.y = caster.y;
+        this.caster = caster;
+        this.angle = mods.angle || 0;
         this.dx = Math.cos(this.angle);
         this.dy = Math.sin(this.angle);
-        
+
         this.speed = 10 * (mods.speed || 1);
         this.damage = 10 * (mods.damage || 1);
         this.knockback = mods.knockback || 1;
         this.penetrate = mods.penetrate || 1;
         this.hitList = [];
-        
+
         this.homing = mods.homing || false;
         this.turnSpeed = mods.turnSpeed || 0.05;
         this.target = null;
-        
+
         this.chainCount = mods.chainCount || 0;
         this.explosive = mods.explosive || false;
         this.explosionRadius = mods.explosionRadius || 30;
         this.bounceCount = mods.bounceCount || 0;
-        
-        this.baseDuration = 120;
-        this.duration = this.baseDuration * (mods.durationMult || 1);
+
+        // 新增效果属性
+        this.burning = mods.burning || false;
+        this.burnDamage = mods.burnDamage || 0;
+        this.critAoe = mods.critAoe || false;
+        this.critChance = mods.critChance || 0;
+        this.lightning = mods.lightning || false;
+        this.lightningChance = mods.lightningChance || 0;
+        this.deathExplosion = mods.deathExplosion || false;
+        this.deathExplosionRadius = mods.deathExplosionRadius || 0;
+        this.poison = mods.poison || false;
+        this.poisonStacks = mods.poisonStacks || 0;
+        this.shieldOnHit = mods.shieldOnHit || false;
+        this.shieldAmount = mods.shieldAmount || 0;
+        this.rampingDamage = mods.rampingDamage || false;
+        this.rampingRate = mods.rampingRate || 0;
+        this.rampingBonus = 0;
+        this.reflect = mods.reflect || false;
+        this.reflectCount = mods.reflectCount || 0;
+        this.reflectDamageDecay = mods.reflectDamageDecay || 0.8;
+        this.splitOnDeath = mods.splitOnDeath || false;
+        this.splitAmount = mods.splitAmount || 0;
+        this.splitDamageMult = mods.splitDamageMult || 0.3;
+        this.hover = mods.hover || false;
+        this.hoverDuration = mods.hoverDuration || 0;
+        this.isHovering = false;
+        this.hoverTimer = 0;
+        this.chainLightning = mods.chainLightning || false;
+        this.chainDamage = mods.chainDamage || 0;
+        this.lightPillar = mods.lightPillar || false;
+        this.pillarDamage = mods.pillarDamage || 0;
+
+        this.duration = 180;
         this.radius = 6;
         this.color = '#fff';
         this.markedForDeletion = false;
-        this.durationMult = mods.durationMult || 1;
-        this.bounceOnEnemy = mods.bounceOnEnemy || false;
     }
-    
+
     update() {
-        // 追踪逻辑
-        if (this.homing) {
-            this.updateHoming();
+        // 悬停状态
+        if (this.isHovering) {
+            this.hoverTimer--;
+            if (this.hoverTimer <= 0) {
+                this.isHovering = false;
+                this.markedForDeletion = true;
+            }
+            // 悬停时持续伤害周围敌人
+            Game.enemies.forEach(e => {
+                if (!e.markedForDeletion) {
+                    const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
+                    if (dist < this.radius + e.radius + 10) {
+                        e.takeDamage(this.damage * 0.1, 0, 0);
+                    }
+                }
+            });
+            return;
         }
-        
-        // 移动
+
+        if (this.homing) this.updateHoming();
         this.x += this.dx * this.speed;
         this.y += this.dy * this.speed;
         this.duration--;
         
-        // 边界检测
-        if (this.bounceCount > 0) {
-            if (this.x < this.radius || this.x > CONFIG.GAME_WIDTH - this.radius) {
-                this.dx = -this.dx;
-                this.bounceCount--;
-                this.x = Math.max(this.radius, Math.min(CONFIG.GAME_WIDTH - this.radius, this.x));
-            }
-            if (this.y < this.radius) {
-                this.dy = -this.dy;
-                this.bounceCount--;
-                this.y = Math.max(this.radius, this.y);
-            }
-        } else {
-            if (this.x < -50 || this.x > CONFIG.GAME_WIDTH + 50 || 
-                this.y < -50 || this.y > CONFIG.GAME_HEIGHT + 50) {
-                this.markedForDeletion = true;
-            }
+        // 棱镜核心 - 持续增加伤害
+        if (this.rampingDamage) {
+            this.rampingBonus += this.rampingRate;
         }
         
         if (this.duration <= 0) {
+            // 分裂效果
+            if (this.splitOnDeath && this.splitAmount > 0) {
+                this.spawnSplitProjectiles();
+            }
             this.markedForDeletion = true;
         }
     }
-    
+
     updateHoming() {
-        if (!this.target || this.target.markedForDeletion) {
-            this.findTarget();
-        }
-        
+        if (!this.target || this.target.markedForDeletion) this.findTarget();
         if (this.target && !this.target.markedForDeletion) {
             const targetAngle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
             const currentAngle = Math.atan2(this.dy, this.dx);
             let angleDiff = targetAngle - currentAngle;
-            
             while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-            
             const turn = Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), this.turnSpeed);
             const newAngle = currentAngle + turn;
-            
             this.dx = Math.cos(newAngle);
             this.dy = Math.sin(newAngle);
         }
     }
-    
+
     findTarget() {
-        let minDist = 400;
+        let minDist = 500;
         this.target = null;
         Game.enemies.forEach(e => {
             if (!e.markedForDeletion && !this.hitList.includes(e)) {
                 const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
-                if (dist < minDist) {
-                    minDist = dist;
-                    this.target = e;
-                }
+                if (dist < minDist) { minDist = dist; this.target = e; }
             }
         });
     }
-    
-    onHit(enemy) {
-        // 敌人弹射
-        if (this.bounceOnEnemy && this.bounceCount > 0) {
-            this.bounceToEnemy(enemy);
+
+    getFinalDamage() {
+        let dmg = this.damage;
+        // 棱镜核心加成
+        if (this.rampingDamage) {
+            dmg *= (1 + this.rampingBonus);
         }
+        // 暴击判定
+        if (Math.random() < this.critChance) {
+            dmg *= 2;
+            Game.spawnParticles(this.x, this.y, '#ffff00', 5);
+        }
+        return dmg;
+    }
+
+    onHit(enemy) {
+        const finalDamage = this.getFinalDamage();
         
         // 爆炸效果
-        if (this.explosive) {
-            this.explode();
+        if (this.explosive) this.explode();
+        
+        // 连锁攻击
+        if (this.chainCount > 0) this.chainToNext(enemy);
+        
+        // 弹射
+        if (this.bounceCount > 0) this.bounceToEnemy(enemy);
+        
+        // 灼烧效果
+        if (this.burning && this.burnDamage > 0) {
+            enemy.addBurn(this.burnDamage, 180); // 3秒灼烧
+            Game.spawnParticles(enemy.x, enemy.y, '#ff6600', 3);
         }
         
-        // 连锁效果
-        if (this.chainCount > 0) {
-            this.chainToNext(enemy);
+        // 雷霆效果
+        if (this.lightning && Math.random() < this.lightningChance) {
+            this.spawnLightning(enemy);
+        }
+        
+        // 中毒效果
+        if (this.poison && this.poisonStacks > 0) {
+            enemy.addPoison(this.poisonStacks);
+            Game.spawnParticles(enemy.x, enemy.y, '#00ff00', 3);
+        }
+        
+        // 护盾效果
+        if (this.shieldOnHit && this.shieldAmount > 0) {
+            this.caster.shield = (this.caster.shield || 0) + this.shieldAmount;
+            Game.addFloatingText('+🛡️', this.caster.x, this.caster.y - 20, '#66ccff');
+        }
+        
+        // 暴击AOE
+        if (this.critAoe && Math.random() < this.critChance) {
+            Game.enemies.forEach(e => {
+                if (!e.markedForDeletion && e !== enemy) {
+                    const dist = Math.sqrt((e.x - enemy.x) ** 2 + (e.y - enemy.y) ** 2);
+                    if (dist < 100) {
+                        e.takeDamage(finalDamage * 0.5, 0, 0);
+                    }
+                }
+            });
+            Game.spawnParticles(enemy.x, enemy.y, '#ffff00', 10);
+        }
+        
+        // 闪电链
+        if (this.chainLightning && this.chainDamage > 0) {
+            this.createLightningChain(enemy);
+        }
+        
+        // 光之柱
+        if (this.lightPillar && this.pillarDamage > 0) {
+            Game.lightPillars = Game.lightPillars || [];
+            Game.lightPillars.push({
+                x: enemy.x,
+                y: enemy.y,
+                damage: this.pillarDamage,
+                life: 60,
+                radius: 40
+            });
+        }
+        
+        // 悬停效果
+        if (this.hover && this.hoverDuration > 0 && !this.isHovering) {
+            this.isHovering = true;
+            this.hoverTimer = this.hoverDuration;
+            this.speed = 0;
+        }
+        
+        // 反弹效果
+        if (this.reflect && this.reflectCount > 0) {
+            this.dx = -this.dx + (Math.random() - 0.5) * 0.5;
+            this.dy = -this.dy + (Math.random() - 0.5) * 0.5;
+            const len = Math.sqrt(this.dx * this.dx + this.dy * this.dy);
+            this.dx /= len;
+            this.dy /= len;
+            this.reflectCount--;
+            this.damage *= this.reflectDamageDecay; // 每次反弹伤害衰减
+            this.duration += 30;
+            this.penetrate++;
+            Game.spawnParticles(this.x, this.y, '#aaaaff', 5);
         }
     }
-    
-    bounceToEnemy(fromEnemy) {
-        // 找最近的其他敌人
-        let nextTarget = null;
-        let minDist = 300;
-        
+
+    onKill(enemy) {
+        // 坍缩晶石 - 击杀爆炸
+        if (this.deathExplosion && this.deathExplosionRadius > 0) {
+            Game.enemies.forEach(e => {
+                if (!e.markedForDeletion && e !== enemy) {
+                    const dist = Math.sqrt((e.x - enemy.x) ** 2 + (e.y - enemy.y) ** 2);
+                    if (dist < this.deathExplosionRadius) {
+                        e.takeDamage(this.damage * 0.8, 0, 0);
+                    }
+                }
+            });
+            Game.spawnParticles(enemy.x, enemy.y, '#9900ff', 20);
+        }
+    }
+
+    spawnLightning(enemy) {
+        // 落雷效果
+        Game.lightningEffects = Game.lightningEffects || [];
+        Game.lightningEffects.push({
+            x1: enemy.x,
+            y1: enemy.y - 200,
+            x2: enemy.x,
+            y2: enemy.y,
+            life: 20
+        });
+        // 范围伤害
         Game.enemies.forEach(e => {
-            if (!e.markedForDeletion && e !== fromEnemy && !this.hitList.includes(e)) {
-                const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
-                if (dist < minDist) {
-                    minDist = dist;
-                    nextTarget = e;
+            if (!e.markedForDeletion) {
+                const dist = Math.sqrt((e.x - enemy.x) ** 2 + (e.y - enemy.y) ** 2);
+                if (dist < 60) {
+                    e.takeDamage(this.damage * 0.5, 0, 0);
+                }
+            }
+        });
+        Game.spawnParticles(enemy.x, enemy.y, '#00ffff', 10);
+    }
+
+    createLightningChain(enemy) {
+        // 连接附近的敌人
+        const nearbyEnemies = [];
+        Game.enemies.forEach(e => {
+            if (!e.markedForDeletion && e !== enemy) {
+                const dist = Math.sqrt((e.x - enemy.x) ** 2 + (e.y - enemy.y) ** 2);
+                if (dist < 150) {
+                    nearbyEnemies.push(e);
                 }
             }
         });
         
-        if (nextTarget) {
-            // 改变方向朝向新目标
-            const dx = nextTarget.x - this.x;
-            const dy = nextTarget.y - this.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            this.dx = dx / dist;
-            this.dy = dy / dist;
-            this.angle = Math.atan2(this.dy, this.dx);
-            this.bounceCount--;
-            
-            // 弹射特效
-            Game.particles.push({
-                x: this.x, y: this.y,
-                vx: 0, vy: 0,
-                life: 10,
-                color: '#ffff00',
-                size: 8
+        nearbyEnemies.forEach(e => {
+            Game.lightningEffects = Game.lightningEffects || [];
+            Game.lightningEffects.push({
+                x1: enemy.x,
+                y1: enemy.y,
+                x2: e.x,
+                y2: e.y,
+                life: 15
             });
+            e.takeDamage(this.chainDamage, 0, 0);
+        });
+    }
+
+    spawnSplitProjectiles() {
+        for (let i = 0; i < this.splitAmount; i++) {
+            const angle = (Math.PI * 2 / this.splitAmount) * i;
+            const proj = new SplitProjectile(this, angle, this.splitDamageMult);
+            Game.projectiles.push(proj);
         }
     }
-    
+
     explode() {
         Game.enemies.forEach(e => {
             if (!e.markedForDeletion) {
                 const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
                 if (dist < this.explosionRadius) {
-                    const dmgMult = 1 - (dist / this.explosionRadius) * 0.5;
-                    e.takeDamage(this.damage * 0.5 * dmgMult, 0, 0);
+                    e.takeDamage(this.damage * 0.5 * (1 - dist / this.explosionRadius * 0.5), 0, 0);
                 }
             }
         });
-        
-        // 爆炸特效
         Game.spawnParticles(this.x, this.y, '#ff6600', 15);
-        Game.spawnParticles(this.x, this.y, '#ffff00', 10);
     }
-    
+
     chainToNext(fromEnemy) {
-        let nextTarget = null;
-        let minDist = 150;
-        
+        let nextTarget = null, minDist = 200;
         Game.enemies.forEach(e => {
             if (!e.markedForDeletion && e !== fromEnemy && !this.hitList.includes(e)) {
                 const dist = Math.sqrt((e.x - fromEnemy.x) ** 2 + (e.y - fromEnemy.y) ** 2);
-                if (dist < minDist) {
-                    minDist = dist;
-                    nextTarget = e;
-                }
+                if (dist < minDist) { minDist = dist; nextTarget = e; }
             }
         });
-        
         if (nextTarget) {
-            // 创建连锁闪电效果
-            Game.lightningEffects.push({
-                x1: fromEnemy.x, y1: fromEnemy.y,
-                x2: nextTarget.x, y2: nextTarget.y,
-                life: 15
-            });
-            
+            Game.lightningEffects = Game.lightningEffects || [];
+            Game.lightningEffects.push({ x1: fromEnemy.x, y1: fromEnemy.y, x2: nextTarget.x, y2: nextTarget.y, life: 15 });
             nextTarget.takeDamage(this.damage * 0.7, 0, 0);
             this.hitList.push(nextTarget);
             this.chainCount--;
-            
-            if (this.chainCount > 0) {
-                setTimeout(() => this.chainToNext(nextTarget), 50);
-            }
+            if (this.chainCount > 0) setTimeout(() => this.chainToNext(nextTarget), 50);
         }
     }
-    
+
+    bounceToEnemy(fromEnemy) {
+        let nextTarget = null, minDist = 300;
+        Game.enemies.forEach(e => {
+            if (!e.markedForDeletion && e !== fromEnemy && !this.hitList.includes(e)) {
+                const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
+                if (dist < minDist) { minDist = dist; nextTarget = e; }
+            }
+        });
+        if (nextTarget) {
+            const dx = nextTarget.x - this.x, dy = nextTarget.y - this.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            this.dx = dx / dist; this.dy = dy / dist;
+            this.bounceCount--; this.penetrate++;
+        }
+    }
+
     draw(ctx, camX, camY) {
-        const x = this.x - camX;
-        const y = this.y - camY;
-        
         ctx.save();
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(x, y, this.radius, 0, Math.PI * 2);
+        ctx.arc(this.x - camX, this.y - camY, this.radius, 0, Math.PI * 2);
         ctx.fill();
+        
+        // 悬停效果绘制
+        if (this.isHovering) {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(this.x - camX, this.y - camY, this.radius + 10, 0, Math.PI * 2);
+            ctx.stroke();
+        }
         ctx.restore();
+    }
+}
+
+// 分裂小弹
+class SplitProjectile extends SkillProjectile {
+    constructor(parent, angle, damageMult = 0.3) {
+        super({ x: parent.x, y: parent.y }, { angle, damage: parent.damage * damageMult / 10 });
+        this.speed = 8;
+        this.damage = parent.damage * damageMult;
+        this.radius = 3;
+        this.color = parent.color || '#fff';
+        this.duration = 30;
+        this.penetrate = 1;
     }
 }
 
 
 // ========== 具体投射物类型 ==========
+class SparkProjectile extends SkillProjectile {
+    constructor(caster, mods) {
+        super(caster, mods);
+        this.damage = 5 * (mods.damage || 1);
+        this.speed = 14 * (mods.speed || 1);
+        this.radius = 4;
+        this.color = '#ffff00';
+        this.duration = 60;
+    }
+    draw(ctx, camX, camY) {
+        const x = this.x - camX, y = this.y - camY;
+        ctx.save();
+        ctx.shadowColor = '#ffff00'; ctx.shadowBlur = 8;
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath(); ctx.arc(x, y, this.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(x, y, this.radius * 0.5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+}
 
-// 火球 - 中等伤害，带爆炸潜力
 class FireballProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
@@ -622,51 +1012,27 @@ class FireballProjectile extends SkillProjectile {
         this.speed = 8 * (mods.speed || 1);
         this.radius = 8;
         this.color = '#ff6600';
-        this.duration = 90 * (mods.durationMult || 1);
+        this.duration = 120;
         this.trailTimer = 0;
     }
-    
     update() {
         super.update();
-        // 火焰尾迹
         this.trailTimer++;
         if (this.trailTimer % 3 === 0) {
-            Game.particles.push({
-                x: this.x, y: this.y,
-                vx: (Math.random() - 0.5) * 2,
-                vy: (Math.random() - 0.5) * 2,
-                life: 15,
-                color: Math.random() > 0.5 ? '#ff6600' : '#ffaa00',
-                size: 3 + Math.random() * 3
-            });
+            Game.particles.push({ x: this.x, y: this.y, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, life: 15, color: Math.random()>0.5?'#ff6600':'#ffaa00', size: 3+Math.random()*3 });
         }
     }
-    
     draw(ctx, camX, camY) {
-        const x = this.x - camX;
-        const y = this.y - camY;
-        
+        const x = this.x - camX, y = this.y - camY;
         ctx.save();
-        // 光晕
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.radius * 2);
-        gradient.addColorStop(0, 'rgba(255, 150, 0, 0.8)');
-        gradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.3)');
-        gradient.addColorStop(1, 'rgba(255, 50, 0, 0)');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, this.radius * 2, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 核心
-        ctx.fillStyle = '#ffff00';
-        ctx.beginPath();
-        ctx.arc(x, y, this.radius * 0.6, 0, Math.PI * 2);
-        ctx.fill();
+        const g = ctx.createRadialGradient(x, y, 0, x, y, this.radius * 2);
+        g.addColorStop(0, 'rgba(255,150,0,0.8)'); g.addColorStop(0.5, 'rgba(255,100,0,0.3)'); g.addColorStop(1, 'rgba(255,50,0,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, this.radius * 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffff00'; ctx.beginPath(); ctx.arc(x, y, this.radius * 0.6, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
 }
 
-// 激光 - 快速直线
 class LaserProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
@@ -674,129 +1040,20 @@ class LaserProjectile extends SkillProjectile {
         this.speed = 18 * (mods.speed || 1);
         this.radius = 4;
         this.color = '#00ffff';
-        this.duration = 60 * (mods.durationMult || 1);
+        this.duration = 90;
         this.length = 20;
     }
-    
     draw(ctx, camX, camY) {
-        const x = this.x - camX;
-        const y = this.y - camY;
+        const x = this.x - camX, y = this.y - camY;
         const angle = Math.atan2(this.dy, this.dx);
-        
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle);
-        
-        // 光束
-        ctx.shadowColor = '#00ffff';
-        ctx.shadowBlur = 10;
-        ctx.fillStyle = '#00ffff';
-        ctx.fillRect(-this.length, -2, this.length * 2, 4);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(-this.length + 2, -1, this.length * 2 - 4, 2);
-        
+        ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
+        ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 10;
+        ctx.fillStyle = '#00ffff'; ctx.fillRect(-this.length, -2, this.length * 2, 4);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(-this.length + 2, -1, this.length * 2 - 4, 2);
         ctx.restore();
     }
 }
 
-// 导弹 - 慢速高伤害，自带追踪和爆炸
-class MissileProjectile extends SkillProjectile {
-    constructor(caster, mods) {
-        super(caster, mods);
-        this.damage = 25 * (mods.damage || 1);
-        this.speed = 5 * (mods.speed || 1);
-        this.radius = 6;
-        this.color = '#ff4400';
-        this.duration = 180 * (mods.durationMult || 1);
-        this.homing = true;
-        this.turnSpeed = Math.max(0.03, mods.turnSpeed || 0.03);
-        this.trailParticles = [];
-        
-        // 导弹自带爆炸
-        this.explosive = true;
-        this.explosionRadius = Math.max(60, (mods.explosionRadius || 0) + 60);
-        this.penetrate = 1; // 导弹命中即爆炸消失
-    }
-    
-    update() {
-        super.update();
-        // 尾焰
-        this.trailParticles.push({ 
-            x: this.x - this.dx * 10, 
-            y: this.y - this.dy * 10, 
-            life: 12 
-        });
-        this.trailParticles = this.trailParticles.filter(p => p.life-- > 0);
-    }
-    
-    draw(ctx, camX, camY) {
-        const x = this.x - camX;
-        const y = this.y - camY;
-        const angle = Math.atan2(this.dy, this.dx);
-        
-        ctx.save();
-        
-        // 尾焰
-        this.trailParticles.forEach(p => {
-            const alpha = p.life / 12;
-            ctx.fillStyle = `rgba(255, 100, 0, ${alpha})`;
-            ctx.beginPath();
-            ctx.arc(p.x - camX, p.y - camY, 4 * alpha, 0, Math.PI * 2);
-            ctx.fill();
-        });
-        
-        // 导弹本体
-        ctx.translate(x, y);
-        ctx.rotate(angle + Math.PI / 2);
-        
-        ctx.fillStyle = '#666666';
-        ctx.beginPath();
-        ctx.moveTo(0, -10);
-        ctx.lineTo(-5, 8);
-        ctx.lineTo(5, 8);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.fillStyle = '#ff4400';
-        ctx.beginPath();
-        ctx.arc(0, -5, 3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.restore();
-    }
-}
-
-// 电火花 - 快速低伤害
-class SparkProjectile extends SkillProjectile {
-    constructor(caster, mods) {
-        super(caster, mods);
-        this.damage = 5 * (mods.damage || 1);
-        this.speed = 14 * (mods.speed || 1);
-        this.radius = 3;
-        this.color = '#ffff00';
-        this.duration = 45 * (mods.durationMult || 1);
-    }
-    
-    draw(ctx, camX, camY) {
-        const x = this.x - camX;
-        const y = this.y - camY;
-        
-        ctx.save();
-        ctx.shadowColor = '#ffff00';
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = '#ffff00';
-        ctx.beginPath();
-        ctx.arc(x, y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(x, y, this.radius * 0.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-    }
-}
-
-// 等离子 - 大型穿透
 class PlasmaProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
@@ -804,76 +1061,72 @@ class PlasmaProjectile extends SkillProjectile {
         this.speed = 6 * (mods.speed || 1);
         this.radius = 14;
         this.color = '#ff00ff';
-        this.duration = 120 * (mods.durationMult || 1);
+        this.duration = 150;
         this.penetrate = Math.max(5, mods.penetrate || 5);
         this.pulsePhase = 0;
     }
-    
-    update() {
-        super.update();
-        this.pulsePhase += 0.2;
-    }
-    
+    update() { super.update(); this.pulsePhase += 0.2; }
     draw(ctx, camX, camY) {
-        const x = this.x - camX;
-        const y = this.y - camY;
-        const pulse = Math.sin(this.pulsePhase) * 3;
-        
+        const x = this.x - camX, y = this.y - camY, pulse = Math.sin(this.pulsePhase) * 3;
         ctx.save();
-        
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.radius + 10 + pulse);
-        gradient.addColorStop(0, 'rgba(255, 100, 255, 0.9)');
-        gradient.addColorStop(0.5, 'rgba(255, 0, 255, 0.4)');
-        gradient.addColorStop(1, 'rgba(200, 0, 255, 0)');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x, y, this.radius + 10 + pulse, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(x, y, this.radius * 0.5, 0, Math.PI * 2);
-        ctx.fill();
-        
+        const g = ctx.createRadialGradient(x, y, 0, x, y, this.radius + 10 + pulse);
+        g.addColorStop(0, 'rgba(255,100,255,0.9)'); g.addColorStop(0.5, 'rgba(255,0,255,0.4)'); g.addColorStop(1, 'rgba(200,0,255,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, this.radius + 10 + pulse, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, this.radius * 0.5, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
 }
 
-// ========== 技能掉落系统 ==========
+class MissileProjectile extends SkillProjectile {
+    constructor(caster, mods) {
+        super(caster, mods);
+        this.damage = 25 * (mods.damage || 1);
+        this.speed = 5 * (mods.speed || 1);
+        this.radius = 6;
+        this.duration = 240;
+        this.homing = true;
+        this.turnSpeed = Math.max(0.03, mods.turnSpeed || 0.03);
+        this.trailParticles = [];
+    }
+    update() {
+        super.update();
+        this.trailParticles.push({ x: this.x - this.dx * 10, y: this.y - this.dy * 10, life: 12 });
+        this.trailParticles = this.trailParticles.filter(p => p.life-- > 0);
+    }
+    draw(ctx, camX, camY) {
+        const x = this.x - camX, y = this.y - camY, angle = Math.atan2(this.dy, this.dx);
+        ctx.save();
+        this.trailParticles.forEach(p => {
+            ctx.fillStyle = `rgba(255,100,0,${p.life/12})`;
+            ctx.beginPath(); ctx.arc(p.x - camX, p.y - camY, 4 * p.life / 12, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.translate(x, y); ctx.rotate(angle + Math.PI / 2);
+        ctx.fillStyle = '#666'; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(-5, 8); ctx.lineTo(5, 8); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#ff4400'; ctx.beginPath(); ctx.arc(0, -5, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+}
 
+
+// ========== 技能掉落系统 ==========
 class SkillDrop {
     constructor(x, y, skillId) {
-        this.x = x;
-        this.y = y;
+        this.x = x; this.y = y;
         this.skillId = skillId;
         this.skill = ALL_SKILLS[skillId];
         this.radius = 12;
         this.floatOffset = Math.random() * Math.PI * 2;
         this.markedForDeletion = false;
-        this.life = 600; // 10秒后消失
+        this.life = 600;
     }
-    
     update(player) {
-        this.y += Game.scrollSpeed * 0.5;
         this.life--;
-        
-        if (this.life <= 0 || this.y > CONFIG.GAME_HEIGHT + 50) {
-            this.markedForDeletion = true;
-            return;
-        }
-        
-        // 检测玩家拾取
-        const dx = player.x - this.x;
-        const dy = player.y - this.y;
+        if (this.life <= 0) { this.markedForDeletion = true; return; }
+        const dx = player.x - this.x, dy = player.y - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        
         if (dist < player.pickupRange) {
-            // 吸引效果
-            this.x += (dx / dist) * 6;
-            this.y += (dy / dist) * 6;
-            
+            this.x += (dx / dist) * 6; this.y += (dy / dist) * 6;
             if (dist < player.radius + this.radius) {
-                // 拾取到背包
                 if (player.wand.addSkillToInventory(this.skillId)) {
                     Game.addFloatingText('+' + this.skill.name, this.x, this.y, '#00ff00');
                     this.markedForDeletion = true;
@@ -881,51 +1134,28 @@ class SkillDrop {
             }
         }
     }
-    
     draw(ctx, camX, camY) {
-        const x = this.x - camX;
-        const y = this.y - camY;
+        const x = this.x - camX, y = this.y - camY;
         const float = Math.sin(Game.frameCount * 0.08 + this.floatOffset) * 4;
         const flash = this.life < 120 ? (Math.sin(Game.frameCount * 0.3) > 0 ? 1 : 0.3) : 1;
-        
-        ctx.save();
-        ctx.globalAlpha = flash;
-        
-        // 背景光晕
-        const isActive = this.skill.type === 'active';
-        const glowColor = isActive ? 'rgba(255, 200, 0, 0.4)' : 'rgba(100, 200, 255, 0.4)';
-        ctx.fillStyle = glowColor;
-        ctx.beginPath();
-        ctx.arc(x, y + float, this.radius + 6, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 主体
-        ctx.fillStyle = isActive ? '#ffcc00' : '#66ccff';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(x, y + float, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-        
-        // 图标
-        ctx.font = '14px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#000';
-        ctx.fillText(this.skill.icon, x, y + float);
-        
+        ctx.save(); ctx.globalAlpha = flash;
+        const isMagic = this.skill.type === 'magic';
+        ctx.fillStyle = isMagic ? 'rgba(255,200,0,0.4)' : 'rgba(100,200,255,0.4)';
+        ctx.beginPath(); ctx.arc(x, y + float, this.radius + 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = isMagic ? '#ffcc00' : '#66ccff';
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(x, y + float, this.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.font = '14px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#000'; ctx.fillText(this.skill.icon, x, y + float);
         ctx.restore();
     }
 }
 
-// 技能掉落生成函数
-function trySpawnSkillDrop(x, y, dropChance = 0.08) {
+function trySpawnSkillDrop(x, y, player) {
+    const dropChance = 0.06 * (player.dropRate || 1);
     if (Math.random() > dropChance) return;
-    
     const skillIds = Object.keys(ALL_SKILLS);
     const randomSkillId = skillIds[Math.floor(Math.random() * skillIds.length)];
-    
     Game.skillDrops = Game.skillDrops || [];
     Game.skillDrops.push(new SkillDrop(x, y, randomSkillId));
 }
