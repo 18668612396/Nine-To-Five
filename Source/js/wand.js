@@ -274,17 +274,17 @@ const SKILL_COSTS = {
     explosive: 1,
     bouncing: 1,
     reduce_cooldown: 1,
-    flame_crystal: 1,
+    burn: 1,
     pull: 1,
-    thunder_crystal: 1,
-    collapse_crystal: 1,
-    poison_crystal: 1,
+    thunder: 1,
+    poison: 1,
     rune_hammer: 1,
     prism_core: 1,
     reflect: 1,
     split: 1,
     hover: 1,
-    light_pillar: 1
+    light_pillar: 1,
+    frenzy: 1
 };
 
 // ========== 新武器类 ==========
@@ -334,6 +334,11 @@ class Weapon {
         this.killCounter = 0;
         this.timerCounter = 0;
         this.hurtTrigger = false;
+        
+        // 狂暴系统
+        this.lastTargetId = null;
+        this.frenzyStacks = 0;
+        this.maxFrenzyStacks = 10; // 最大叠加层数
         
         // 应用词条效果
         this.affixes.forEach(affix => {
@@ -569,6 +574,28 @@ class Weapon {
 
         if (nearest) {
             targetAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+            
+            // 狂暴系统 - 追踪目标
+            if (mods.frenzy) {
+                const targetId = nearest.id || nearest;
+                if (this.lastTargetId === targetId) {
+                    // 同一目标，增加狂暴层数
+                    this.frenzyStacks = Math.min(this.frenzyStacks + 1, this.maxFrenzyStacks);
+                } else {
+                    // 不同目标，重置狂暴层数
+                    this.frenzyStacks = 0;
+                    this.lastTargetId = targetId;
+                }
+                
+                // 应用狂暴效果 - 每层减少冷却
+                const frenzyBonus = this.frenzyStacks * mods.frenzyReduction;
+                mods.cooldownMult = (mods.cooldownMult || 1) * (1 - frenzyBonus);
+                
+                // 显示狂暴层数
+                if (this.frenzyStacks > 0) {
+                    Game.addFloatingText('狂暴x' + this.frenzyStacks, player.x, player.y - 40, '#ff4444');
+                }
+            }
         }
 
         const count = mods.splitCount || 1;

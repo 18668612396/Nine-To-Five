@@ -118,8 +118,8 @@ const MODIFIER_SKILLS = {
         name: '爆炸',
         type: 'modifier',
         icon: '💥',
-        desc: '命中时爆炸，速度-20%',
-        modify: (mods) => { mods.explosive = true; mods.explosionRadius = (mods.explosionRadius || 30) + 30; mods.speed = (mods.speed || 1) * 0.8; }
+        desc: '击杀敌人时产生爆炸',
+        modify: (mods) => { mods.explosiveOnKill = true; mods.explosionRadius = (mods.explosionRadius || 30) + 30; }
     },
     bouncing: {
         id: 'bouncing',
@@ -138,9 +138,9 @@ const MODIFIER_SKILLS = {
         modify: (mods) => { mods.cooldownMult = (mods.cooldownMult || 1) * 0.7; }
     },
     // 新增被动技能
-    flame_crystal: {
-        id: 'flame_crystal',
-        name: '炽焰晶石',
+    burn: {
+        id: 'burn',
+        name: '灼烧',
         type: 'modifier',
         icon: '🔶',
         desc: '附带灼烧效果，持续伤害',
@@ -154,25 +154,17 @@ const MODIFIER_SKILLS = {
         desc: '击中敌人时拉扯周围敌人',
         modify: (mods) => { mods.pull = true; mods.pullRange = (mods.pullRange || 80) + 40; mods.pullStrength = (mods.pullStrength || 0) + 5; }
     },
-    thunder_crystal: {
-        id: 'thunder_crystal',
-        name: '雷霆晶石',
+    thunder: {
+        id: 'thunder',
+        name: '落雷',
         type: 'modifier',
         icon: '⚡',
-        desc: '附带雷电效果，几率落雷',
+        desc: '击中敌人时落下金色闪电',
         modify: (mods) => { mods.lightning = true; mods.lightningChance = (mods.lightningChance || 0) + 0.2; }
     },
-    collapse_crystal: {
-        id: 'collapse_crystal',
-        name: '坍缩晶石',
-        type: 'modifier',
-        icon: '🕳️',
-        desc: '击杀爆炸，伤害-15%',
-        modify: (mods) => { mods.deathExplosion = true; mods.deathExplosionRadius = (mods.deathExplosionRadius || 0) + 50; mods.damage = (mods.damage || 1) * 0.85; }
-    },
-    poison_crystal: {
-        id: 'poison_crystal',
-        name: '毒液晶石',
+    poison: {
+        id: 'poison',
+        name: '中毒',
         type: 'modifier',
         icon: '☠️',
         desc: '附带中毒效果，叠加伤害',
@@ -225,6 +217,14 @@ const MODIFIER_SKILLS = {
         icon: '🌟',
         desc: '召唤光柱1秒，冷却+20%',
         modify: (mods) => { mods.lightPillar = true; mods.pillarDamage = (mods.pillarDamage || 0) + 8; mods.cooldownMult = (mods.cooldownMult || 1) * 1.2; }
+    },
+    frenzy: {
+        id: 'frenzy',
+        name: '狂暴',
+        type: 'modifier',
+        icon: '😈',
+        desc: '持续攻击同一敌人时冷却递减',
+        modify: (mods) => { mods.frenzy = true; mods.frenzyReduction = (mods.frenzyReduction || 0) + 0.05; }
     }
 };
 
@@ -612,7 +612,7 @@ class SkillProjectile {
         this.target = null;
 
         this.chainCount = mods.chainCount || 0;
-        this.explosive = mods.explosive || false;
+        this.explosiveOnKill = mods.explosiveOnKill || false;
         this.explosionRadius = mods.explosionRadius || 30;
         this.bounceCount = mods.bounceCount || 0;
 
@@ -622,8 +622,6 @@ class SkillProjectile {
         this.critChance = mods.critChance || 0;
         this.lightning = mods.lightning || false;
         this.lightningChance = mods.lightningChance || 0;
-        this.deathExplosion = mods.deathExplosion || false;
-        this.deathExplosionRadius = mods.deathExplosionRadius || 0;
         this.poison = mods.poison || false;
         this.poisonStacks = mods.poisonStacks || 0;
         this.shieldOnHit = mods.shieldOnHit || false;
@@ -647,6 +645,10 @@ class SkillProjectile {
         this.hoverTimer = 0;
         this.lightPillar = mods.lightPillar || false;
         this.pillarDamage = mods.pillarDamage || 0;
+        
+        // 狂暴
+        this.frenzy = mods.frenzy || false;
+        this.frenzyReduction = mods.frenzyReduction || 0;
         
         // 符文战锤 - 环绕效果
         this.orbital = mods.orbital || false;
@@ -770,9 +772,6 @@ class SkillProjectile {
     onHit(enemy) {
         const finalDamage = this.getFinalDamage();
         
-        // 爆炸效果
-        if (this.explosive) this.explode();
-        
         // 连锁攻击
         if (this.chainCount > 0) this.chainToNext(enemy);
         
@@ -848,29 +847,29 @@ class SkillProjectile {
     }
 
     onKill(enemy) {
-        // 坍缩晶石 - 击杀爆炸
-        if (this.deathExplosion && this.deathExplosionRadius > 0) {
-            Game.enemies.forEach(e => {
-                if (!e.markedForDeletion && e !== enemy) {
-                    const dist = Math.sqrt((e.x - enemy.x) ** 2 + (e.y - enemy.y) ** 2);
-                    if (dist < this.deathExplosionRadius) {
-                        e.takeDamage(this.damage * 0.8, 0, 0);
-                    }
-                }
-            });
-            Game.spawnParticles(enemy.x, enemy.y, '#9900ff', 20);
+        // 爆炸 - 击杀时爆炸
+        if (this.explosiveOnKill && this.explosionRadius > 0) {
+            // 保存当前位置用于爆炸
+            const oldX = this.x;
+            const oldY = this.y;
+            this.x = enemy.x;
+            this.y = enemy.y;
+            this.explode();
+            this.x = oldX;
+            this.y = oldY;
         }
     }
 
     spawnLightning(enemy) {
-        // 落雷效果
+        // 落雷效果 - 金色闪电
         Game.lightningEffects = Game.lightningEffects || [];
         Game.lightningEffects.push({
             x1: enemy.x,
             y1: enemy.y - 200,
             x2: enemy.x,
             y2: enemy.y,
-            life: 20
+            life: 25,
+            color: '#ffdd00'
         });
         // 范围伤害
         Game.enemies.forEach(e => {
@@ -881,7 +880,8 @@ class SkillProjectile {
                 }
             }
         });
-        Game.spawnParticles(enemy.x, enemy.y, '#ffdd00', 10);
+        Game.spawnParticles(enemy.x, enemy.y, '#ffdd00', 12);
+        Game.spawnParticles(enemy.x, enemy.y, '#ffffff', 5);
     }
 
     // 牵引效果 - 拉扯周围敌人
@@ -922,15 +922,74 @@ class SkillProjectile {
     }
 
     explode() {
+        const x = this.x;
+        const y = this.y;
+        const radius = this.explosionRadius;
+        
+        // 对范围内敌人造成伤害
         Game.enemies.forEach(e => {
             if (!e.markedForDeletion) {
-                const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
-                if (dist < this.explosionRadius) {
-                    e.takeDamage(this.damage * 0.5 * (1 - dist / this.explosionRadius * 0.5), 0, 0);
+                const dist = Math.sqrt((e.x - x) ** 2 + (e.y - y) ** 2);
+                if (dist < radius) {
+                    const dmgMult = 1 - dist / radius * 0.5;
+                    e.takeDamage(this.damage * 0.5 * dmgMult, (e.x - x) / dist * 3, (e.y - y) / dist * 3);
                 }
             }
         });
-        Game.spawnParticles(this.x, this.y, '#ff6600', 15);
+        
+        // 对Boss也造成伤害
+        if (typeof BossManager !== 'undefined' && BossManager.bosses) {
+            BossManager.bosses.forEach(boss => {
+                if (!boss.markedForDeletion) {
+                    const dist = Math.sqrt((boss.x - x) ** 2 + (boss.y - y) ** 2);
+                    if (dist < radius) {
+                        const dmgMult = 1 - dist / radius * 0.5;
+                        boss.takeDamage(this.damage * 0.5 * dmgMult, 0, 0);
+                    }
+                }
+            });
+        }
+        
+        // 添加爆炸效果到游戏
+        Game.explosionEffects = Game.explosionEffects || [];
+        Game.explosionEffects.push({
+            x: x,
+            y: y,
+            radius: radius,
+            life: 30,
+            maxLife: 30
+        });
+        
+        // 爆炸粒子 - 火焰核心
+        for (let i = 0; i < 20; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 2 + Math.random() * 4;
+            Game.particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 25 + Math.random() * 15,
+                color: Math.random() > 0.5 ? '#ff6600' : '#ffaa00',
+                size: 4 + Math.random() * 6
+            });
+        }
+        
+        // 烟雾粒子 - 向上飘
+        for (let i = 0; i < 15; i++) {
+            Game.particles.push({
+                x: x + (Math.random() - 0.5) * 30,
+                y: y,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: -2 - Math.random() * 3,
+                life: 40 + Math.random() * 20,
+                color: '#444444',
+                size: 8 + Math.random() * 10
+            });
+        }
+        
+        // 屏幕震动
+        Game.screenShake(8, 12);
     }
 
     chainToNext(fromEnemy) {

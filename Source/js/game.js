@@ -252,6 +252,10 @@ const Game = {
         // 更新扭曲特效
         this.distortEffects = this.distortEffects || [];
         this.distortEffects = this.distortEffects.filter(d => d.life-- > 0);
+        
+        // 更新爆炸效果
+        this.explosionEffects = this.explosionEffects || [];
+        this.explosionEffects = this.explosionEffects.filter(e => e.life-- > 0);
 
         // 更新光之柱
         this.lightPillars = this.lightPillars || [];
@@ -475,6 +479,9 @@ const Game = {
         
         // 绘制光之柱
         this.drawLightPillars();
+        
+        // 绘制爆炸效果
+        this.drawExplosionEffects();
         
         // 绘制技能槽UI
         this.drawWandSlots();
@@ -717,6 +724,79 @@ const Game = {
             CTX.beginPath();
             CTX.arc(x, y, 5, 0, Math.PI * 2);
             CTX.fill();
+        });
+    },
+    
+    drawExplosionEffects() {
+        this.explosionEffects = this.explosionEffects || [];
+        this.explosionEffects.forEach(exp => {
+            const x = exp.x - cameraX;
+            const y = exp.y - cameraY;
+            const progress = 1 - exp.life / exp.maxLife;
+            const radius = exp.radius;
+            
+            // 阶段1: 扩张的火球 (0-0.3)
+            if (progress < 0.3) {
+                const expandProgress = progress / 0.3;
+                const currentRadius = radius * expandProgress;
+                const alpha = 0.8 - expandProgress * 0.3;
+                
+                // 火焰核心
+                const gradient = CTX.createRadialGradient(x, y, 0, x, y, currentRadius);
+                gradient.addColorStop(0, `rgba(255, 255, 200, ${alpha})`);
+                gradient.addColorStop(0.3, `rgba(255, 150, 0, ${alpha * 0.8})`);
+                gradient.addColorStop(0.7, `rgba(255, 80, 0, ${alpha * 0.5})`);
+                gradient.addColorStop(1, `rgba(200, 50, 0, 0)`);
+                
+                CTX.fillStyle = gradient;
+                CTX.beginPath();
+                CTX.arc(x, y, currentRadius, 0, Math.PI * 2);
+                CTX.fill();
+            }
+            
+            // 阶段2: 蘑菇云上升 (0.2-0.8)
+            if (progress > 0.2 && progress < 0.8) {
+                const cloudProgress = (progress - 0.2) / 0.6;
+                const cloudY = y - cloudProgress * 60;
+                const cloudRadius = 20 + cloudProgress * 25;
+                const alpha = 0.6 * (1 - cloudProgress);
+                
+                // 蘑菇云头部
+                const cloudGradient = CTX.createRadialGradient(x, cloudY, 0, x, cloudY, cloudRadius);
+                cloudGradient.addColorStop(0, `rgba(100, 100, 100, ${alpha})`);
+                cloudGradient.addColorStop(0.5, `rgba(80, 80, 80, ${alpha * 0.7})`);
+                cloudGradient.addColorStop(1, `rgba(60, 60, 60, 0)`);
+                
+                CTX.fillStyle = cloudGradient;
+                CTX.beginPath();
+                CTX.arc(x, cloudY, cloudRadius, 0, Math.PI * 2);
+                CTX.fill();
+                
+                // 蘑菇云柱子
+                const stemWidth = 15 - cloudProgress * 5;
+                const stemAlpha = alpha * 0.8;
+                CTX.fillStyle = `rgba(80, 80, 80, ${stemAlpha})`;
+                CTX.beginPath();
+                CTX.moveTo(x - stemWidth, y);
+                CTX.lineTo(x + stemWidth, y);
+                CTX.lineTo(x + stemWidth * 0.6, cloudY + cloudRadius * 0.5);
+                CTX.lineTo(x - stemWidth * 0.6, cloudY + cloudRadius * 0.5);
+                CTX.closePath();
+                CTX.fill();
+            }
+            
+            // 阶段3: 冲击波环 (0-0.5)
+            if (progress < 0.5) {
+                const ringProgress = progress / 0.5;
+                const ringRadius = radius * ringProgress;
+                const ringAlpha = 0.5 * (1 - ringProgress);
+                
+                CTX.strokeStyle = `rgba(255, 200, 100, ${ringAlpha})`;
+                CTX.lineWidth = 4 * (1 - ringProgress);
+                CTX.beginPath();
+                CTX.arc(x, y, ringRadius, 0, Math.PI * 2);
+                CTX.stroke();
+            }
         });
     },
     

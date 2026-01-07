@@ -329,7 +329,18 @@ class Enemy extends Entity {
             if (Game.frameCount % 20 === 0) {
                 this.hp -= this.burnDamage;
                 Game.addFloatingText(Math.floor(this.burnDamage), this.x, this.y - 30, '#ff6600');
-                Game.spawnParticles(this.x, this.y, '#ff6600', 2);
+                // 燃烧粒子效果
+                for (let i = 0; i < 5; i++) {
+                    Game.particles.push({
+                        x: this.x + (Math.random() - 0.5) * 20,
+                        y: this.y + (Math.random() - 0.5) * 20,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: -Math.random() * 3 - 1,
+                        life: 20 + Math.random() * 15,
+                        color: Math.random() > 0.5 ? '#ff4400' : '#ffaa00',
+                        size: 3 + Math.random() * 4
+                    });
+                }
                 if (this.hp <= 0 && !this.markedForDeletion) {
                     this.die();
                 }
@@ -342,8 +353,19 @@ class Enemy extends Entity {
             if (this.poisonTimer <= 0) {
                 const poisonDmg = this.poisonStacks * 2;
                 this.hp -= poisonDmg;
-                Game.addFloatingText(Math.floor(poisonDmg), this.x, this.y - 30, '#00ff00');
-                Game.spawnParticles(this.x, this.y, '#00ff00', 2);
+                Game.addFloatingText(Math.floor(poisonDmg), this.x, this.y - 30, '#aa00ff');
+                // 紫色泡泡效果
+                for (let i = 0; i < 4; i++) {
+                    Game.particles.push({
+                        x: this.x + (Math.random() - 0.5) * 25,
+                        y: this.y + (Math.random() - 0.5) * 15,
+                        vx: (Math.random() - 0.5) * 1.5,
+                        vy: -Math.random() * 2 - 1,
+                        life: 30 + Math.random() * 20,
+                        color: Math.random() > 0.5 ? '#aa00ff' : '#cc66ff',
+                        size: 4 + Math.random() * 5
+                    });
+                }
                 this.poisonStacks = Math.max(0, this.poisonStacks - 1);
                 this.poisonTimer = 60;
                 if (this.hp <= 0 && !this.markedForDeletion) {
