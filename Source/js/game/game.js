@@ -157,6 +157,13 @@ const Game = {
         Events.on(EVENT.SCREEN_SHAKE, (data) => {
             Camera.shake(data.intensity || 5, data.duration || 10);
         });
+        
+        // 投射物发射
+        Events.on(EVENT.PROJECTILE_FIRE, (data) => {
+            if (data.projectile) {
+                this.projectiles.push(data.projectile);
+            }
+        });
     },
     
     // 开始游戏
@@ -976,7 +983,7 @@ const Game = {
     // ========== 界面控制 ==========
     
     openPauseMenu() {
-        this.state = 'INVENTORY';
+        if (this.state !== 'PLAYING') return;
         Inventory.open();
     },
     
