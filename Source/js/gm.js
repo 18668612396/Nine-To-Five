@@ -85,5 +85,11 @@ const GM = {
         Game.gold += amount;
         Game.addFloatingText('+' + amount + ' 💰', Game.player.x, Game.player.y - 30, '#ffd700');
         Game.updateUI();
+    },
+    
+    spawnBoss(type) {
+        if (BossManager && BossManager.spawnBoss) {
+            BossManager.spawnBoss(type);
+        }
     }
 };

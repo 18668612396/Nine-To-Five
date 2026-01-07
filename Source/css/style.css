@@ -365,6 +365,7 @@ body {
 #inventory-screen {
     background: rgba(0, 0, 0, 0.9);
     position: relative;
+    z-index: 100;
 }
 
 .inventory-container {
@@ -1503,6 +1504,10 @@ body {
 
 
 /* ========== 设置菜单 ========== */
+#settings-modal {
+    z-index: 150;
+}
+
 .settings-container {
     background: linear-gradient(135deg, #1a1a2e, #16213e);
     border: 2px solid #4488cc;
@@ -1979,5 +1984,23 @@ body {
 
 .inv-surrender-btn:hover {
     background: rgba(255, 120, 120, 0.9);
+    transform: scale(1.05);
+}
+
+
+/* Boss按钮样式 */
+.gm-boss-btns {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.gm-btn.boss-type {
+    background: rgba(255, 50, 50, 0.3);
+    border-color: #ff4444;
+}
+
+.gm-btn.boss-type:hover {
+    background: rgba(255, 50, 50, 0.5);
     transform: scale(1.05);
 }

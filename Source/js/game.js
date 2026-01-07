@@ -101,6 +101,9 @@ const Game = {
         this.xp = 0;
         this.xpToNext = 10;
         
+        // 初始化Boss管理器
+        BossManager.init();
+        
         // 设置地图场景
         SceneManager.setScene(config.map);
         this.generateSceneElements();
@@ -232,6 +235,9 @@ const Game = {
         // 更新敌人
         this.enemies.forEach(e => e.update(this.player));
         
+        // 更新Boss
+        BossManager.update();
+        
         // 更新宝石
         this.gems.forEach(g => g.update(this.player));
         
@@ -243,6 +249,8 @@ const Game = {
 
         // 碰撞检测：投射物 vs 敌人
         this.projectiles.forEach(p => {
+            if (p.isBossProjectile) return; // Boss投射物不攻击敌人
+            
             this.enemies.forEach(e => {
                 if (!e.markedForDeletion && !p.markedForDeletion) {
                     if (this.checkCollision(p, e)) {
@@ -262,6 +270,26 @@ const Game = {
                     }
                 }
             });
+            
+            // 投射物 vs Boss
+            BossManager.bosses.forEach(boss => {
+                if (!boss.markedForDeletion && !p.markedForDeletion) {
+                    if (this.checkCollision(p, boss)) {
+                        if (!p.hitList.includes(boss)) {
+                            const dmg = p.getFinalDamage ? p.getFinalDamage() : p.damage;
+                            boss.takeDamage(dmg, p.dx * p.knockback, p.dy * p.knockback);
+                            p.hitList.push(boss);
+                            this.spawnParticles(boss.x, boss.y, boss.color, 5);
+                            
+                            if (p.onHit) p.onHit(boss);
+                            
+                            if (p.hitList.length >= p.penetrate && !p.isHovering) {
+                                p.markedForDeletion = true;
+                            }
+                        }
+                    }
+                }
+            });
         });
 
         // 碰撞检测：敌人 vs 玩家
@@ -271,6 +299,18 @@ const Game = {
                     this.player.hp -= e.damage;
                     this.addFloatingText("-" + e.damage, this.player.x, this.player.y - 30, '#ff4444');
                     this.spawnParticles(this.player.x, this.player.y, '#ff0000', 5);
+                    this.updateUI();
+                }
+            }
+        });
+        
+        // 碰撞检测：Boss vs 玩家
+        BossManager.bosses.forEach(boss => {
+            if (this.checkCollision(boss, this.player)) {
+                if (this.frameCount % 30 === 0) {
+                    this.player.hp -= boss.damage;
+                    this.addFloatingText("-" + boss.damage, this.player.x, this.player.y - 30, '#ff0000');
+                    this.spawnParticles(this.player.x, this.player.y, '#ff0000', 8);
                     this.updateUI();
                 }
             }
@@ -361,6 +401,9 @@ const Game = {
 
         // 绘制敌人
         this.enemies.forEach(e => e.draw(CTX, cameraX, cameraY));
+        
+        // 绘制Boss
+        BossManager.draw(CTX, cameraX, cameraY);
         
         // 绘制玩家
         this.player.draw(CTX, cameraX, cameraY);
