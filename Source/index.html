@@ -4,9 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>葵瓜幸存者</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌻</text></svg>">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <!-- 加载界面 -->
+    <div id="loading-screen">
+        <div class="loading-content">
+            <div class="loading-icon">🌻</div>
+            <h1 class="loading-title">葵瓜幸存者</h1>
+            <div class="loading-bar-container">
+                <div class="loading-bar"></div>
+            </div>
+            <p class="loading-text">正在加载...</p>
+        </div>
+    </div>
+
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
         
@@ -203,7 +216,12 @@
                         <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
                     </div>
                     <div class="collection-content">
-                        <p class="coming-soon">🚧 功能开发中...</p>
+                        <div class="collection-tabs">
+                            <button class="collection-tab active" onclick="Lobby.showCollectionTab('characters', this)">👤 角色</button>
+                            <button class="collection-tab" onclick="Lobby.showCollectionTab('enemies', this)">👹 敌人</button>
+                            <button class="collection-tab" onclick="Lobby.showCollectionTab('skills', this)">🔮 技能</button>
+                        </div>
+                        <div id="collection-grid" class="collection-grid"></div>
                     </div>
                 </div>
             </div>
@@ -394,6 +412,29 @@
     <script src="js/gm.js"></script>
     <script src="js/lobby.js"></script>
     <script>
+        // 模拟加载进度
+        const loadingBar = document.querySelector('.loading-bar');
+        const loadingText = document.querySelector('.loading-text');
+        let progress = 0;
+        
+        const loadingInterval = setInterval(() => {
+            progress += Math.random() * 15 + 5;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(loadingInterval);
+                loadingText.textContent = '加载完成!';
+                
+                setTimeout(() => {
+                    document.getElementById('loading-screen').classList.add('fade-out');
+                    setTimeout(() => {
+                        document.getElementById('loading-screen').style.display = 'none';
+                    }, 500);
+                }, 300);
+            }
+            loadingBar.style.width = progress + '%';
+            loadingText.textContent = '正在加载... ' + Math.floor(progress) + '%';
+        }, 100);
+        
         Game.init();
         GM.init();
         Lobby.init();

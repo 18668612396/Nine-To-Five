@@ -291,6 +291,119 @@ const Lobby = {
     
     showCollection() {
         document.getElementById('collection-modal').classList.remove('hidden');
+        this.showCollectionTab('characters');
+    },
+    
+    showCollectionTab(tab, element) {
+        // 更新标签状态
+        document.querySelectorAll('.collection-tab').forEach(t => t.classList.remove('active'));
+        if (element) {
+            element.classList.add('active');
+        } else {
+            document.querySelector(`.collection-tab[onclick*="${tab}"]`)?.classList.add('active');
+        }
+        
+        const grid = document.getElementById('collection-grid');
+        grid.innerHTML = '';
+        
+        if (tab === 'characters') {
+            this.renderCharacterCollection(grid);
+        } else if (tab === 'enemies') {
+            this.renderEnemyCollection(grid);
+        } else if (tab === 'skills') {
+            this.renderSkillCollection(grid);
+        }
+    },
+    
+    renderCharacterCollection(grid) {
+        const characters = [
+            { id: 'guagua', name: '瓜瓜', desc: '速度+10%', icon: '🍈', unlocked: true },
+            { id: 'kuikui', name: '葵葵', desc: '血量+20%', icon: '🌻', unlocked: true },
+            { id: 'unknown1', name: '???', desc: '敬请期待', icon: '❓', unlocked: false },
+            { id: 'unknown2', name: '???', desc: '敬请期待', icon: '❓', unlocked: false }
+        ];
+        
+        characters.forEach(char => {
+            const div = document.createElement('div');
+            div.className = 'collection-item' + (char.unlocked ? '' : ' locked');
+            
+            if (char.unlocked && (char.id === 'guagua' || char.id === 'kuikui')) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 60;
+                canvas.height = 60;
+                const ctx = canvas.getContext('2d');
+                if (char.id === 'guagua') {
+                    CharacterRenderer.drawGuagua(ctx, 30, 35, 18, 0);
+                } else {
+                    CharacterRenderer.drawKuikui(ctx, 30, 35, 18, 0);
+                }
+                div.innerHTML = `
+                    <div class="collection-icon"></div>
+                    <span class="collection-name">${char.name}</span>
+                    <span class="collection-desc">${char.desc}</span>
+                `;
+                div.querySelector('.collection-icon').appendChild(canvas);
+            } else {
+                div.innerHTML = `
+                    <span class="collection-icon">${char.icon}</span>
+                    <span class="collection-name">${char.name}</span>
+                    <span class="collection-desc">${char.desc}</span>
+                `;
+            }
+            grid.appendChild(div);
+        });
+    },
+    
+    renderEnemyCollection(grid) {
+        const enemies = [
+            { id: 'slime', name: '史莱姆', desc: '普通敌人，缓慢但坚韧', icon: '🟣', color: '#ac92ec', unlocked: true },
+            { id: 'bat', name: '蝙蝠', desc: '快速但脆弱的飞行敌人', icon: '🦇', color: '#ec87c0', unlocked: true },
+            { id: 'golem', name: '石巨人', desc: '高血量的精英敌人', icon: '🗿', color: '#ffce54', unlocked: true },
+            { id: 'boss_sakura', name: '樱花树妖', desc: 'Boss - 召唤花瓣攻击', icon: '🌸', unlocked: true, rarity: 'epic' },
+            { id: 'boss_lava', name: '熔岩巨人', desc: 'Boss - 喷射火焰', icon: '🔥', unlocked: true, rarity: 'epic' },
+            { id: 'boss_eye', name: '深渊之眼', desc: 'Boss - 激光扫射', icon: '👁️', unlocked: true, rarity: 'legendary' },
+            { id: 'boss_frost', name: '冰霜女王', desc: 'Boss - 冰冻领域', icon: '❄️', unlocked: true, rarity: 'legendary' }
+        ];
+        
+        enemies.forEach(enemy => {
+            const div = document.createElement('div');
+            div.className = 'collection-item' + (enemy.unlocked ? '' : ' locked');
+            if (enemy.rarity) div.classList.add('rarity-' + enemy.rarity);
+            div.innerHTML = `
+                <span class="collection-icon">${enemy.icon}</span>
+                <span class="collection-name">${enemy.name}</span>
+                <span class="collection-desc">${enemy.desc}</span>
+            `;
+            grid.appendChild(div);
+        });
+    },
+    
+    renderSkillCollection(grid) {
+        if (typeof MAGIC_SKILLS === 'undefined') return;
+        
+        Object.values(MAGIC_SKILLS).forEach(skill => {
+            const div = document.createElement('div');
+            div.className = 'collection-item rarity-rare';
+            div.innerHTML = `
+                <span class="collection-icon">${skill.icon}</span>
+                <span class="collection-name">${skill.name}</span>
+                <span class="collection-desc">${skill.desc || '主动技能'}</span>
+            `;
+            grid.appendChild(div);
+        });
+        
+        if (typeof MODIFIER_SKILLS !== 'undefined') {
+            Object.values(MODIFIER_SKILLS).forEach(skill => {
+                const div = document.createElement('div');
+                div.className = 'collection-item rarity-common';
+                div.innerHTML = `
+                    <span class="collection-icon">${skill.icon}</span>
+                    <span class="collection-name">${skill.name}</span>
+                    <span class="collection-desc">${skill.desc || '被动效果'}</span>
+                `;
+                grid.appendChild(div);
+            });
+        }
     },
     
     closeModal() {
