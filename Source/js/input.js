@@ -18,13 +18,17 @@ const Input = {
             // ESC 键处理
             if (e.code === 'Escape') {
                 if (Game.state === 'PLAYING') {
-                    Game.openSettings();
-                } else if (Game.state === 'SETTINGS') {
-                    Game.closeSettings();
+                    // 游戏中按ESC直接打开背包
+                    Game.openPauseMenu();
                 } else if (Game.state === 'INVENTORY') {
-                    Game.closeInventory();
+                    // 背包按ESC返回游戏
+                    Game.closePauseMenu();
                 } else if (Game.state === 'GM') {
+                    // GM面板按ESC返回背包
                     GM.closePanel();
+                } else if (Game.state === 'SETTINGS') {
+                    // 设置按ESC返回背包
+                    Game.closeSettings();
                 }
             }
         });

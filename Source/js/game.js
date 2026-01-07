@@ -718,21 +718,61 @@ const Game = {
         return `${m}:${s}`;
     },
 
-    // 设置菜单
-    openSettings() {
-        this.previousState = this.state;
+    // 暂停菜单 - ESC直接打开背包
+    openPauseMenu() {
+        this.state = 'INVENTORY';
+        document.getElementById('inventory-screen').classList.remove('hidden');
+        this.renderInventory();
+    },
+    
+    closePauseMenu() {
+        document.getElementById('inventory-screen').classList.add('hidden');
+        this.state = 'PLAYING';
+    },
+    
+    resumeGame() {
+        this.closePauseMenu();
+    },
+    
+    // 从暂停菜单打开背包
+    openInventoryFromPause() {
+        // 已经在背包界面了，不需要操作
+    },
+    
+    // 从暂停菜单打开GM
+    openGMFromPause() {
+        document.getElementById('pause-modal').classList.add('hidden');
+        GM.openFromPause();
+    },
+    
+    // 从暂停菜单打开设置
+    openSettingsFromPause() {
+        document.getElementById('pause-modal').classList.add('hidden');
+        this.state = 'SETTINGS';
+        document.getElementById('settings-modal').classList.remove('hidden');
+    },
+    
+    // 从背包打开设置
+    openSettingsFromInventory() {
         this.state = 'SETTINGS';
         document.getElementById('settings-modal').classList.remove('hidden');
     },
     
     closeSettings() {
         document.getElementById('settings-modal').classList.add('hidden');
-        this.state = this.previousState || 'PLAYING';
+        // 返回背包界面
+        this.state = 'INVENTORY';
+    },
+    
+    // 只关闭设置弹窗（不改变状态）
+    closeSettingsOnly() {
+        document.getElementById('settings-modal').classList.add('hidden');
     },
     
     // 放弃战斗
     surrenderGame() {
-        this.closeSettings();
+        document.getElementById('inventory-screen').classList.add('hidden');
+        document.getElementById('settings-modal').classList.add('hidden');
         this.endGame();
     },
 
@@ -748,6 +788,7 @@ const Game = {
         const earnedGold = this.gold;
         Lobby.addGold(earnedGold);
         
+        document.getElementById('hud').classList.add('hidden');
         document.getElementById('gameover-screen').classList.remove('hidden');
         document.getElementById('final-time').innerText = this.formatTime(this.time);
         document.getElementById('final-kills').innerText = this.kills;
@@ -769,17 +810,19 @@ const Game = {
         document.getElementById('levelup-screen').classList.add('hidden');
         document.getElementById('gameover-screen').classList.add('hidden');
         document.getElementById('inventory-screen').classList.add('hidden');
+        document.getElementById('pause-modal').classList.add('hidden');
         
         // 返回大厅
         Lobby.enter();
     },
     
-    // 背包系统
+    // 背包系统（直接打开，用于HUD按钮）
     openInventory() {
-        this.previousState = this.state;
-        this.state = 'INVENTORY';
-        document.getElementById('inventory-screen').classList.remove('hidden');
-        this.renderInventory();
+        if (this.state === 'PLAYING') {
+            this.state = 'INVENTORY';
+            document.getElementById('inventory-screen').classList.remove('hidden');
+            this.renderInventory();
+        }
     },
     
     closeInventory() {
@@ -792,10 +835,13 @@ const Game = {
             });
             this.workbenchSlots = [null, null, null];
             this.workbenchOpen = false;
+            document.getElementById('workbench-panel').classList.add('hidden');
+            document.getElementById('workbench-toggle-btn').classList.remove('active');
+            document.querySelector('.inventory-layout').classList.remove('with-workbench');
         }
         
-        this.state = this.previousState || 'PLAYING';
         document.getElementById('inventory-screen').classList.add('hidden');
+        this.state = 'PLAYING';
     },
     
     renderInventory() {

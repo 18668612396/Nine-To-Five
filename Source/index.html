@@ -39,6 +39,30 @@
                 </div>
             </div>
 
+            <!-- 暂停菜单 -->
+            <div id="pause-modal" class="screen hidden">
+                <div class="pause-container">
+                    <h2>⏸️ 暂停</h2>
+                    <div class="pause-content">
+                        <button class="pause-item" onclick="Game.resumeGame()">
+                            <span>▶️ 继续游戏</span>
+                        </button>
+                        <button class="pause-item" onclick="Game.openInventoryFromPause()">
+                            <span>📦 背包</span>
+                        </button>
+                        <button class="pause-item" onclick="Game.openGMFromPause()">
+                            <span>�️ GM指令</s>pan>
+                        </button>
+                        <button class="pause-item" onclick="Game.openSettingsFromPause()">
+                            <span>⚙️ 设置</span>
+                        </button>
+                        <button class="pause-item danger" onclick="Game.surrenderGame()">
+                            <span>🏳️ 放弃战斗</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- 设置菜单 -->
             <div id="settings-modal" class="screen hidden">
                 <div class="settings-container">
@@ -47,19 +71,7 @@
                         <button class="modal-close" onclick="Game.closeSettings()">✕</button>
                     </div>
                     <div class="settings-content">
-                        <button class="settings-item" onclick="Game.closeSettings()">
-                            <span>▶️ 继续游戏</span>
-                        </button>
-                        <button class="settings-item" onclick="Game.openInventory(); Game.closeSettings();">
-                            <span>📦 背包</span>
-                        </button>
-                        <button class="settings-item" onclick="GM.openPanel(); Game.closeSettings();">
-                            <span>🛠️ GM指令</span>
-                        </button>
-                        <button class="settings-item danger" onclick="Game.surrenderGame()">
-                            <span>🏳️ 放弃战斗</span>
-                            <small>立即结算本局</small>
-                        </button>
+                        <p class="coming-soon">🚧 设置功能开发中...</p>
                     </div>
                 </div>
             </div>
@@ -283,6 +295,11 @@
             
             <!-- 背包界面 -->
             <div id="inventory-screen" class="screen hidden">
+                <!-- 右上角设置按钮 -->
+                <button class="inv-settings-btn" onclick="Game.openSettingsFromInventory()">⚙️ 设置</button>
+                <!-- 右下角放弃按钮 -->
+                <button class="inv-surrender-btn" onclick="Game.surrenderGame()">🏳️ 放弃战斗</button>
+                
                 <div class="inventory-layout">
                     <div class="inventory-container">
                         <div class="inventory-header">
@@ -316,6 +333,22 @@
                         <div class="workbench-result" id="workbench-result"></div>
                         <div class="workbench-tip" id="workbench-tip">• 3个相同 → 升星<br>• 2个不同 → 随机</div>
                         <button class="workbench-craft-btn" id="workbench-craft-btn" onclick="Game.doCraft()" disabled>合成</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 设置菜单 -->
+            <div id="settings-modal" class="screen hidden">
+                <div class="settings-container">
+                    <div class="settings-header">
+                        <h2>⚙️ 设置</h2>
+                        <button class="modal-close" onclick="Game.closeSettings()">✕</button>
+                    </div>
+                    <div class="settings-content">
+                        <button class="settings-item" onclick="GM.openPanel(); Game.closeSettingsOnly();">
+                            <span>🛠️ GM指令</span>
+                        </button>
+                        <p class="coming-soon">🚧 更多设置开发中...</p>
                     </div>
                 </div>
             </div>

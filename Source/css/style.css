@@ -1870,3 +1870,95 @@ body {
 .gameover-btns button:hover {
     background: linear-gradient(135deg, #5599dd, #4488cc);
 }
+
+
+/* ========== 暂停菜单 ========== */
+.pause-container {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 2px solid #4488cc;
+    border-radius: 15px;
+    padding: 30px;
+    min-width: 280px;
+    text-align: center;
+}
+
+.pause-container h2 {
+    margin: 0 0 25px;
+    color: #4488cc;
+    font-size: 24px;
+}
+
+.pause-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pause-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255,255,255,0.05);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 16px;
+}
+
+.pause-item:hover {
+    background: rgba(255,255,255,0.1);
+    transform: scale(1.02);
+}
+
+.pause-item.danger {
+    border-color: #ff6b6b;
+    margin-top: 10px;
+}
+
+.pause-item.danger:hover {
+    background: rgba(255,107,107,0.2);
+}
+
+/* ========== 背包界面按钮 ========== */
+.inv-settings-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background: rgba(68, 136, 204, 0.8);
+    border: 2px solid #4488cc;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.inv-settings-btn:hover {
+    background: rgba(85, 153, 221, 0.9);
+    transform: scale(1.05);
+}
+
+.inv-surrender-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background: rgba(255, 107, 107, 0.8);
+    border: 2px solid #ff6b6b;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.inv-surrender-btn:hover {
+    background: rgba(255, 120, 120, 0.9);
+    transform: scale(1.05);
+}
