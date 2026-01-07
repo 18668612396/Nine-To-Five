@@ -513,6 +513,7 @@ class Weapon {
         // 星级加成
         const starMult = this.getStarMultiplier(magicSkill.star || 1);
         mods.damage *= starMult;
+        mods.star = magicSkill.star || 1; // 传递星级给技能
         
         // 发射
         this.fireSkill(player, magicSkill, mods);

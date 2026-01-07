@@ -225,6 +225,14 @@ const MODIFIER_SKILLS = {
         icon: '😈',
         desc: '持续攻击同一敌人时冷却递减',
         modify: (mods) => { mods.frenzy = true; mods.frenzyReduction = (mods.frenzyReduction || 0) + 0.05; }
+    },
+    enlarge: {
+        id: 'enlarge',
+        name: '膨胀',
+        type: 'modifier',
+        icon: '🎈',
+        desc: '技能体积+25%',
+        modify: (mods) => { mods.sizeScale = (mods.sizeScale || 1) * 1.25; }
     }
 };
 
@@ -493,8 +501,10 @@ class Wand {
                 loopCount++;
             } else if (slot.type === 'magic') {
                 // 主动技能星级加成
+                console.log('slot数据:', slot); // 调试：查看slot结构
                 const starMult = this.getStarMultiplier(slot.star || 1);
                 mods.damage *= starMult;
+                mods.star = slot.star || 1; // 传递星级给技能
                 this.fireSkill(slot, mods);
                 const cooldown = Math.max(this.baseCooldown, slot.cooldown * (mods.cooldownMult || 1) / starMult);
                 return { fired: true, nextIndex: (index + 1) % this.slotCount, cooldown };
@@ -600,6 +610,9 @@ class SkillProjectile {
         this.angle = mods.angle || 0;
         this.dx = Math.cos(this.angle);
         this.dy = Math.sin(this.angle);
+
+        // 体积缩放
+        this.sizeScale = mods.sizeScale || 1;
 
         this.speed = 10 * (mods.speed || 1);
         this.damage = 10 * (mods.damage || 1);
@@ -1115,14 +1128,14 @@ class SparkProjectile extends SkillProjectile {
         super(caster, mods);
         this.damage = 5 * (mods.damage || 1);
         this.speed = 14 * (mods.speed || 1);
-        this.radius = 4;
+        this.radius = 4 * this.sizeScale;
         this.color = '#ffff00';
         this.duration = 60;
     }
     draw(ctx, camX, camY) {
         const x = this.x - camX, y = this.y - camY;
         ctx.save();
-        ctx.shadowColor = '#ffff00'; ctx.shadowBlur = 8;
+        ctx.shadowColor = '#ffff00'; ctx.shadowBlur = 8 * this.sizeScale;
         ctx.fillStyle = '#ffff00';
         ctx.beginPath(); ctx.arc(x, y, this.radius, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#ffffff';
@@ -1136,7 +1149,7 @@ class FireballProjectile extends SkillProjectile {
         super(caster, mods);
         this.damage = 15 * (mods.damage || 1);
         this.speed = 8 * (mods.speed || 1);
-        this.radius = 8;
+        this.radius = 8 * this.sizeScale;
         this.color = '#ff6600';
         this.duration = 120;
         this.trailTimer = 0;
@@ -1145,7 +1158,7 @@ class FireballProjectile extends SkillProjectile {
         super.update();
         this.trailTimer++;
         if (this.trailTimer % 3 === 0) {
-            Game.particles.push({ x: this.x, y: this.y, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, life: 15, color: Math.random()>0.5?'#ff6600':'#ffaa00', size: 3+Math.random()*3 });
+            Game.particles.push({ x: this.x, y: this.y, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, life: 15, color: Math.random()>0.5?'#ff6600':'#ffaa00', size: (3+Math.random()*3) * this.sizeScale });
         }
     }
     draw(ctx, camX, camY) {
@@ -1164,18 +1177,18 @@ class LaserProjectile extends SkillProjectile {
         super(caster, mods);
         this.damage = 8 * (mods.damage || 1);
         this.speed = 18 * (mods.speed || 1);
-        this.radius = 4;
+        this.radius = 4 * this.sizeScale;
         this.color = '#00ffff';
         this.duration = 90;
-        this.length = 20;
+        this.length = 20 * this.sizeScale;
     }
     draw(ctx, camX, camY) {
         const x = this.x - camX, y = this.y - camY;
         const angle = Math.atan2(this.dy, this.dx);
         ctx.save(); ctx.translate(x, y); ctx.rotate(angle);
-        ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 10;
-        ctx.fillStyle = '#00ffff'; ctx.fillRect(-this.length, -2, this.length * 2, 4);
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(-this.length + 2, -1, this.length * 2 - 4, 2);
+        ctx.shadowColor = '#00ffff'; ctx.shadowBlur = 10 * this.sizeScale;
+        ctx.fillStyle = '#00ffff'; ctx.fillRect(-this.length, -2 * this.sizeScale, this.length * 2, 4 * this.sizeScale);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(-this.length + 2, -1 * this.sizeScale, this.length * 2 - 4, 2 * this.sizeScale);
         ctx.restore();
     }
 }
@@ -1185,7 +1198,7 @@ class PlasmaProjectile extends SkillProjectile {
         super(caster, mods);
         this.damage = 35 * (mods.damage || 1);
         this.speed = 6 * (mods.speed || 1);
-        this.radius = 14;
+        this.radius = 14 * this.sizeScale;
         this.color = '#ff00ff';
         this.duration = 150;
         this.penetrate = Math.max(5, mods.penetrate || 5);
@@ -1193,11 +1206,11 @@ class PlasmaProjectile extends SkillProjectile {
     }
     update() { super.update(); this.pulsePhase += 0.2; }
     draw(ctx, camX, camY) {
-        const x = this.x - camX, y = this.y - camY, pulse = Math.sin(this.pulsePhase) * 3;
+        const x = this.x - camX, y = this.y - camY, pulse = Math.sin(this.pulsePhase) * 3 * this.sizeScale;
         ctx.save();
-        const g = ctx.createRadialGradient(x, y, 0, x, y, this.radius + 10 + pulse);
+        const g = ctx.createRadialGradient(x, y, 0, x, y, this.radius + 10 * this.sizeScale + pulse);
         g.addColorStop(0, 'rgba(255,100,255,0.9)'); g.addColorStop(0.5, 'rgba(255,0,255,0.4)'); g.addColorStop(1, 'rgba(200,0,255,0)');
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, this.radius + 10 + pulse, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, this.radius + 10 * this.sizeScale + pulse, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x, y, this.radius * 0.5, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
@@ -1208,7 +1221,7 @@ class MissileProjectile extends SkillProjectile {
         super(caster, mods);
         this.damage = 25 * (mods.damage || 1);
         this.speed = 5 * (mods.speed || 1);
-        this.radius = 6;
+        this.radius = 6 * this.sizeScale;
         this.duration = 240;
         this.homing = true;
         this.turnSpeed = Math.max(0.03, mods.turnSpeed || 0.03);
@@ -1221,14 +1234,15 @@ class MissileProjectile extends SkillProjectile {
     }
     draw(ctx, camX, camY) {
         const x = this.x - camX, y = this.y - camY, angle = Math.atan2(this.dy, this.dx);
+        const s = this.sizeScale;
         ctx.save();
         this.trailParticles.forEach(p => {
             ctx.fillStyle = `rgba(255,100,0,${p.life/12})`;
-            ctx.beginPath(); ctx.arc(p.x - camX, p.y - camY, 4 * p.life / 12, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(p.x - camX, p.y - camY, 4 * s * p.life / 12, 0, Math.PI * 2); ctx.fill();
         });
         ctx.translate(x, y); ctx.rotate(angle + Math.PI / 2);
-        ctx.fillStyle = '#666'; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(-5, 8); ctx.lineTo(5, 8); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = '#ff4400'; ctx.beginPath(); ctx.arc(0, -5, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#666'; ctx.beginPath(); ctx.moveTo(0, -10 * s); ctx.lineTo(-5 * s, 8 * s); ctx.lineTo(5 * s, 8 * s); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#ff4400'; ctx.beginPath(); ctx.arc(0, -5 * s, 3 * s, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
     }
 }
@@ -1241,17 +1255,23 @@ class FlyingSwordProjectile extends SkillProjectile {
         this.baseDamage = 12;
         this.damage = this.baseDamage * (mods.damage || 1) * (1 + (star - 1) * 0.5);
         this.speed = 0; // 不移动，围绕玩家挥舞
-        this.radius = 20 + star * 10; // 星级越高，剑越大
-        this.swordLength = 30 + star * 15; // 剑的长度
-        this.duration = 20; // 挥舞持续时间
+        this.radius = (30 + star * 10) * this.sizeScale;
+        // 剑的长度：1星50，2星100，3星200，再乘以膨胀系数
+        const swordLengths = { 1: 50, 2: 100, 3: 200 };
+        this.swordLength = (swordLengths[star] || 50) * this.sizeScale;
+        this.duration = 30; // 挥舞持续时间
         this.swingAngle = 0; // 当前挥舞角度
-        this.swingSpeed = 0.3; // 挥舞速度
+        this.swingSpeed = 0.08; // 挥舞速度（调慢）
         this.startAngle = mods.angle || 0; // 起始角度（朝向敌人）
         this.swingRange = Math.PI * 0.8; // 挥舞范围（弧度）
         this.swingProgress = 0;
         this.hitList = [];
         this.penetrate = 999; // 可以打到多个敌人
         this.star = star;
+        
+        // 残影记录
+        this.trailHistory = [];
+        this.maxTrailLength = 8;
         
         // 剑的颜色随星级变化
         this.swordColors = ['#88ccff', '#aaffaa', '#ffdd66'];
@@ -1269,9 +1289,19 @@ class FlyingSwordProjectile extends SkillProjectile {
         // 计算当前挥舞角度（从左到右）
         this.swingAngle = this.startAngle - this.swingRange / 2 + this.swingRange * this.swingProgress;
         
-        // 更新剑的位置（围绕玩家）
-        this.x = this.caster.x + Math.cos(this.swingAngle) * this.swordLength * 0.5;
-        this.y = this.caster.y + Math.sin(this.swingAngle) * this.swordLength * 0.5;
+        // 记录残影
+        this.trailHistory.push(this.swingAngle);
+        if (this.trailHistory.length > this.maxTrailLength) {
+            this.trailHistory.shift();
+        }
+        
+        // 更新剑的位置（围绕玩家，剑伸出一定距离）
+        const swordOffset = 40; // 剑柄距离角色中心的偏移量
+        this.x = this.caster.x + Math.cos(this.swingAngle) * (this.swordLength * 0.5 + swordOffset);
+        this.y = this.caster.y + Math.sin(this.swingAngle) * (this.swordLength * 0.5 + swordOffset);
+        
+        // 碰撞检测的有效范围（剑长度 + 偏移量）
+        const effectiveRange = this.swordLength + swordOffset;
         
         // 检测碰撞（扇形范围）
         Game.enemies.forEach(e => {
@@ -1280,7 +1310,7 @@ class FlyingSwordProjectile extends SkillProjectile {
                 const dy = e.y - this.caster.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 
-                if (dist < this.swordLength + e.radius) {
+                if (dist < effectiveRange + e.radius && dist > swordOffset - 5) {
                     // 检查是否在挥舞弧度内
                     const enemyAngle = Math.atan2(dy, dx);
                     let angleDiff = Math.abs(enemyAngle - this.swingAngle);
@@ -1306,7 +1336,7 @@ class FlyingSwordProjectile extends SkillProjectile {
                     const dy = boss.y - this.caster.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     
-                    if (dist < this.swordLength + boss.radius) {
+                    if (dist < effectiveRange + boss.radius && dist > swordOffset - 5) {
                         const enemyAngle = Math.atan2(dy, dx);
                         let angleDiff = Math.abs(enemyAngle - this.swingAngle);
                         if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
@@ -1328,7 +1358,7 @@ class FlyingSwordProjectile extends SkillProjectile {
                 const dy = p.y - this.caster.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 
-                if (dist < this.swordLength + p.radius) {
+                if (dist < effectiveRange + p.radius && dist > swordOffset - 5) {
                     const projAngle = Math.atan2(dy, dx);
                     let angleDiff = Math.abs(projAngle - this.swingAngle);
                     if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
@@ -1350,30 +1380,44 @@ class FlyingSwordProjectile extends SkillProjectile {
         const cx = this.caster.x - camX;
         const cy = this.caster.y - camY;
         const colorIdx = Math.min(this.star - 1, 2);
+        const swordOffset = 15 * this.sizeScale;
+        const scale = this.swordLength / 50;
         
         ctx.save();
         ctx.translate(cx, cy);
+        
+        // 绘制挥舞弧线（简化）
+        ctx.globalAlpha = 0.4;
+        ctx.strokeStyle = this.glowColors[colorIdx];
+        ctx.lineWidth = Math.min(3 * scale, 8);
+        ctx.beginPath();
+        ctx.arc(0, 0, swordOffset + this.swordLength * 0.7, this.startAngle - this.swingRange / 2, this.swingAngle);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        
+        // 绘制当前剑身
         ctx.rotate(this.swingAngle);
         
-        // 挥舞轨迹（弧形残影）
-        const trailAlpha = 0.3 * (1 - this.swingProgress);
-        ctx.strokeStyle = `rgba(136, 204, 255, ${trailAlpha})`;
+        // 外发光（用描边代替shadowBlur）
+        ctx.strokeStyle = this.glowColors[colorIdx];
         ctx.lineWidth = 3;
+        ctx.globalAlpha = 0.5;
         ctx.beginPath();
-        ctx.arc(0, 0, this.swordLength * 0.7, -this.swingRange / 2, this.swingAngle - this.startAngle + this.swingRange / 2);
+        ctx.moveTo(swordOffset + 10 * scale, 0);
+        ctx.lineTo(swordOffset + this.swordLength - 5 * scale, -4 * scale);
+        ctx.lineTo(swordOffset + this.swordLength + 5 * scale, 0);
+        ctx.lineTo(swordOffset + this.swordLength - 5 * scale, 4 * scale);
+        ctx.closePath();
         ctx.stroke();
-        
-        // 剑身发光
-        ctx.shadowColor = this.glowColors[colorIdx];
-        ctx.shadowBlur = 15;
+        ctx.globalAlpha = 1;
         
         // 剑身
         ctx.fillStyle = this.swordColors[colorIdx];
         ctx.beginPath();
-        ctx.moveTo(10, 0); // 剑柄
-        ctx.lineTo(this.swordLength - 5, -4); // 剑身左边
-        ctx.lineTo(this.swordLength + 5, 0); // 剑尖
-        ctx.lineTo(this.swordLength - 5, 4); // 剑身右边
+        ctx.moveTo(swordOffset + 10 * scale, 0);
+        ctx.lineTo(swordOffset + this.swordLength - 5 * scale, -4 * scale);
+        ctx.lineTo(swordOffset + this.swordLength + 5 * scale, 0);
+        ctx.lineTo(swordOffset + this.swordLength - 5 * scale, 4 * scale);
         ctx.closePath();
         ctx.fill();
         
@@ -1381,19 +1425,18 @@ class FlyingSwordProjectile extends SkillProjectile {
         ctx.fillStyle = '#ffffff';
         ctx.globalAlpha = 0.6;
         ctx.beginPath();
-        ctx.moveTo(15, 0);
-        ctx.lineTo(this.swordLength - 10, -1);
-        ctx.lineTo(this.swordLength - 10, 1);
+        ctx.moveTo(swordOffset + 15 * scale, 0);
+        ctx.lineTo(swordOffset + this.swordLength - 10 * scale, -1 * scale);
+        ctx.lineTo(swordOffset + this.swordLength - 10 * scale, 1 * scale);
         ctx.closePath();
         ctx.fill();
         ctx.globalAlpha = 1;
         
         // 剑柄
-        ctx.shadowBlur = 0;
         ctx.fillStyle = '#8b4513';
-        ctx.fillRect(0, -3, 12, 6);
+        ctx.fillRect(swordOffset, -3 * scale, 12 * scale, 6 * scale);
         ctx.fillStyle = '#ffd700';
-        ctx.fillRect(10, -4, 3, 8); // 护手
+        ctx.fillRect(swordOffset + 10 * scale, -4 * scale, 3 * scale, 8 * scale);
         
         ctx.restore();
     }
