@@ -63,6 +63,8 @@ class Player extends Entity {
         this.dropRate = 1;
         this.projSpeed = 1;
         this.knockback = 1;
+        this.shield = 0; // 护盾值
+        this.shieldOnKill = 0; // 击杀获得护盾
 
         // 角色特性（不再设置初始技能，由 startWithConfig 设置）
         if (charType === 'guagua') {
@@ -90,6 +92,31 @@ class Player extends Entity {
         if (this.regen > 0 && this.hp < this.maxHp) {
             this.hp += this.regen / 60;
             if (this.hp > this.maxHp) this.hp = this.maxHp;
+        }
+        
+        // 献祭 - 伤害光环
+        if (this.damageAura > 0 && Game.frameCount % 30 === 0) {
+            const auraRadius = 60 + this.damageAura * 2;
+            Game.enemies.forEach(e => {
+                if (!e.markedForDeletion) {
+                    const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
+                    if (dist < auraRadius) {
+                        e.takeDamage(this.damageAura, 0, 0);
+                        // 燃烧粒子效果
+                        for (let i = 0; i < 5; i++) {
+                            Game.particles.push({
+                                x: e.x + (Math.random() - 0.5) * 20,
+                                y: e.y + (Math.random() - 0.5) * 20,
+                                vx: (Math.random() - 0.5) * 2,
+                                vy: -Math.random() * 3 - 1,
+                                life: 20 + Math.random() * 15,
+                                color: Math.random() > 0.5 ? '#ff4400' : '#ffaa00',
+                                size: 3 + Math.random() * 4
+                            });
+                        }
+                    }
+                }
+            });
         }
 
         // 武器更新（自动施法）
@@ -177,6 +204,45 @@ class Player extends Entity {
         const r = this.radius;
         const input = Input.getAxis();
         const isFlipped = !this.facingRight;
+        
+        // 献祭火焰光环效果
+        if (this.damageAura > 0) {
+            const auraRadius = 60 + this.damageAura * 2;
+            const pulseAlpha = 0.12 + Math.sin(Game.frameCount * 0.15) * 0.05;
+            
+            // 火焰渐变
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, auraRadius);
+            gradient.addColorStop(0, `rgba(255, 50, 0, 0)`);
+            gradient.addColorStop(0.5, `rgba(255, 80, 0, ${pulseAlpha * 0.3})`);
+            gradient.addColorStop(0.8, `rgba(255, 50, 0, ${pulseAlpha * 0.6})`);
+            gradient.addColorStop(1, `rgba(200, 0, 0, ${pulseAlpha})`);
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, auraRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 火焰边缘（闪烁效果）
+            const edgeAlpha = 0.3 + Math.sin(Game.frameCount * 0.2) * 0.15;
+            ctx.strokeStyle = `rgba(255, 100, 0, ${edgeAlpha})`;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.lineDashOffset = -Game.frameCount * 0.5;
+            ctx.beginPath();
+            ctx.arc(x, y, auraRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // 护盾光环效果
+        if (this.shield > 0) {
+            const shieldAlpha = 0.2 + Math.sin(Game.frameCount * 0.15) * 0.1;
+            ctx.strokeStyle = `rgba(100, 200, 255, ${shieldAlpha})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(x, y, r + 8, 0, Math.PI * 2);
+            ctx.stroke();
+        }
         
         CharacterRenderer.draw(this.charType, ctx, x, y, r, Game.frameCount, {
             input,
@@ -307,6 +373,12 @@ class Enemy extends Entity {
         // 吸血效果
         if (Game.player.vampirism > 0) {
             Game.player.hp = Math.min(Game.player.maxHp, Game.player.hp + Game.player.vampirism);
+        }
+        
+        // 奥术屏障 - 击杀获得护盾
+        if (Game.player.shieldOnKill > 0) {
+            Game.player.shield = (Game.player.shield || 0) + Game.player.shieldOnKill;
+            Game.addFloatingText('+🛡️' + Game.player.shieldOnKill, Game.player.x, Game.player.y - 40, '#66ccff');
         }
         
         // 掉落技能

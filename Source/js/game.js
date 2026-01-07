@@ -248,6 +248,10 @@ const Game = {
         
         // 更新闪电效果
         this.lightningEffects = this.lightningEffects.filter(l => l.life-- > 0);
+        
+        // 更新扭曲特效
+        this.distortEffects = this.distortEffects || [];
+        this.distortEffects = this.distortEffects.filter(d => d.life-- > 0);
 
         // 更新光之柱
         this.lightPillars = this.lightPillars || [];
@@ -354,13 +358,7 @@ const Game = {
         this.enemies.forEach(e => {
             if (this.checkCollision(e, this.player)) {
                 if (this.frameCount % 30 === 0) {
-                    this.player.hp -= e.damage;
-                    this.damageTaken += e.damage;
-                    this.addFloatingText("-" + e.damage, this.player.x, this.player.y - 30, '#ff4444');
-                    this.spawnParticles(this.player.x, this.player.y, '#ff0000', 5);
-                    this.screenShake(5, 10);
-                    Audio.play('hurt');
-                    this.updateUI();
+                    this.damagePlayer(e.damage);
                 }
             }
         });
@@ -369,13 +367,7 @@ const Game = {
         BossManager.bosses.forEach(boss => {
             if (this.checkCollision(boss, this.player)) {
                 if (this.frameCount % 30 === 0) {
-                    this.player.hp -= boss.damage;
-                    this.damageTaken += boss.damage;
-                    this.addFloatingText("-" + boss.damage, this.player.x, this.player.y - 30, '#ff0000');
-                    this.spawnParticles(this.player.x, this.player.y, '#ff0000', 8);
-                    this.screenShake(10, 15);
-                    Audio.play('hurt');
-                    this.updateUI();
+                    this.damagePlayer(boss.damage, true);
                 }
             }
         });
@@ -477,6 +469,9 @@ const Game = {
         
         // 绘制闪电效果
         this.drawLightningEffects();
+        
+        // 绘制扭曲特效（牵引）
+        this.drawDistortEffects();
         
         // 绘制光之柱
         this.drawLightPillars();
@@ -641,8 +636,19 @@ const Game = {
     drawLightningEffects() {
         this.lightningEffects.forEach(l => {
             const alpha = l.life / 15;
-            CTX.strokeStyle = `rgba(100, 200, 255, ${alpha})`;
+            // 支持自定义颜色，默认金黄色
+            const color = l.color || '#ffdd00';
+            // 解析颜色为 RGB
+            let r = 255, g = 221, b = 0;
+            if (color.startsWith('#')) {
+                r = parseInt(color.slice(1, 3), 16);
+                g = parseInt(color.slice(3, 5), 16);
+                b = parseInt(color.slice(5, 7), 16);
+            }
+            CTX.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
             CTX.lineWidth = 3;
+            CTX.shadowColor = color;
+            CTX.shadowBlur = 10;
             CTX.beginPath();
             const segments = 5;
             const dx = (l.x2 - l.x1) / segments;
@@ -655,6 +661,35 @@ const Game = {
                 );
             }
             CTX.lineTo(l.x2 - cameraX, l.y2 - cameraY);
+            CTX.stroke();
+            CTX.shadowBlur = 0;
+        });
+    },
+    
+    drawDistortEffects() {
+        this.distortEffects = this.distortEffects || [];
+        this.distortEffects.forEach(d => {
+            const x = d.x - cameraX;
+            const y = d.y - cameraY;
+            const tx = d.targetX - cameraX;
+            const ty = d.targetY - cameraY;
+            const alpha = d.life / 15;
+            
+            // 扭曲线条效果
+            CTX.strokeStyle = `rgba(153, 102, 255, ${alpha})`;
+            CTX.lineWidth = 2;
+            CTX.beginPath();
+            CTX.moveTo(x, y);
+            // 弯曲的线条
+            const midX = (x + tx) / 2 + (Math.random() - 0.5) * 20;
+            const midY = (y + ty) / 2 + (Math.random() - 0.5) * 20;
+            CTX.quadraticCurveTo(midX, midY, tx, ty);
+            CTX.stroke();
+            
+            // 扭曲圆环
+            CTX.strokeStyle = `rgba(153, 102, 255, ${alpha * 0.5})`;
+            CTX.beginPath();
+            CTX.arc(x, y, 10 + (15 - d.life) * 2, 0, Math.PI * 2);
             CTX.stroke();
         });
     },
@@ -812,6 +847,33 @@ const Game = {
         this.floatingTexts.push({ text, x, y, color, life: 40 });
     },
     
+    // 玩家受伤（带护盾吸收）
+    damagePlayer(damage, isBoss = false) {
+        let actualDamage = damage;
+        
+        // 护盾吸收
+        if (this.player.shield && this.player.shield > 0) {
+            const absorbed = Math.min(this.player.shield, actualDamage);
+            this.player.shield -= absorbed;
+            actualDamage -= absorbed;
+            if (absorbed > 0) {
+                this.addFloatingText('🛡️-' + absorbed, this.player.x, this.player.y - 50, '#66ccff');
+            }
+        }
+        
+        // 剩余伤害扣血
+        if (actualDamage > 0) {
+            this.player.hp -= actualDamage;
+            this.damageTaken += actualDamage;
+            this.addFloatingText("-" + actualDamage, this.player.x, this.player.y - 30, isBoss ? '#ff0000' : '#ff4444');
+        }
+        
+        this.spawnParticles(this.player.x, this.player.y, '#ff0000', isBoss ? 8 : 5);
+        this.screenShake(isBoss ? 10 : 5, isBoss ? 15 : 10);
+        Audio.play('hurt');
+        this.updateUI();
+    },
+    
     // 实时更新武器能量条（每帧调用）
     updateWeaponEnergyBar() {
         if (this.player && this.player.weapon) {
@@ -827,7 +889,10 @@ const Game = {
     updateUI() {
         const hpPct = Math.max(0, (this.player.hp / this.player.maxHp) * 100);
         document.getElementById('hp-bar-fill').style.width = hpPct + '%';
-        document.getElementById('hp-text').innerText = `${Math.ceil(this.player.hp)}/${Math.ceil(this.player.maxHp)}`;
+        
+        // 显示护盾值
+        const shieldText = this.player.shield > 0 ? ` +🛡️${Math.ceil(this.player.shield)}` : '';
+        document.getElementById('hp-text').innerText = `${Math.ceil(this.player.hp)}/${Math.ceil(this.player.maxHp)}${shieldText}`;
         
         const xpPct = (this.xp / this.xpToNext) * 100;
         document.getElementById('xp-bar-fill').style.width = xpPct + '%';

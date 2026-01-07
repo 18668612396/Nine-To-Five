@@ -50,6 +50,15 @@ const MAGIC_SKILLS = {
         cooldown: 35,
         desc: '追踪敌人的导弹',
         create: (caster, mods) => new MissileProjectile(caster, mods)
+    },
+    flying_sword: {
+        id: 'flying_sword',
+        name: '飞剑',
+        type: 'magic',
+        icon: '🗡️',
+        cooldown: 15,
+        desc: '挥舞飞剑攻击前方，可抵挡敌人弹道',
+        create: (caster, mods) => new FlyingSwordProjectile(caster, mods)
     }
 };
 
@@ -80,12 +89,12 @@ const MODIFIER_SKILLS = {
         desc: '穿透多个敌人',
         modify: (mods) => { mods.penetrate = (mods.penetrate || 1) + 2; }
     },
-    chainsaw: {
-        id: 'chainsaw',
-        name: '链锯',
+    lightning_chain: {
+        id: 'lightning_chain',
+        name: '闪电链',
         type: 'modifier',
-        icon: '⛓️',
-        desc: '命中后跳跃攻击',
+        icon: '⚡',
+        desc: '命中后连锁攻击附近敌人',
         modify: (mods) => { mods.chainCount = (mods.chainCount || 0) + 2; }
     },
     speed_up: {
@@ -137,13 +146,13 @@ const MODIFIER_SKILLS = {
         desc: '附带灼烧效果，持续伤害',
         modify: (mods) => { mods.burning = true; mods.burnDamage = (mods.burnDamage || 0) + 3; }
     },
-    power_pull: {
-        id: 'power_pull',
-        name: '强力牵引',
+    pull: {
+        id: 'pull',
+        name: '牵引',
         type: 'modifier',
         icon: '🌀',
-        desc: '暴击时周围敌人受同等伤害',
-        modify: (mods) => { mods.critAoe = true; mods.critChance = (mods.critChance || 0) + 0.15; }
+        desc: '击中敌人时拉扯周围敌人',
+        modify: (mods) => { mods.pull = true; mods.pullRange = (mods.pullRange || 80) + 40; mods.pullStrength = (mods.pullStrength || 0) + 5; }
     },
     thunder_crystal: {
         id: 'thunder_crystal',
@@ -161,14 +170,6 @@ const MODIFIER_SKILLS = {
         desc: '击杀爆炸，伤害-15%',
         modify: (mods) => { mods.deathExplosion = true; mods.deathExplosionRadius = (mods.deathExplosionRadius || 0) + 50; mods.damage = (mods.damage || 1) * 0.85; }
     },
-    flying_sword: {
-        id: 'flying_sword',
-        name: '狴犴飞剑',
-        type: 'modifier',
-        icon: '🗡️',
-        desc: '施法时附加飞剑攻击',
-        modify: (mods) => { mods.flyingSword = true; mods.swordCount = (mods.swordCount || 0) + 2; }
-    },
     poison_crystal: {
         id: 'poison_crystal',
         name: '毒液晶石',
@@ -176,14 +177,6 @@ const MODIFIER_SKILLS = {
         icon: '☠️',
         desc: '附带中毒效果，叠加伤害',
         modify: (mods) => { mods.poison = true; mods.poisonStacks = (mods.poisonStacks || 0) + 4; }
-    },
-    arcane_barrier: {
-        id: 'arcane_barrier',
-        name: '奥术屏障',
-        type: 'modifier',
-        icon: '🛡️',
-        desc: '命中时产生护盾效果',
-        modify: (mods) => { mods.shieldOnHit = true; mods.shieldAmount = (mods.shieldAmount || 0) + 5; }
     },
     rune_hammer: {
         id: 'rune_hammer',
@@ -224,14 +217,6 @@ const MODIFIER_SKILLS = {
         icon: '⏸️',
         desc: '命中后停留0.5秒，伤害-30%',
         modify: (mods) => { mods.hover = true; mods.hoverDuration = (mods.hoverDuration || 0) + 30; mods.damage = (mods.damage || 1) * 0.7; }
-    },
-    lightning_chain: {
-        id: 'lightning_chain',
-        name: '闪电链',
-        type: 'modifier',
-        icon: '⛓️‍💥',
-        desc: '连接附近敌人造成15点伤害',
-        modify: (mods) => { mods.chainLightning = true; mods.chainDamage = (mods.chainDamage || 0) + 15; }
     },
     light_pillar: {
         id: 'light_pillar',
@@ -330,11 +315,11 @@ const PERKS = {
     },
     
     // 特殊类
-    projectile_repulsion: {
-        id: 'projectile_repulsion',
-        name: '弹幕屏障',
-        icon: '🛡️',
-        desc: '周围产生伤害光环',
+    sacrifice: {
+        id: 'sacrifice',
+        name: '献祭',
+        icon: '�',
+        desc: '周围产生献祭火焰',
         stackable: true,
         apply: (player, level) => { player.damageAura = (player.damageAura || 0) + 5 * level; }
     },
@@ -345,6 +330,14 @@ const PERKS = {
         desc: '技能掉落率+25%',
         stackable: true,
         apply: (player, level) => { player.dropRate = (player.dropRate || 1) * Math.pow(1.25, level); }
+    },
+    arcane_barrier: {
+        id: 'arcane_barrier',
+        name: '奥术屏障',
+        icon: '�️',
+        desc: '击杀敌人时获得5护盾',
+        stackable: true,
+        apply: (player, level) => { player.shieldOnKill = (player.shieldOnKill || 0) + 5 * level; }
     }
 };
 
@@ -626,7 +619,6 @@ class SkillProjectile {
         // 新增效果属性
         this.burning = mods.burning || false;
         this.burnDamage = mods.burnDamage || 0;
-        this.critAoe = mods.critAoe || false;
         this.critChance = mods.critChance || 0;
         this.lightning = mods.lightning || false;
         this.lightningChance = mods.lightningChance || 0;
@@ -636,6 +628,9 @@ class SkillProjectile {
         this.poisonStacks = mods.poisonStacks || 0;
         this.shieldOnHit = mods.shieldOnHit || false;
         this.shieldAmount = mods.shieldAmount || 0;
+        this.pull = mods.pull || false;
+        this.pullRange = mods.pullRange || 0;
+        this.pullStrength = mods.pullStrength || 0;
         this.rampingDamage = mods.rampingDamage || false;
         this.rampingRate = mods.rampingRate || 0;
         this.rampingBonus = 0;
@@ -650,8 +645,6 @@ class SkillProjectile {
         this.hoverDuration = mods.hoverDuration || 0;
         this.isHovering = false;
         this.hoverTimer = 0;
-        this.chainLightning = mods.chainLightning || false;
-        this.chainDamage = mods.chainDamage || 0;
         this.lightPillar = mods.lightPillar || false;
         this.pillarDamage = mods.pillarDamage || 0;
         
@@ -815,22 +808,9 @@ class SkillProjectile {
             Game.addFloatingText('+🛡️', this.caster.x, this.caster.y - 20, '#66ccff');
         }
         
-        // 暴击AOE
-        if (this.critAoe && Math.random() < this.critChance) {
-            Game.enemies.forEach(e => {
-                if (!e.markedForDeletion && e !== enemy) {
-                    const dist = Math.sqrt((e.x - enemy.x) ** 2 + (e.y - enemy.y) ** 2);
-                    if (dist < 100) {
-                        e.takeDamage(finalDamage * 0.5, 0, 0);
-                    }
-                }
-            });
-            Game.spawnParticles(enemy.x, enemy.y, '#ffff00', 10);
-        }
-        
-        // 闪电链
-        if (this.chainLightning && this.chainDamage > 0) {
-            this.createLightningChain(enemy);
+        // 牵引效果 - 拉扯周围敌人
+        if (this.pull && this.pullRange > 0) {
+            this.pullNearbyEnemies(enemy);
         }
         
         // 光之柱
@@ -901,32 +881,36 @@ class SkillProjectile {
                 }
             }
         });
-        Game.spawnParticles(enemy.x, enemy.y, '#00ffff', 10);
+        Game.spawnParticles(enemy.x, enemy.y, '#ffdd00', 10);
     }
 
-    createLightningChain(enemy) {
-        // 连接附近的敌人
-        const nearbyEnemies = [];
+    // 牵引效果 - 拉扯周围敌人
+    pullNearbyEnemies(enemy) {
         Game.enemies.forEach(e => {
             if (!e.markedForDeletion && e !== enemy) {
-                const dist = Math.sqrt((e.x - enemy.x) ** 2 + (e.y - enemy.y) ** 2);
-                if (dist < 150) {
-                    nearbyEnemies.push(e);
+                const dx = enemy.x - e.x;
+                const dy = enemy.y - e.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < this.pullRange && dist > 10) {
+                    // 拉扯敌人向命中点移动
+                    const pullForce = this.pullStrength / dist * 10;
+                    e.x += dx / dist * pullForce;
+                    e.y += dy / dist * pullForce;
+                    
+                    // 添加扭曲特效
+                    Game.distortEffects = Game.distortEffects || [];
+                    Game.distortEffects.push({
+                        x: e.x,
+                        y: e.y,
+                        targetX: enemy.x,
+                        targetY: enemy.y,
+                        life: 15
+                    });
                 }
             }
         });
-        
-        nearbyEnemies.forEach(e => {
-            Game.lightningEffects = Game.lightningEffects || [];
-            Game.lightningEffects.push({
-                x1: enemy.x,
-                y1: enemy.y,
-                x2: e.x,
-                y2: e.y,
-                life: 15
-            });
-            e.takeDamage(this.chainDamage, 0, 0);
-        });
+        // 中心扭曲粒子
+        Game.spawnParticles(enemy.x, enemy.y, '#9966ff', 8);
     }
 
     spawnSplitProjectiles() {
@@ -959,7 +943,7 @@ class SkillProjectile {
         });
         if (nextTarget) {
             Game.lightningEffects = Game.lightningEffects || [];
-            Game.lightningEffects.push({ x1: fromEnemy.x, y1: fromEnemy.y, x2: nextTarget.x, y2: nextTarget.y, life: 15 });
+            Game.lightningEffects.push({ x1: fromEnemy.x, y1: fromEnemy.y, x2: nextTarget.x, y2: nextTarget.y, life: 15, color: '#ffdd00' });
             nextTarget.takeDamage(this.damage * 0.7, 0, 0);
             this.hitList.push(nextTarget);
             this.chainCount--;
@@ -1186,6 +1170,172 @@ class MissileProjectile extends SkillProjectile {
         ctx.translate(x, y); ctx.rotate(angle + Math.PI / 2);
         ctx.fillStyle = '#666'; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(-5, 8); ctx.lineTo(5, 8); ctx.closePath(); ctx.fill();
         ctx.fillStyle = '#ff4400'; ctx.beginPath(); ctx.arc(0, -5, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+}
+
+// 飞剑 - 挥舞攻击
+class FlyingSwordProjectile extends SkillProjectile {
+    constructor(caster, mods) {
+        super(caster, mods);
+        const star = mods.star || 1;
+        this.baseDamage = 12;
+        this.damage = this.baseDamage * (mods.damage || 1) * (1 + (star - 1) * 0.5);
+        this.speed = 0; // 不移动，围绕玩家挥舞
+        this.radius = 20 + star * 10; // 星级越高，剑越大
+        this.swordLength = 30 + star * 15; // 剑的长度
+        this.duration = 20; // 挥舞持续时间
+        this.swingAngle = 0; // 当前挥舞角度
+        this.swingSpeed = 0.3; // 挥舞速度
+        this.startAngle = mods.angle || 0; // 起始角度（朝向敌人）
+        this.swingRange = Math.PI * 0.8; // 挥舞范围（弧度）
+        this.swingProgress = 0;
+        this.hitList = [];
+        this.penetrate = 999; // 可以打到多个敌人
+        this.star = star;
+        
+        // 剑的颜色随星级变化
+        this.swordColors = ['#88ccff', '#aaffaa', '#ffdd66'];
+        this.glowColors = ['#4488ff', '#44ff88', '#ffaa00'];
+    }
+    
+    update() {
+        // 挥舞动画
+        this.swingProgress += this.swingSpeed;
+        if (this.swingProgress >= 1) {
+            this.markedForDeletion = true;
+            return;
+        }
+        
+        // 计算当前挥舞角度（从左到右）
+        this.swingAngle = this.startAngle - this.swingRange / 2 + this.swingRange * this.swingProgress;
+        
+        // 更新剑的位置（围绕玩家）
+        this.x = this.caster.x + Math.cos(this.swingAngle) * this.swordLength * 0.5;
+        this.y = this.caster.y + Math.sin(this.swingAngle) * this.swordLength * 0.5;
+        
+        // 检测碰撞（扇形范围）
+        Game.enemies.forEach(e => {
+            if (!e.markedForDeletion && !this.hitList.includes(e)) {
+                const dx = e.x - this.caster.x;
+                const dy = e.y - this.caster.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < this.swordLength + e.radius) {
+                    // 检查是否在挥舞弧度内
+                    const enemyAngle = Math.atan2(dy, dx);
+                    let angleDiff = Math.abs(enemyAngle - this.swingAngle);
+                    if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
+                    
+                    if (angleDiff < 0.5) { // 在剑的范围内
+                        e.takeDamage(this.damage, dx / dist * 5, dy / dist * 5, this);
+                        this.hitList.push(e);
+                        Game.spawnParticles(e.x, e.y, this.swordColors[Math.min(this.star - 1, 2)], 5);
+                        
+                        // 触发被动效果
+                        if (this.onHit) this.onHit(e);
+                    }
+                }
+            }
+        });
+        
+        // 检测Boss
+        if (typeof BossManager !== 'undefined' && BossManager.bosses) {
+            BossManager.bosses.forEach(boss => {
+                if (!boss.markedForDeletion && !this.hitList.includes(boss)) {
+                    const dx = boss.x - this.caster.x;
+                    const dy = boss.y - this.caster.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < this.swordLength + boss.radius) {
+                        const enemyAngle = Math.atan2(dy, dx);
+                        let angleDiff = Math.abs(enemyAngle - this.swingAngle);
+                        if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
+                        
+                        if (angleDiff < 0.5) {
+                            boss.takeDamage(this.damage, dx / dist * 3, dy / dist * 3);
+                            this.hitList.push(boss);
+                            Game.spawnParticles(boss.x, boss.y, this.swordColors[Math.min(this.star - 1, 2)], 8);
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 抵挡敌人弹道
+        Game.projectiles.forEach(p => {
+            if (p.isBossProjectile && !p.markedForDeletion) {
+                const dx = p.x - this.caster.x;
+                const dy = p.y - this.caster.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < this.swordLength + p.radius) {
+                    const projAngle = Math.atan2(dy, dx);
+                    let angleDiff = Math.abs(projAngle - this.swingAngle);
+                    if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
+                    
+                    if (angleDiff < 0.6) { // 在剑的范围内
+                        p.markedForDeletion = true;
+                        // 抵挡特效
+                        Game.spawnParticles(p.x, p.y, '#ffffff', 8);
+                        Game.spawnParticles(p.x, p.y, this.swordColors[Math.min(this.star - 1, 2)], 5);
+                    }
+                }
+            }
+        });
+        
+        this.duration--;
+    }
+    
+    draw(ctx, camX, camY) {
+        const cx = this.caster.x - camX;
+        const cy = this.caster.y - camY;
+        const colorIdx = Math.min(this.star - 1, 2);
+        
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(this.swingAngle);
+        
+        // 挥舞轨迹（弧形残影）
+        const trailAlpha = 0.3 * (1 - this.swingProgress);
+        ctx.strokeStyle = `rgba(136, 204, 255, ${trailAlpha})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.swordLength * 0.7, -this.swingRange / 2, this.swingAngle - this.startAngle + this.swingRange / 2);
+        ctx.stroke();
+        
+        // 剑身发光
+        ctx.shadowColor = this.glowColors[colorIdx];
+        ctx.shadowBlur = 15;
+        
+        // 剑身
+        ctx.fillStyle = this.swordColors[colorIdx];
+        ctx.beginPath();
+        ctx.moveTo(10, 0); // 剑柄
+        ctx.lineTo(this.swordLength - 5, -4); // 剑身左边
+        ctx.lineTo(this.swordLength + 5, 0); // 剑尖
+        ctx.lineTo(this.swordLength - 5, 4); // 剑身右边
+        ctx.closePath();
+        ctx.fill();
+        
+        // 剑身高光
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.moveTo(15, 0);
+        ctx.lineTo(this.swordLength - 10, -1);
+        ctx.lineTo(this.swordLength - 10, 1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        
+        // 剑柄
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(0, -3, 12, 6);
+        ctx.fillStyle = '#ffd700';
+        ctx.fillRect(10, -4, 3, 8); // 护手
+        
         ctx.restore();
     }
 }

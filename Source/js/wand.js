@@ -262,30 +262,28 @@ const SKILL_COSTS = {
     magic_arrow: 1,
     energy_orb: 1,
     magic_missile: 1,
+    flying_sword: 1,
     
     // 被动技能消耗（统一为1）
     scatter: 1,
     homing: 1,
     piercing: 1,
-    chainsaw: 1,
+    lightning_chain: 1,
     speed_up: 1,
     damage_plus: 1,
     explosive: 1,
     bouncing: 1,
     reduce_cooldown: 1,
     flame_crystal: 1,
-    power_pull: 1,
+    pull: 1,
     thunder_crystal: 1,
     collapse_crystal: 1,
-    flying_sword: 1,
     poison_crystal: 1,
-    arcane_barrier: 1,
     rune_hammer: 1,
     prism_core: 1,
     reflect: 1,
     split: 1,
     hover: 1,
-    lightning_chain: 1,
     light_pillar: 1
 };
 
