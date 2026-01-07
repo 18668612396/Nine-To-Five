@@ -7,11 +7,26 @@ const CTX = CANVAS.getContext('2d');
 let cameraX = 0;
 let cameraY = 0;
 
+// 设备像素比（解决手机端模糊问题）
+const dpr = window.devicePixelRatio || 1;
+
 function resize() {
-    CANVAS.width = window.innerWidth;
-    CANVAS.height = window.innerHeight;
-    CONFIG.GAME_WIDTH = CANVAS.width;
-    CONFIG.GAME_HEIGHT = CANVAS.height;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    // Canvas 实际像素大小（乘以设备像素比）
+    CANVAS.width = width * dpr;
+    CANVAS.height = height * dpr;
+    
+    // CSS 显示大小
+    CANVAS.style.width = width + 'px';
+    CANVAS.style.height = height + 'px';
+    
+    // 缩放绘图上下文
+    CTX.setTransform(dpr, 0, 0, dpr, 0, 0);
+    
+    CONFIG.GAME_WIDTH = width;
+    CONFIG.GAME_HEIGHT = height;
 }
 window.addEventListener('resize', resize);
 resize();
