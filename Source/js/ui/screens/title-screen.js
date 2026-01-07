@@ -33,10 +33,8 @@ class TitleScreen extends FullScreen {
             ctx1.clearRect(0, 0, 120, 120);
             ctx2.clearRect(0, 0, 120, 120);
             
-            if (typeof CharacterRenderer !== 'undefined') {
-                CharacterRenderer.drawGuagua(ctx1, 60, 70, 30, this.animationFrame);
-                CharacterRenderer.drawKuikui(ctx2, 60, 70, 30, this.animationFrame);
-            }
+            GuaguaPlayer.drawCharacter(ctx1, 60, 70, 30, this.animationFrame);
+            KuikuiPlayer.drawCharacter(ctx2, 60, 70, 30, this.animationFrame);
         });
     }
     

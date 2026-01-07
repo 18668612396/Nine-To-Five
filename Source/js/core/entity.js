@@ -1,6 +1,9 @@
 // --- 实体基类 ---
 
 class Entity {
+    // 全局帧计数（由 Game 更新）
+    static frameCount = 0;
+    
     constructor(x, y, radius, color) {
         this.x = x;
         this.y = y;
@@ -9,9 +12,15 @@ class Entity {
         this.markedForDeletion = false;
     }
     
+    // 绘制方法 - 子类应重写
+    // ctx: Canvas 2D 上下文
+    // camX, camY: 相机偏移
     draw(ctx, camX, camY) {
+        const x = this.x - camX;
+        const y = this.y - camY;
+        
         ctx.beginPath();
-        ctx.arc(this.x - camX, this.y - camY, this.radius, 0, Math.PI * 2);
+        ctx.arc(x, y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = this.color;
         ctx.fill();
     }

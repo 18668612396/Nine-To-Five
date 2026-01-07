@@ -41,12 +41,10 @@ class CharSelectScreen extends FloatScreen {
                 const charType = canvas.dataset.char;
                 ctx.clearRect(0, 0, 80, 80);
                 
-                if (typeof CharacterRenderer !== 'undefined') {
-                    if (charType === 'guagua') {
-                        CharacterRenderer.drawGuagua(ctx, 40, 45, 22, this.animationFrame);
-                    } else {
-                        CharacterRenderer.drawKuikui(ctx, 40, 45, 22, this.animationFrame);
-                    }
+                if (charType === 'guagua') {
+                    GuaguaPlayer.drawCharacter(ctx, 40, 45, 22, this.animationFrame);
+                } else {
+                    KuikuiPlayer.drawCharacter(ctx, 40, 45, 22, this.animationFrame);
                 }
             });
         });

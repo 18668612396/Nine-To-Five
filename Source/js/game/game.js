@@ -316,6 +316,7 @@ const Game = {
         
         // 更新玩家
         const input = Input.getAxis();
+        Entity.frameCount = this.frameCount;
         Player.frameCount = this.frameCount;
         Enemy.frameCount = this.frameCount;
         this.player.update(input, this.enemies);

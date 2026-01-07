@@ -38,21 +38,19 @@ class LobbyScreen extends FullScreen {
             
             // 主角色
             ctx.clearRect(0, 0, 300, 350);
-            if (typeof CharacterRenderer !== 'undefined') {
-                if (this.selectedChar === 'guagua') {
-                    CharacterRenderer.drawGuagua(ctx, 150, 200, 80, this.animationFrame);
-                } else {
-                    CharacterRenderer.drawKuikui(ctx, 150, 200, 80, this.animationFrame);
-                }
+            if (this.selectedChar === 'guagua') {
+                GuaguaPlayer.drawCharacter(ctx, 150, 200, 80, this.animationFrame);
+            } else {
+                KuikuiPlayer.drawCharacter(ctx, 150, 200, 80, this.animationFrame);
             }
             
             // 头像
-            if (avatarCtx && typeof CharacterRenderer !== 'undefined') {
+            if (avatarCtx) {
                 avatarCtx.clearRect(0, 0, 50, 50);
                 if (this.selectedChar === 'guagua') {
-                    CharacterRenderer.drawGuagua(avatarCtx, 25, 30, 15, this.animationFrame);
+                    GuaguaPlayer.drawCharacter(avatarCtx, 25, 30, 15, this.animationFrame);
                 } else {
-                    CharacterRenderer.drawKuikui(avatarCtx, 25, 30, 15, this.animationFrame);
+                    KuikuiPlayer.drawCharacter(avatarCtx, 25, 30, 15, this.animationFrame);
                 }
             }
         });

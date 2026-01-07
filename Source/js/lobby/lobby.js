@@ -82,10 +82,8 @@ const Lobby = {
             this.animationFrame++;
             ctx1.clearRect(0, 0, 120, 120);
             ctx2.clearRect(0, 0, 120, 120);
-            if (typeof CharacterRenderer !== 'undefined') {
-                CharacterRenderer.drawGuagua(ctx1, 60, 70, 30, this.animationFrame);
-                CharacterRenderer.drawKuikui(ctx2, 60, 70, 30, this.animationFrame);
-            }
+            GuaguaPlayer.drawCharacter(ctx1, 60, 70, 30, this.animationFrame);
+            KuikuiPlayer.drawCharacter(ctx2, 60, 70, 30, this.animationFrame);
             this.animationId = requestAnimationFrame(animate);
         };
         animate();
@@ -104,20 +102,18 @@ const Lobby = {
             this.animationFrame++;
             
             ctx.clearRect(0, 0, 300, 350);
-            if (typeof CharacterRenderer !== 'undefined') {
-                if (this.selectedChar === 'guagua') {
-                    CharacterRenderer.drawGuagua(ctx, 150, 200, 80, this.animationFrame);
-                } else {
-                    CharacterRenderer.drawKuikui(ctx, 150, 200, 80, this.animationFrame);
-                }
+            if (this.selectedChar === 'guagua') {
+                GuaguaPlayer.drawCharacter(ctx, 150, 200, 80, this.animationFrame);
+            } else {
+                KuikuiPlayer.drawCharacter(ctx, 150, 200, 80, this.animationFrame);
             }
             
-            if (avatarCtx && typeof CharacterRenderer !== 'undefined') {
+            if (avatarCtx) {
                 avatarCtx.clearRect(0, 0, 50, 50);
                 if (this.selectedChar === 'guagua') {
-                    CharacterRenderer.drawGuagua(avatarCtx, 25, 30, 15, this.animationFrame);
+                    GuaguaPlayer.drawCharacter(avatarCtx, 25, 30, 15, this.animationFrame);
                 } else {
-                    CharacterRenderer.drawKuikui(avatarCtx, 25, 30, 15, this.animationFrame);
+                    KuikuiPlayer.drawCharacter(avatarCtx, 25, 30, 15, this.animationFrame);
                 }
             }
             
@@ -158,13 +154,13 @@ const Lobby = {
         const stats = document.getElementById('lobby-char-stats');
         
         // 从角色注册表获取信息
-        const charClass = Player.get(this.selectedChar);
-        if (charClass) {
-            const tempChar = new charClass();
-            if (name) name.textContent = tempChar.displayName || this.selectedChar;
-            if (stats) stats.textContent = tempChar.description || '';
+        const charClass = Player.types[this.selectedChar];
+        if (charClass && charClass.CONFIG) {
+            if (name) name.textContent = charClass.CONFIG.name || this.selectedChar;
+            // 根据 startPerks 显示描述
+            const perkDesc = this.selectedChar === 'guagua' ? '速度+10%' : '血量+20%';
+            if (stats) stats.textContent = perkDesc;
         } else {
-            // 兼容旧代码
             if (this.selectedChar === 'guagua') {
                 if (name) name.textContent = '瓜瓜';
                 if (stats) stats.textContent = '速度+10%';
@@ -191,12 +187,10 @@ const Lobby = {
             const ctx = canvas.getContext('2d');
             const charType = canvas.dataset.char;
             ctx.clearRect(0, 0, 80, 80);
-            if (typeof CharacterRenderer !== 'undefined') {
-                if (charType === 'guagua') {
-                    CharacterRenderer.drawGuagua(ctx, 40, 45, 22, this.animationFrame);
-                } else {
-                    CharacterRenderer.drawKuikui(ctx, 40, 45, 22, this.animationFrame);
-                }
+            if (charType === 'guagua') {
+                GuaguaPlayer.drawCharacter(ctx, 40, 45, 22, this.animationFrame);
+            } else {
+                KuikuiPlayer.drawCharacter(ctx, 40, 45, 22, this.animationFrame);
             }
         });
     },
@@ -466,12 +460,10 @@ const Lobby = {
                 canvas.width = 60;
                 canvas.height = 60;
                 const ctx = canvas.getContext('2d');
-                if (typeof CharacterRenderer !== 'undefined') {
-                    if (char.id === 'guagua') {
-                        CharacterRenderer.drawGuagua(ctx, 30, 35, 18, 0);
-                    } else {
-                        CharacterRenderer.drawKuikui(ctx, 30, 35, 18, 0);
-                    }
+                if (char.id === 'guagua') {
+                    GuaguaPlayer.drawCharacter(ctx, 30, 35, 18, 0);
+                } else {
+                    KuikuiPlayer.drawCharacter(ctx, 30, 35, 18, 0);
                 }
                 div.innerHTML = `
                     <div class="collection-icon"></div>
