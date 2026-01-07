@@ -696,11 +696,11 @@ const Game = {
             const x = startX + i * (slotSize + padding);
             const y = startY;
             const slot = wand.slots[i];
-            const isCurrent = i === wand.currentIndex;
             
-            CTX.fillStyle = isCurrent ? 'rgba(255, 255, 0, 0.3)' : 'rgba(0, 0, 0, 0.5)';
-            CTX.strokeStyle = isCurrent ? '#ffff00' : '#666666';
-            CTX.lineWidth = isCurrent ? 3 : 1;
+            // 统一的槽位背景
+            CTX.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            CTX.strokeStyle = '#666666';
+            CTX.lineWidth = 1;
             CTX.fillRect(x, y, slotSize, slotSize);
             CTX.strokeRect(x, y, slotSize, slotSize);
             

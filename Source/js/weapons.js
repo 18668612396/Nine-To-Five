@@ -661,6 +661,12 @@ class SkillProjectile {
         this.chainDamage = mods.chainDamage || 0;
         this.lightPillar = mods.lightPillar || false;
         this.pillarDamage = mods.pillarDamage || 0;
+        
+        // 符文战锤 - 环绕效果
+        this.orbital = mods.orbital || false;
+        this.orbitalRadius = 80; // 环绕半径
+        this.orbitalSpeed = 0.08; // 环绕速度
+        this.orbitalAngle = mods.angle || 0; // 初始角度
 
         this.duration = 180;
         this.radius = 6;
@@ -685,6 +691,18 @@ class SkillProjectile {
                     }
                 }
             });
+            return;
+        }
+        
+        // 符文战锤 - 环绕玩家
+        if (this.orbital) {
+            this.orbitalAngle += this.orbitalSpeed;
+            this.x = this.caster.x + Math.cos(this.orbitalAngle) * this.orbitalRadius;
+            this.y = this.caster.y + Math.sin(this.orbitalAngle) * this.orbitalRadius;
+            this.duration--;
+            if (this.duration <= 0) {
+                this.markedForDeletion = true;
+            }
             return;
         }
 
