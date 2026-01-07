@@ -295,6 +295,8 @@
             
             <!-- 背包界面 -->
             <div id="inventory-screen" class="screen hidden">
+                <!-- 左上角返回按钮 -->
+                <button class="inv-back-btn" onclick="Game.closeInventory()">← 返回</button>
                 <!-- 右上角设置按钮 -->
                 <button class="inv-settings-btn" onclick="Game.openSettingsFromInventory()">⚙️ 设置</button>
                 <!-- 右下角放弃按钮 -->
@@ -306,7 +308,6 @@
                             <h2>⚔️ 技能编辑</h2>
                             <div class="inventory-header-btns">
                                 <button class="merge-btn" id="workbench-toggle-btn" onclick="Game.toggleWorkbench()">🔧 工作台</button>
-                                <button class="inventory-close" onclick="Game.closeInventory()">ESC 关闭</button>
                             </div>
                         </div>
                         <div class="inventory-section">

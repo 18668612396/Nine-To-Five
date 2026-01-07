@@ -721,6 +721,13 @@ const Game = {
     // 暂停菜单 - ESC直接打开背包
     openPauseMenu() {
         this.state = 'INVENTORY';
+        // 每次打开背包时，确保工作台是关闭的
+        this.workbenchOpen = false;
+        this.workbenchSlots = [null, null, null];
+        document.getElementById('workbench-panel').classList.add('hidden');
+        document.getElementById('workbench-toggle-btn').classList.remove('active');
+        document.querySelector('.inventory-layout').classList.remove('with-workbench');
+        
         document.getElementById('inventory-screen').classList.remove('hidden');
         this.renderInventory();
     },
@@ -820,6 +827,13 @@ const Game = {
     openInventory() {
         if (this.state === 'PLAYING') {
             this.state = 'INVENTORY';
+            // 每次打开背包时，确保工作台是关闭的
+            this.workbenchOpen = false;
+            this.workbenchSlots = [null, null, null];
+            document.getElementById('workbench-panel').classList.add('hidden');
+            document.getElementById('workbench-toggle-btn').classList.remove('active');
+            document.querySelector('.inventory-layout').classList.remove('with-workbench');
+            
             document.getElementById('inventory-screen').classList.remove('hidden');
             this.renderInventory();
         }

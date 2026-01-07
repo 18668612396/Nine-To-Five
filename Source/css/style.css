@@ -1923,6 +1923,25 @@ body {
 }
 
 /* ========== 背包界面按钮 ========== */
+.inv-back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.inv-back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
 .inv-settings-btn {
     position: absolute;
     top: 20px;
