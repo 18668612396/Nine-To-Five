@@ -288,9 +288,29 @@
             <div id="gameover-screen" class="screen hidden">
                 <h1>游戏结束</h1>
                 <div class="gameover-stats">
-                    <p>存活时间: <span id="final-time"></span></p>
-                    <p>击杀数量: <span id="final-kills"></span></p>
-                    <p class="gold-earned">获得金币: <span id="final-gold">0</span> 💰</p>
+                    <div class="stats-main">
+                        <p>⏱️ 存活时间: <span id="final-time"></span></p>
+                        <p>💀 击杀数量: <span id="final-kills"></span></p>
+                        <p class="gold-earned">💰 获得金币: <span id="final-gold">0</span></p>
+                    </div>
+                    <div class="stats-detail">
+                        <div class="stat-item">
+                            <span class="stat-label">⬆️ 最终等级</span>
+                            <span class="stat-value" id="final-level">1</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">⚔️ 造成伤害</span>
+                            <span class="stat-value" id="final-damage">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">💔 承受伤害</span>
+                            <span class="stat-value" id="final-taken">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">👹 Boss击杀</span>
+                            <span class="stat-value" id="final-boss">0</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="gameover-btns">
                     <button onclick="Lobby.enter()">返回大厅</button>
@@ -402,6 +422,7 @@
 
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/audio.js"></script>
     <script src="js/input.js"></script>
     <script src="js/characters.js"></script>
     <script src="js/scenes.js"></script>
@@ -438,6 +459,7 @@
         Game.init();
         GM.init();
         Lobby.init();
+        Audio.init();
     </script>
 </body>
 </html>

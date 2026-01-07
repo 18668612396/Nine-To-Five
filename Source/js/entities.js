@@ -209,6 +209,9 @@ class Enemy extends Entity {
         Game.spawnGem(this.x, this.y, this.xpValue);
         Game.kills++;
         
+        // 播放击杀音效
+        Audio.play('kill');
+        
         // 掉落金币
         const goldAmount = Math.floor((1 + Math.random() * 2) * (Game.goldMult || 1) * (Game.difficultyMult?.reward || 1));
         Game.gold += goldAmount;
@@ -232,6 +235,8 @@ class Enemy extends Entity {
         this.knockbackX = kbX || 0;
         this.knockbackY = kbY || 0;
         Game.addFloatingText(Math.floor(amt), this.x, this.y - 20, '#fff');
+        Game.damageDealt += amt;
+        Audio.play('hit');
 
         if (this.hp <= 0 && !this.markedForDeletion) {
             this.die(projectile);
@@ -317,6 +322,7 @@ class Gem extends Entity {
             
             if (dist < player.radius + this.radius) {
                 Game.addXp(this.val);
+                Audio.play('pickup');
                 this.markedForDeletion = true;
             }
         }

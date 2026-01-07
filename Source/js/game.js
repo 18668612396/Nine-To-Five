@@ -53,6 +53,19 @@ const Game = {
     xpToNext: 10,
     gold: 0, // 本局获得的金币
     
+    // 统计数据
+    damageTaken: 0,
+    damageDealt: 0,
+    bossKills: 0,
+    maxCombo: 0,
+    currentCombo: 0,
+    lastKillTime: 0,
+    
+    // 屏幕震动
+    shakeX: 0,
+    shakeY: 0,
+    shakeDuration: 0,
+    
     init() {
         Input.init();
         SceneManager.currentScene = 'grass';
@@ -115,6 +128,17 @@ const Game = {
         this.level = 1;
         this.xp = 0;
         this.xpToNext = 10;
+        
+        // 重置统计
+        this.damageTaken = 0;
+        this.damageDealt = 0;
+        this.bossKills = 0;
+        this.maxCombo = 0;
+        this.currentCombo = 0;
+        this.lastKillTime = 0;
+        this.shakeX = 0;
+        this.shakeY = 0;
+        this.shakeDuration = 0;
         
         // 初始化Boss管理器
         BossManager.init();
@@ -243,9 +267,19 @@ const Game = {
             this.gameOver();
         }
 
-        // 更新相机（跟随玩家）
-        cameraX = this.player.x - CONFIG.GAME_WIDTH / 2;
-        cameraY = this.player.y - CONFIG.GAME_HEIGHT / 2;
+        // 更新屏幕震动
+        if (this.shakeDuration > 0) {
+            this.shakeDuration--;
+            this.shakeX = (Math.random() - 0.5) * this.shakeIntensity;
+            this.shakeY = (Math.random() - 0.5) * this.shakeIntensity;
+        } else {
+            this.shakeX = 0;
+            this.shakeY = 0;
+        }
+
+        // 更新相机（跟随玩家 + 震动）
+        cameraX = this.player.x - CONFIG.GAME_WIDTH / 2 + this.shakeX;
+        cameraY = this.player.y - CONFIG.GAME_HEIGHT / 2 + this.shakeY;
 
         // 更新敌人
         this.enemies.forEach(e => e.update(this.player));
@@ -312,8 +346,11 @@ const Game = {
             if (this.checkCollision(e, this.player)) {
                 if (this.frameCount % 30 === 0) {
                     this.player.hp -= e.damage;
+                    this.damageTaken += e.damage;
                     this.addFloatingText("-" + e.damage, this.player.x, this.player.y - 30, '#ff4444');
                     this.spawnParticles(this.player.x, this.player.y, '#ff0000', 5);
+                    this.screenShake(5, 10);
+                    Audio.play('hurt');
                     this.updateUI();
                 }
             }
@@ -324,8 +361,11 @@ const Game = {
             if (this.checkCollision(boss, this.player)) {
                 if (this.frameCount % 30 === 0) {
                     this.player.hp -= boss.damage;
+                    this.damageTaken += boss.damage;
                     this.addFloatingText("-" + boss.damage, this.player.x, this.player.y - 30, '#ff0000');
                     this.spawnParticles(this.player.x, this.player.y, '#ff0000', 8);
+                    this.screenShake(10, 15);
+                    Audio.play('hurt');
                     this.updateUI();
                 }
             }
@@ -584,6 +624,11 @@ const Game = {
         }
     },
     
+    screenShake(intensity, duration) {
+        this.shakeIntensity = intensity;
+        this.shakeDuration = duration;
+    },
+    
     drawLightningEffects() {
         this.lightningEffects.forEach(l => {
             const alpha = l.life / 15;
@@ -702,6 +747,7 @@ const Game = {
         this.level++;
         this.xpToNext = Math.floor(this.xpToNext * 1.15);
         this.state = 'LEVEL_UP';
+        Audio.play('levelup');
         this.showUpgradeMenu();
         this.updateUI();
     },
@@ -849,6 +895,9 @@ const Game = {
     endGame() {
         this.state = 'GAME_OVER';
         
+        // 播放死亡音效
+        Audio.play('death');
+        
         // 结算金币
         const earnedGold = this.gold;
         Lobby.addGold(earnedGold);
@@ -858,6 +907,10 @@ const Game = {
         document.getElementById('final-time').innerText = this.formatTime(this.time);
         document.getElementById('final-kills').innerText = this.kills;
         document.getElementById('final-gold').innerText = earnedGold;
+        document.getElementById('final-level').innerText = this.level;
+        document.getElementById('final-damage').innerText = Math.floor(this.damageDealt);
+        document.getElementById('final-taken').innerText = Math.floor(this.damageTaken);
+        document.getElementById('final-boss').innerText = this.bossKills;
     },
 
     backToMenu() {
