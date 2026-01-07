@@ -20,8 +20,9 @@ const GM = {
     
     closePanel() {
         document.getElementById('gm-modal').classList.add('hidden');
-        // 返回背包界面
+        // 返回背包界面并刷新
         Game.state = 'INVENTORY';
+        Game.renderInventory();
     },
     
     render() {
@@ -70,10 +71,6 @@ const GM = {
         if (skill) {
             Game.player.skillInventory.push({ ...skill, star: 1 });
             Game.addFloatingText('+' + skill.name, Game.player.x, Game.player.y - 30, '#00ff00');
-            // 如果背包界面打开，刷新显示
-            if (Game.state === 'INVENTORY') {
-                Game.renderInventory();
-            }
         }
     },
     

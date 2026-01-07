@@ -264,8 +264,7 @@ const SKILL_COSTS = {
     magic_missile: 1,
     
     // 被动技能消耗（统一为1）
-    double_cast: 1,
-    triple_cast: 1,
+    scatter: 1,
     homing: 1,
     piercing: 1,
     chainsaw: 1,

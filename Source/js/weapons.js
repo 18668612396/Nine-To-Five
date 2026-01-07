@@ -56,19 +56,11 @@ const MAGIC_SKILLS = {
 
 // ========== 被动技能 (修饰符) ==========
 const MODIFIER_SKILLS = {
-    double_cast: {
-        id: 'double_cast',
-        name: '双重施法',
+    scatter: {
+        id: 'scatter',
+        name: '散射',
         type: 'modifier',
-        icon: '⚡',
-        desc: '同时发射2个投射物',
-        modify: (mods) => { mods.splitCount = (mods.splitCount || 1) + 1; }
-    },
-    triple_cast: {
-        id: 'triple_cast',
-        name: '三重施法',
-        type: 'modifier',
-        icon: '⚡⚡',
+        icon: '🔱',
         desc: '同时发射3个投射物',
         modify: (mods) => { mods.splitCount = (mods.splitCount || 1) + 2; }
     },
@@ -1010,16 +1002,66 @@ class SkillProjectile {
     }
 }
 
-// 分裂小弹
+// 分裂小弹 - 继承主技能的特性（除分裂外）
 class SplitProjectile extends SkillProjectile {
     constructor(parent, angle, damageMult = 0.3) {
-        super({ x: parent.x, y: parent.y }, { angle, damage: parent.damage * damageMult / 10 });
-        this.speed = 8;
-        this.damage = parent.damage * damageMult;
-        this.radius = 3;
+        // 创建一个基础的 mods 对象
+        const mods = {
+            angle: angle,
+            damage: (parent.baseDamage || parent.damage) * damageMult / 10,
+            speed: parent.speed * 0.8,
+            penetrate: parent.penetrate,
+            // 继承主技能的被动效果（除分裂外）
+            homing: parent.homing,
+            turnSpeed: parent.turnSpeed,
+            bounceCount: parent.bounceCount,
+            chainCount: parent.chainCount,
+            chainRange: parent.chainRange,
+            chainDamageDecay: parent.chainDamageDecay,
+            reflect: parent.reflect,
+            reflectCount: parent.reflectCount,
+            reflectDamageDecay: parent.reflectDamageDecay,
+            // 不继承分裂效果，避免无限分裂
+            splitOnHit: false,
+            splitOnDeath: false,
+            splitAmount: 0
+        };
+        
+        super({ x: parent.x, y: parent.y }, mods);
+        
+        this.parentType = parent.constructor.name;
+        this.damage = (parent.baseDamage || parent.damage) * damageMult;
+        this.speed = parent.speed * 0.8;
+        this.radius = Math.max(2, parent.radius * 0.5); // 缩小版
         this.color = parent.color || '#fff';
-        this.duration = 30;
-        this.penetrate = 1;
+        this.duration = 45;
+        this.penetrate = parent.penetrate;
+        this.scale = 0.5; // 缩放比例
+        
+        // 保存父弹的绘制方法引用
+        this.parentDraw = parent.draw.bind(this);
+    }
+    
+    draw(ctx, camX, camY) {
+        const x = this.x - camX, y = this.y - camY;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(this.scale, this.scale);
+        ctx.translate(-x, -y);
+        
+        // 使用简化的绘制（基于颜色）
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 6;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(x, y, this.radius / this.scale, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, y, this.radius * 0.4 / this.scale, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
     }
 }
 
