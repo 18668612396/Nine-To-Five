@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>葵瓜幸存者</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌻</text></svg>">
-    <script>document.write(`<link rel="stylesheet" href="css/style.css?v=${Date.now()}">`)</script>
+    <script>document.write(`<link rel="stylesheet" href="css/style.css?v=__BUILD_TIME__">`)</script>
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <script>
-        // 给所有脚本添加时间戳防止缓存
-        const v = Date.now();
+        // 给所有脚本添加版本号防止缓存（部署时自动替换）
+        const v = '__BUILD_TIME__';
         const scripts = [
             'js/config.js', 'js/utils.js', 'js/audio.js', 'js/input.js',
             'js/characters.js', 'js/scenes.js', 'js/entities.js', 'js/weapons.js',

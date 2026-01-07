@@ -24,6 +24,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
+      - name: Inject build timestamp
+        run: |
+          BUILD_TIME=$(date +%s)
+          sed -i "s/__BUILD_TIME__/$BUILD_TIME/g" Source/index.html
+      
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
