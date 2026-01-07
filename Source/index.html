@@ -15,7 +15,7 @@
         const scripts = [
             'js/config.js', 'js/utils.js', 'js/audio.js', 'js/input.js',
             'js/characters.js', 'js/scenes.js', 'js/entities.js', 'js/weapons.js',
-            'js/boss.js', 'js/game.js', 'js/gm.js', 'js/lobby.js'
+            'js/wand.js', 'js/boss.js', 'js/game.js', 'js/gm.js', 'js/lobby.js'
         ];
         scripts.forEach(src => {
             document.write(`<script src="${src}?v=${v}"><\/script>`);
@@ -56,6 +56,16 @@
                                 <div id="xp-bar-fill"></div>
                             </div>
                             <div id="level-text">Lv.1</div>
+                        </div>
+                        <div id="energy-bar-container">
+                            <div id="energy-bar-bg">
+                                <div id="energy-bar-fill"></div>
+                            </div>
+                            <div id="energy-text">100/100</div>
+                        </div>
+                        <div class="weapon-info-display">
+                            <span class="weapon-info-icon" id="weapon-icon">🪄</span>
+                            <span class="weapon-info-name" id="weapon-name">学徒法杖</span>
                         </div>
                     </div>
                     <div class="hud-right">
@@ -350,17 +360,30 @@
                                 <button class="merge-btn" id="workbench-toggle-btn" onclick="Game.toggleWorkbench()">🔧 工作台</button>
                             </div>
                         </div>
+                        
+                        <!-- 武器槽区域 -->
+                        <div class="inventory-section weapon-slots-section">
+                            <h3>🗡️ 武器槽 <span class="weapon-switch-hint">(按Q切换)</span></h3>
+                            <div id="weapon-slots" class="weapon-slots-container"></div>
+                        </div>
+                        
                         <div class="inventory-section">
-                            <h3>🔮 技能槽</h3>
+                            <h3>🔮 技能槽 <span class="current-weapon-name" id="current-weapon-label"></span></h3>
                             <div id="wand-slots" class="slot-container"></div>
                         </div>
                         <div class="inventory-section">
-                            <h3>📦 背包</h3>
+                            <h3>📦 技能背包</h3>
                             <div id="inventory-items" class="inventory-grid"></div>
                         </div>
                         <div class="inventory-section">
                             <h3>🎁 祝福</h3>
                             <div id="perks-display" class="perks-grid"></div>
+                        </div>
+                        
+                        <!-- 武器背包区域 -->
+                        <div class="inventory-section weapon-inventory-section">
+                            <h3>🎒 武器背包</h3>
+                            <div id="weapon-inventory" class="weapon-inventory-grid"></div>
                         </div>
                     </div>
                     <div class="workbench-panel hidden" id="workbench-panel">
@@ -397,6 +420,16 @@
             
             <!-- GM面板 -->
             <div id="gm-modal" class="screen hidden">
+
+            <!-- 武器选择弹窗（Boss掉落） -->
+            <div id="weapon-drop-modal" class="screen hidden">
+                <div class="weapon-drop-container">
+                    <h2>🎁 选择武器</h2>
+                    <p class="weapon-drop-hint">击败Boss获得武器奖励！选择一把或跳过随机获得</p>
+                    <div id="weapon-drop-options" class="weapon-drop-grid"></div>
+                    <button class="weapon-skip-btn" onclick="Game.skipWeaponDrop()">🎲 跳过，随机获得</button>
+                </div>
+            </div>
                 <div class="gm-modal-container">
                     <div class="gm-header">
                         <h2>🛠️ GM</h2>

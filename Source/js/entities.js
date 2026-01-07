@@ -35,8 +35,18 @@ class Player extends Entity {
         this.projSpeed = 1.0;
         this.knockback = 1.0;
 
-        // 法杖系统（组合技能）
-        this.wand = new Wand(this, 8);
+        // 武器槽系统（3个槽位）
+        this.weaponSlots = [null, null, null];
+        this.currentWeaponIndex = 0;
+        this.weaponInventory = []; // 武器背包
+        
+        // 初始武器
+        const starterWeapon = new Weapon(WEAPON_TEMPLATES.apprentice_wand, []);
+        this.weaponSlots[0] = starterWeapon;
+        this.weapon = starterWeapon;
+        
+        // 兼容旧代码
+        this.wand = this.weapon;
         
         // 祝福系统
         this.perkManager = new PerkManager(this);
@@ -84,8 +94,83 @@ class Player extends Entity {
             if (this.hp > this.maxHp) this.hp = this.maxHp;
         }
 
-        // 法杖更新（自动施法）
-        this.wand.update();
+        // 武器更新（自动施法）
+        if (this.weapon) {
+            this.weapon.update(this);
+        }
+    }
+    
+    // 切换武器
+    switchWeapon(index) {
+        if (index < 0 || index >= this.weaponSlots.length) return;
+        if (!this.weaponSlots[index]) return;
+        
+        this.currentWeaponIndex = index;
+        this.weapon = this.weaponSlots[index];
+        this.wand = this.weapon;
+        Game.addFloatingText(`切换: ${this.weapon.icon} ${this.weapon.name}`, this.x, this.y - 40, '#ffd700');
+        Audio.play('pickup');
+    }
+    
+    // 下一把武器
+    nextWeapon() {
+        let nextIndex = this.currentWeaponIndex;
+        for (let i = 1; i <= this.weaponSlots.length; i++) {
+            const idx = (this.currentWeaponIndex + i) % this.weaponSlots.length;
+            if (this.weaponSlots[idx]) {
+                nextIndex = idx;
+                break;
+            }
+        }
+        if (nextIndex !== this.currentWeaponIndex) {
+            this.switchWeapon(nextIndex);
+        }
+    }
+    
+    // 装备武器到槽位
+    equipWeaponToSlot(weaponIndex, slotIndex) {
+        if (weaponIndex < 0 || weaponIndex >= this.weaponInventory.length) return false;
+        if (slotIndex < 0 || slotIndex >= this.weaponSlots.length) return false;
+        
+        const newWeapon = this.weaponInventory[weaponIndex];
+        const oldWeapon = this.weaponSlots[slotIndex];
+        
+        // 如果槽位有武器，放回背包
+        if (oldWeapon) {
+            this.weaponInventory.push(oldWeapon);
+        }
+        
+        // 装备新武器
+        this.weaponSlots[slotIndex] = newWeapon;
+        this.weaponInventory.splice(weaponIndex, 1);
+        
+        // 如果是当前武器槽，更新当前武器
+        if (slotIndex === this.currentWeaponIndex) {
+            this.weapon = newWeapon;
+            this.wand = newWeapon;
+        }
+        
+        return true;
+    }
+    
+    // 卸下武器到背包
+    unequipWeapon(slotIndex) {
+        if (slotIndex < 0 || slotIndex >= this.weaponSlots.length) return false;
+        if (!this.weaponSlots[slotIndex]) return false;
+        
+        // 至少保留一把武器
+        const equippedCount = this.weaponSlots.filter(w => w !== null).length;
+        if (equippedCount <= 1) return false;
+        
+        this.weaponInventory.push(this.weaponSlots[slotIndex]);
+        this.weaponSlots[slotIndex] = null;
+        
+        // 如果卸下的是当前武器，切换到其他武器
+        if (slotIndex === this.currentWeaponIndex) {
+            this.nextWeapon();
+        }
+        
+        return true;
     }
 
     draw(ctx, camX, camY) {
@@ -211,6 +296,11 @@ class Enemy extends Entity {
         
         // 播放击杀音效
         Audio.play('kill');
+        
+        // 通知武器击杀（回能等）
+        if (Game.player.weapon) {
+            Game.player.weapon.onKill();
+        }
         
         // 掉落金币
         const goldAmount = Math.floor((1 + Math.random() * 2) * (Game.goldMult || 1) * (Game.difficultyMult?.reward || 1));

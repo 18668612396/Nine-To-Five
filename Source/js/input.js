@@ -28,6 +28,19 @@ const Input = {
                     Game.closeSettings();
                 }
             }
+            
+            // Q 键切换武器
+            if (e.code === 'KeyQ' && Game.state === 'PLAYING') {
+                Game.player.nextWeapon();
+                Game.updateUI();
+            }
+            
+            // 数字键 1-3 切换武器
+            if (Game.state === 'PLAYING') {
+                if (e.code === 'Digit1') { Game.player.switchWeapon(0); Game.updateUI(); }
+                if (e.code === 'Digit2') { Game.player.switchWeapon(1); Game.updateUI(); }
+                if (e.code === 'Digit3') { Game.player.switchWeapon(2); Game.updateUI(); }
+            }
         });
         window.addEventListener('keyup', e => this.keys[e.code] = false);
         

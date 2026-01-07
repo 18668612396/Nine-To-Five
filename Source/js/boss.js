@@ -180,6 +180,19 @@ class Boss {
         
         Game.addFloatingText('💀 ' + this.name + ' 被击败!', this.x, this.y - 60, '#ffd700');
         Game.kills++;
+        Game.bossKills++;
+        
+        // 武器掉落
+        const weapons = WeaponGenerator.generateBossDrops(this.level || 1);
+        setTimeout(() => {
+            Game.showWeaponDrop(weapons);
+        }, 500);
+        
+        // 通知武器击杀
+        if (Game.player.weapon) {
+            Game.player.weapon.onKill();
+        }
+        
         Game.updateUI();
     }
     

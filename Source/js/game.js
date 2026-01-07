@@ -814,6 +814,16 @@ const Game = {
         
         document.getElementById('kill-count').innerText = '击杀: ' + this.kills;
         document.getElementById('gold-count').innerText = '💰 ' + this.gold;
+        
+        // 武器能量条
+        if (this.player.weapon) {
+            const weapon = this.player.weapon;
+            const energyPct = (weapon.energy / weapon.maxEnergy) * 100;
+            document.getElementById('energy-bar-fill').style.width = energyPct + '%';
+            document.getElementById('energy-text').innerText = `${Math.floor(weapon.energy)}/${weapon.maxEnergy}`;
+            document.getElementById('weapon-icon').innerText = weapon.icon;
+            document.getElementById('weapon-name').innerText = weapon.name;
+        }
     },
 
     formatTime(sec) {
@@ -970,14 +980,31 @@ const Game = {
     },
     
     renderInventory() {
-        const wand = this.player.wand;
+        const player = this.player;
+        const weapon = player.weapon;
+        
+        // 渲染武器槽
+        this.renderWeaponSlots();
+        
+        // 渲染武器背包
+        this.renderWeaponInventory();
+        
+        // 更新当前武器标签
+        const weaponLabel = document.getElementById('current-weapon-label');
+        if (weaponLabel && weapon) {
+            weaponLabel.textContent = `(${weapon.icon} ${weapon.name})`;
+        }
         
         // 渲染技能槽
         const slotsContainer = document.getElementById('wand-slots');
         slotsContainer.innerHTML = '';
         
-        for (let i = 0; i < wand.slotCount; i++) {
-            const slot = wand.slots[i];
+        // 使用当前武器的槽位数
+        const slotCount = weapon ? weapon.slotCount : 6;
+        const slots = weapon ? weapon.slots : [];
+        
+        for (let i = 0; i < slotCount; i++) {
+            const slot = slots[i];
             const div = document.createElement('div');
             div.className = 'wand-slot';
             div.dataset.slotIndex = i;
@@ -997,15 +1024,15 @@ const Game = {
             
             // 点击槽位：卸下技能
             div.onclick = () => {
-                if (wand.slots[i]) {
-                    wand.unequipSkill(i);
+                if (weapon && weapon.slots[i]) {
+                    weapon.unequipSkill(i);
                     this.renderInventory();
                 }
             };
             
             // 拖拽事件 - 槽位拖出
             div.ondragstart = (e) => {
-                if (wand.slots[i]) {
+                if (weapon && weapon.slots[i]) {
                     e.dataTransfer.setData('type', 'slot');
                     e.dataTransfer.setData('slotIndex', i.toString());
                     div.classList.add('dragging');
@@ -1026,15 +1053,15 @@ const Game = {
                 if (type === 'slot') {
                     // 槽位之间交换
                     const fromIndex = parseInt(e.dataTransfer.getData('slotIndex'));
-                    if (!isNaN(fromIndex) && fromIndex !== i) {
-                        wand.swapSlots(fromIndex, i);
+                    if (!isNaN(fromIndex) && fromIndex !== i && weapon) {
+                        [weapon.slots[fromIndex], weapon.slots[i]] = [weapon.slots[i], weapon.slots[fromIndex]];
                         this.renderInventory();
                     }
                 } else if (type === 'inventory') {
                     // 从背包拖入
                     const invIndex = parseInt(e.dataTransfer.getData('inventoryIndex'));
-                    if (!isNaN(invIndex)) {
-                        wand.equipSkill(invIndex, i);
+                    if (!isNaN(invIndex) && weapon) {
+                        weapon.equipSkill(invIndex, i);
                         this.renderInventory();
                     }
                 }
@@ -1048,6 +1075,7 @@ const Game = {
         inventoryContainer.innerHTML = '';
         
         const totalSlots = 100; // 背包总格子数 10x10
+        const wand = weapon; // 兼容旧代码
         
         // 先渲染已有物品
         wand.inventory.forEach((skill, idx) => {
@@ -1198,6 +1226,102 @@ const Game = {
         }
     },
     
+    // 渲染武器槽
+    renderWeaponSlots() {
+        const container = document.getElementById('weapon-slots');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        const player = this.player;
+        
+        for (let i = 0; i < player.weaponSlots.length; i++) {
+            const weapon = player.weaponSlots[i];
+            const div = document.createElement('div');
+            div.className = 'weapon-slot';
+            div.dataset.slotIndex = i;
+            
+            if (weapon) {
+                div.classList.add(`rarity-${weapon.rarity}`);
+                if (i === player.currentWeaponIndex) {
+                    div.classList.add('active');
+                }
+                div.innerHTML = `
+                    <span class="weapon-slot-index">${i + 1}</span>
+                    <span class="weapon-slot-icon">${weapon.icon}</span>
+                    <span class="weapon-slot-name">${weapon.name}</span>
+                `;
+                div.title = `${weapon.name}\n能量: ${weapon.maxEnergy}\n槽位: ${weapon.slotCount}`;
+            } else {
+                div.classList.add('empty');
+                div.innerHTML = `<span class="weapon-slot-index">${i + 1}</span><span class="weapon-slot-icon">+</span>`;
+            }
+            
+            // 点击切换武器
+            div.onclick = () => {
+                if (weapon) {
+                    player.switchWeapon(i);
+                    this.renderInventory();
+                }
+            };
+            
+            // 拖拽接收
+            div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over'); };
+            div.ondragleave = () => div.classList.remove('drag-over');
+            div.ondrop = (e) => {
+                e.preventDefault();
+                div.classList.remove('drag-over');
+                const type = e.dataTransfer.getData('type');
+                
+                if (type === 'weaponInventory') {
+                    const weaponIdx = parseInt(e.dataTransfer.getData('weaponIndex'));
+                    if (!isNaN(weaponIdx)) {
+                        player.equipWeaponToSlot(weaponIdx, i);
+                        this.renderInventory();
+                    }
+                }
+            };
+            
+            container.appendChild(div);
+        }
+    },
+    
+    // 渲染武器背包
+    renderWeaponInventory() {
+        const container = document.getElementById('weapon-inventory');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        const player = this.player;
+        
+        if (player.weaponInventory.length === 0) {
+            container.innerHTML = '<div style="color:#666;font-size:12px;padding:10px;">暂无武器，击败Boss获取</div>';
+            return;
+        }
+        
+        player.weaponInventory.forEach((weapon, idx) => {
+            const div = document.createElement('div');
+            div.className = `weapon-inv-item rarity-${weapon.rarity}`;
+            div.draggable = true;
+            div.dataset.weaponIndex = idx;
+            
+            div.innerHTML = `
+                <span class="weapon-inv-icon">${weapon.icon}</span>
+                <span class="weapon-inv-name">${weapon.name}</span>
+            `;
+            div.title = `${weapon.name}\n能量: ${weapon.maxEnergy}\n回复: ${weapon.baseEnergyRegen}/s\n槽位: ${weapon.slotCount}`;
+            
+            // 拖拽开始
+            div.ondragstart = (e) => {
+                e.dataTransfer.setData('type', 'weaponInventory');
+                e.dataTransfer.setData('weaponIndex', idx.toString());
+                div.classList.add('dragging');
+            };
+            div.ondragend = () => div.classList.remove('dragging');
+            
+            container.appendChild(div);
+        });
+    },
+
     renderWorkbench() {
         // 渲染槽位
         for (let i = 0; i < 3; i++) {
@@ -1493,6 +1617,93 @@ const Game = {
         } else {
             this.addFloatingText('没有可合成的技能', this.player.x, this.player.y - 40, '#888888');
         }
+    },
+    
+    // ========== 武器选择系统 ==========
+    pendingWeaponDrops: null,
+    
+    showWeaponDrop(weapons) {
+        this.pendingWeaponDrops = weapons;
+        this.state = 'WEAPON_DROP';
+        
+        const container = document.getElementById('weapon-drop-options');
+        container.innerHTML = '';
+        
+        weapons.forEach((weapon, index) => {
+            const card = document.createElement('div');
+            card.className = `weapon-drop-card rarity-${weapon.rarity}`;
+            card.onclick = () => this.selectWeaponDrop(index);
+            
+            // 词条HTML
+            let affixesHtml = '';
+            weapon.affixes.forEach(affix => {
+                const def = WEAPON_AFFIXES[affix.id];
+                if (def) {
+                    const desc = def.desc.replace('{value}', affix.value);
+                    affixesHtml += `<div class="weapon-affix">✦ ${desc}</div>`;
+                }
+            });
+            
+            // 特殊槽HTML
+            let specialHtml = '';
+            if (weapon.specialSlot) {
+                const trigger = SPECIAL_TRIGGERS[weapon.specialSlot.trigger];
+                if (trigger) {
+                    const desc = trigger.desc.replace('{value}', weapon.specialSlot.value);
+                    specialHtml = `<div class="weapon-card-special">⚡ 特殊槽(${weapon.specialSlot.slots}): ${desc}</div>`;
+                }
+            }
+            
+            const rarityNames = { common: '普通', uncommon: '优秀', rare: '稀有', epic: '史诗' };
+            
+            card.innerHTML = `
+                <div class="weapon-card-header">
+                    <span class="weapon-card-icon">${weapon.icon}</span>
+                    <div>
+                        <div class="weapon-card-name">${weapon.name}</div>
+                        <span class="weapon-card-rarity">${rarityNames[weapon.rarity]}</span>
+                    </div>
+                </div>
+                <div class="weapon-card-stats">
+                    <div>⚡ 能量: ${weapon.maxEnergy} | 回复: ${weapon.baseEnergyRegen}/s</div>
+                    <div>⏱️ 间隔: ${(weapon.baseCastInterval / 60).toFixed(2)}s | 槽位: ${weapon.slotCount}</div>
+                </div>
+                <div class="weapon-card-affixes">${affixesHtml || '<div class="weapon-affix" style="color:#888">无词条</div>'}</div>
+                ${specialHtml}
+            `;
+            container.appendChild(card);
+        });
+        
+        document.getElementById('weapon-drop-modal').classList.remove('hidden');
+    },
+    
+    selectWeaponDrop(index) {
+        const weapon = this.pendingWeaponDrops[index];
+        this.equipNewWeapon(weapon);
+        this.closeWeaponDrop();
+    },
+    
+    skipWeaponDrop() {
+        // 随机选一个
+        const index = Math.floor(Math.random() * this.pendingWeaponDrops.length);
+        const weapon = this.pendingWeaponDrops[index];
+        this.equipNewWeapon(weapon);
+        this.addFloatingText(`随机获得: ${weapon.icon} ${weapon.name}`, this.player.x, this.player.y - 40, '#ffd700');
+        this.closeWeaponDrop();
+    },
+    
+    equipNewWeapon(weapon) {
+        // 新武器放入武器背包
+        this.player.weaponInventory.push(weapon);
+        this.addFloatingText(`获得: ${weapon.icon} ${weapon.name}`, this.player.x, this.player.y - 60, '#ffd700');
+        Audio.play('levelup');
+        this.updateUI();
+    },
+    
+    closeWeaponDrop() {
+        document.getElementById('weapon-drop-modal').classList.add('hidden');
+        this.pendingWeaponDrops = null;
+        this.state = 'PLAYING';
     }
 };
 
