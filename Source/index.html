@@ -9,18 +9,6 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script>
-        // 给所有脚本添加版本号防止缓存（部署时自动替换）
-        const v = '__BUILD_TIME__';
-        const scripts = [
-            'js/config.js', 'js/utils.js', 'js/audio.js', 'js/input.js',
-            'js/characters.js', 'js/scenes.js', 'js/entities.js', 'js/weapons.js',
-            'js/wand.js', 'js/boss.js', 'js/game.js', 'js/gm.js', 'js/lobby.js'
-        ];
-        scripts.forEach(src => {
-            document.write(`<script src="${src}?v=${v}"><\/script>`);
-        });
-    </script>
 </head>
 <body>
     <!-- 加载界面 -->
@@ -492,7 +480,25 @@
             loadingBar.style.width = progress + '%';
             loadingText.textContent = '正在加载... ' + Math.floor(progress) + '%';
         }, 100);
-        
+    </script>
+    
+    <!-- 加载所有游戏脚本 -->
+    <script src="js/config.js?v=__BUILD_TIME__"></script>
+    <script src="js/utils.js?v=__BUILD_TIME__"></script>
+    <script src="js/audio.js?v=__BUILD_TIME__"></script>
+    <script src="js/input.js?v=__BUILD_TIME__"></script>
+    <script src="js/characters.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes.js?v=__BUILD_TIME__"></script>
+    <script src="js/weapons.js?v=__BUILD_TIME__"></script>
+    <script src="js/wand.js?v=__BUILD_TIME__"></script>
+    <script src="js/entities.js?v=__BUILD_TIME__"></script>
+    <script src="js/boss.js?v=__BUILD_TIME__"></script>
+    <script src="js/game.js?v=__BUILD_TIME__"></script>
+    <script src="js/gm.js?v=__BUILD_TIME__"></script>
+    <script src="js/lobby.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 初始化游戏 -->
+    <script>
         Game.init();
         GM.init();
         Lobby.init();

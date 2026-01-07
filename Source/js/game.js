@@ -1,7 +1,7 @@
 // --- 游戏引擎 (类幸存者风格 + 场景系统) ---
 
-const CANVAS = document.getElementById('gameCanvas');
-const CTX = CANVAS.getContext('2d');
+let CANVAS = null;
+let CTX = null;
 
 // 相机位置（跟随玩家）
 let cameraX = 0;
@@ -11,6 +11,7 @@ let cameraY = 0;
 const dpr = window.devicePixelRatio || 1;
 
 function resize() {
+    if (!CANVAS || !CTX) return;
     const width = window.innerWidth;
     const height = window.innerHeight;
     
@@ -26,10 +27,9 @@ function resize() {
     CTX.setTransform(dpr, 0, 0, dpr, 0, 0);
     
     CONFIG.GAME_WIDTH = width;
+    CONFIG.GAME_WIDTH = width;
     CONFIG.GAME_HEIGHT = height;
 }
-window.addEventListener('resize', resize);
-resize();
 
 const Game = {
     state: 'MENU',
@@ -67,6 +67,13 @@ const Game = {
     shakeDuration: 0,
     
     init() {
+        // 初始化 Canvas
+        CANVAS = document.getElementById('gameCanvas');
+        CTX = CANVAS.getContext('2d');
+        
+        resize();
+        window.addEventListener('resize', resize);
+        
         Input.init();
         SceneManager.currentScene = 'grass';
         SceneManager.init();
