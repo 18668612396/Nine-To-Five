@@ -209,6 +209,10 @@ class Enemy extends Entity {
         Game.spawnGem(this.x, this.y, this.xpValue);
         Game.kills++;
         
+        // 掉落金币
+        const goldAmount = Math.floor((1 + Math.random() * 2) * (Game.goldMult || 1) * (Game.difficultyMult?.reward || 1));
+        Game.gold += goldAmount;
+        
         // 吸血效果
         if (Game.player.vampirism > 0) {
             Game.player.hp = Math.min(Game.player.maxHp, Game.player.hp + Game.player.vampirism);

@@ -36,6 +36,7 @@ const Game = {
     level: 1,
     xp: 0,
     xpToNext: 10,
+    gold: 0, // 本局获得的金币
     
     init() {
         Input.init();
@@ -46,9 +47,43 @@ const Game = {
     },
 
     start(charType) {
-        this.player = new Player(charType);
+        this.startWithConfig({
+            character: charType,
+            weapon: 'spark_bolt',
+            difficulty: 'normal',
+            map: 'forest',
+            talentBonus: { hp: 1, damage: 1, speed: 1, crit: 0, xp: 1, gold: 1 }
+        });
+    },
+    
+    startWithConfig(config) {
+        this.currentConfig = config;
+        
+        this.player = new Player(config.character);
         this.player.x = 0;
         this.player.y = 0;
+        
+        // 应用天赋加成
+        if (config.talentBonus) {
+            this.player.maxHp *= config.talentBonus.hp;
+            this.player.hp = this.player.maxHp;
+            this.player.damageMult *= config.talentBonus.damage;
+            this.player.speed *= config.talentBonus.speed;
+            this.player.critChance = (this.player.critChance || 0) + config.talentBonus.crit;
+            this.player.xpMult = config.talentBonus.xp;
+            this.goldMult = config.talentBonus.gold;
+        } else {
+            this.goldMult = 1;
+        }
+        
+        // 应用难度修正
+        this.applyDifficulty(config.difficulty);
+        
+        // 设置初始武器
+        if (config.weapon && MAGIC_SKILLS[config.weapon]) {
+            this.player.wand.addSkillToInventory(config.weapon, 1);
+            this.player.wand.equipSkill(0, 0);
+        }
         
         this.enemies = [];
         this.gems = [];
@@ -58,6 +93,7 @@ const Game = {
         this.particles = [];
         this.lightningEffects = [];
         this.sceneElements = [];
+        this.gold = 0;
         this.frameCount = 0;
         this.time = 0;
         this.kills = 0;
@@ -65,8 +101,8 @@ const Game = {
         this.xp = 0;
         this.xpToNext = 10;
         
-        // 随机选择场景
-        SceneManager.randomScene();
+        // 设置地图场景
+        SceneManager.setScene(config.map);
         this.generateSceneElements();
         
         document.getElementById('hud').classList.remove('hidden');
@@ -74,6 +110,20 @@ const Game = {
         
         this.state = 'PLAYING';
         this.updateUI();
+    },
+    
+    applyDifficulty(difficulty) {
+        // 难度系数存储，供敌人生成时使用
+        switch(difficulty) {
+            case 'easy':
+                this.difficultyMult = { enemy: 0.7, spawn: 0.8, reward: 0.8 };
+                break;
+            case 'hard':
+                this.difficultyMult = { enemy: 1.5, spawn: 1.3, reward: 1.5 };
+                break;
+            default:
+                this.difficultyMult = { enemy: 1, spawn: 1, reward: 1 };
+        }
     },
     
     // 生成场景装饰元素
@@ -652,13 +702,14 @@ const Game = {
     updateUI() {
         const hpPct = Math.max(0, (this.player.hp / this.player.maxHp) * 100);
         document.getElementById('hp-bar-fill').style.width = hpPct + '%';
-        document.getElementById('hp-text').innerText = `${Math.ceil(this.player.hp)}/${this.player.maxHp}`;
+        document.getElementById('hp-text').innerText = `${Math.ceil(this.player.hp)}/${Math.ceil(this.player.maxHp)}`;
         
         const xpPct = (this.xp / this.xpToNext) * 100;
         document.getElementById('xp-bar-fill').style.width = xpPct + '%';
         document.getElementById('level-text').innerText = 'Lv.' + this.level;
         
         document.getElementById('kill-count').innerText = '击杀: ' + this.kills;
+        document.getElementById('gold-count').innerText = '💰 ' + this.gold;
     },
 
     formatTime(sec) {
@@ -667,11 +718,40 @@ const Game = {
         return `${m}:${s}`;
     },
 
+    // 设置菜单
+    openSettings() {
+        this.previousState = this.state;
+        this.state = 'SETTINGS';
+        document.getElementById('settings-modal').classList.remove('hidden');
+    },
+    
+    closeSettings() {
+        document.getElementById('settings-modal').classList.add('hidden');
+        this.state = this.previousState || 'PLAYING';
+    },
+    
+    // 放弃战斗
+    surrenderGame() {
+        this.closeSettings();
+        this.endGame();
+    },
+
     gameOver() {
+        this.endGame();
+    },
+    
+    // 结束游戏（通用）
+    endGame() {
         this.state = 'GAME_OVER';
+        
+        // 结算金币
+        const earnedGold = this.gold;
+        Lobby.addGold(earnedGold);
+        
         document.getElementById('gameover-screen').classList.remove('hidden');
         document.getElementById('final-time').innerText = this.formatTime(this.time);
         document.getElementById('final-kills').innerText = this.kills;
+        document.getElementById('final-gold').innerText = earnedGold;
     },
 
     backToMenu() {
@@ -689,7 +769,9 @@ const Game = {
         document.getElementById('levelup-screen').classList.add('hidden');
         document.getElementById('gameover-screen').classList.add('hidden');
         document.getElementById('inventory-screen').classList.add('hidden');
-        document.getElementById('main-menu').classList.remove('hidden');
+        
+        // 返回大厅
+        Lobby.enter();
     },
     
     // 背包系统
@@ -701,6 +783,17 @@ const Game = {
     },
     
     closeInventory() {
+        // 关闭工作台
+        if (this.workbenchOpen) {
+            this.workbenchSlots.forEach((item) => {
+                if (item) {
+                    this.player.wand.inventory.push(item.skill);
+                }
+            });
+            this.workbenchSlots = [null, null, null];
+            this.workbenchOpen = false;
+        }
+        
         this.state = this.previousState || 'PLAYING';
         document.getElementById('inventory-screen').classList.add('hidden');
     },
@@ -805,7 +898,22 @@ const Game = {
             };
             div.ondragend = () => div.classList.remove('dragging');
             
-            // 点击背包物品：装备到第一个空槽
+            // 接收从工作台拖入的物品
+            div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over'); };
+            div.ondragleave = () => div.classList.remove('drag-over');
+            div.ondrop = (e) => {
+                e.preventDefault();
+                div.classList.remove('drag-over');
+                const type = e.dataTransfer.getData('type');
+                if (type === 'workbench') {
+                    const wbIdx = parseInt(e.dataTransfer.getData('workbenchIndex'));
+                    if (!isNaN(wbIdx)) {
+                        this.dropFromWorkbenchToInventory(wbIdx);
+                    }
+                }
+            };
+            
+            // 点击背包物品：装备到第一个空槽（工作台用拖拽）
             div.onclick = () => {
                 let targetSlot = -1;
                 for (let i = 0; i < wand.slotCount; i++) {
@@ -847,6 +955,12 @@ const Game = {
                         wand.unequipSkill(slotIndex);
                         this.renderInventory();
                     }
+                } else if (type === 'workbench') {
+                    // 从工作台拖回背包
+                    const wbIdx = parseInt(e.dataTransfer.getData('workbenchIndex'));
+                    if (!isNaN(wbIdx)) {
+                        this.dropFromWorkbenchToInventory(wbIdx);
+                    }
                 }
             };
             
@@ -877,57 +991,232 @@ const Game = {
         }
     },
     
-    // 合成面板
-    showMergePanel() {
-        document.getElementById('merge-modal').classList.remove('hidden');
-        this.renderMergePanel();
-    },
+    // 工作台系统
+    workbenchSlots: [null, null, null],
+    workbenchOpen: false,
     
-    closeMergePanel() {
-        document.getElementById('merge-modal').classList.add('hidden');
-    },
-    
-    renderMergePanel() {
-        const mergeList = document.getElementById('merge-list');
-        mergeList.innerHTML = '';
+    toggleWorkbench() {
+        this.workbenchOpen = !this.workbenchOpen;
+        const panel = document.getElementById('workbench-panel');
+        const btn = document.getElementById('workbench-toggle-btn');
+        const layout = document.querySelector('.inventory-layout');
         
-        const mergeable = this.player.wand.canMergeSkills();
-        
-        if (mergeable.length === 0) {
-            mergeList.innerHTML = '<div class="merge-empty">没有可合成的技能<br>需要3个相同星级的技能</div>';
-            return;
-        }
-        
-        mergeable.forEach(item => {
-            const skill = item.skill;
-            const star = item.star;
-            const count = item.indices.length;
-            const starText = '⭐'.repeat(star);
-            const nextStarText = '⭐'.repeat(star + 1);
-            
-            const div = document.createElement('div');
-            div.className = 'merge-item';
-            div.innerHTML = `
-                <div class="merge-item-info">
-                    <span class="merge-item-icon">${skill.icon}</span>
-                    <div>
-                        <div class="merge-item-name">${skill.name}</div>
-                        <div class="merge-item-stars">${starText} → ${nextStarText}</div>
-                        <div class="merge-item-count">数量: ${count}</div>
-                    </div>
-                </div>
-                <button class="merge-do-btn" onclick="Game.doMerge('${skill.id}', ${star})">合成</button>
-            `;
-            mergeList.appendChild(div);
-        });
-    },
-    
-    doMerge(skillId, star) {
-        if (this.player.wand.mergeSkill(skillId, star)) {
-            this.addFloatingText('合成成功!', this.player.x, this.player.y - 40, '#00ff00');
-            this.renderMergePanel();
+        if (this.workbenchOpen) {
+            panel.classList.remove('hidden');
+            btn.classList.add('active');
+            layout.classList.add('with-workbench');
+            this.renderWorkbench();
+        } else {
+            // 把工作台里的技能放回背包
+            this.workbenchSlots.forEach((item, idx) => {
+                if (item) {
+                    this.player.wand.inventory.push(item.skill);
+                }
+            });
+            this.workbenchSlots = [null, null, null];
+            panel.classList.add('hidden');
+            btn.classList.remove('active');
+            layout.classList.remove('with-workbench');
             this.renderInventory();
         }
+    },
+    
+    closeWorkbench() {
+        if (this.workbenchOpen) {
+            this.toggleWorkbench();
+        }
+    },
+    
+    renderWorkbench() {
+        // 渲染槽位
+        for (let i = 0; i < 3; i++) {
+            const slot = document.getElementById(`workbench-slot-${i}`);
+            const item = this.workbenchSlots[i];
+            if (item) {
+                const starText = '⭐'.repeat(item.skill.star || 1);
+                slot.innerHTML = `<span class="wb-icon">${item.skill.icon}</span><span class="wb-star">${starText}</span>`;
+                slot.classList.add('filled');
+                slot.draggable = true;
+                
+                // 从工作台拖出
+                slot.ondragstart = (e) => {
+                    e.dataTransfer.setData('type', 'workbench');
+                    e.dataTransfer.setData('workbenchIndex', i.toString());
+                    slot.classList.add('dragging');
+                };
+                slot.ondragend = () => slot.classList.remove('dragging');
+            } else {
+                slot.innerHTML = '<span class="wb-empty">+</span>';
+                slot.classList.remove('filled');
+                slot.draggable = false;
+                slot.ondragstart = null;
+                slot.ondragend = null;
+            }
+            
+            // 接收拖入
+            slot.ondragover = (e) => { e.preventDefault(); slot.classList.add('drag-over'); };
+            slot.ondragleave = () => slot.classList.remove('drag-over');
+            slot.ondrop = (e) => {
+                e.preventDefault();
+                slot.classList.remove('drag-over');
+                const type = e.dataTransfer.getData('type');
+                
+                if (type === 'inventory') {
+                    const invIdx = parseInt(e.dataTransfer.getData('inventoryIndex'));
+                    if (!isNaN(invIdx)) {
+                        this.dropToWorkbench(invIdx, i);
+                    }
+                } else if (type === 'workbench') {
+                    const fromIdx = parseInt(e.dataTransfer.getData('workbenchIndex'));
+                    if (!isNaN(fromIdx) && fromIdx !== i) {
+                        this.swapWorkbenchSlots(fromIdx, i);
+                    }
+                }
+            };
+        }
+        
+        // 检查合成结果
+        this.updateCraftResult();
+    },
+    
+    // 从背包拖入工作台
+    dropToWorkbench(inventoryIdx, slotIdx) {
+        if (this.workbenchSlots[slotIdx] !== null) {
+            // 槽位已有物品，放回背包
+            this.player.wand.inventory.push(this.workbenchSlots[slotIdx].skill);
+        }
+        
+        const skill = this.player.wand.inventory[inventoryIdx];
+        this.workbenchSlots[slotIdx] = { skill };
+        this.player.wand.inventory.splice(inventoryIdx, 1);
+        this.renderWorkbench();
+        this.renderInventory();
+    },
+    
+    // 交换工作台槽位
+    swapWorkbenchSlots(fromIdx, toIdx) {
+        const temp = this.workbenchSlots[fromIdx];
+        this.workbenchSlots[fromIdx] = this.workbenchSlots[toIdx];
+        this.workbenchSlots[toIdx] = temp;
+        this.renderWorkbench();
+    },
+    
+    removeFromWorkbench(slotIdx) {
+        const item = this.workbenchSlots[slotIdx];
+        if (!item) return;
+        
+        this.player.wand.inventory.push(item.skill);
+        this.workbenchSlots[slotIdx] = null;
+        this.renderWorkbench();
+        this.renderInventory();
+    },
+    
+    // 从工作台拖回背包
+    dropFromWorkbenchToInventory(workbenchIdx) {
+        const item = this.workbenchSlots[workbenchIdx];
+        if (!item) return;
+        
+        this.player.wand.inventory.push(item.skill);
+        this.workbenchSlots[workbenchIdx] = null;
+        this.renderWorkbench();
+        this.renderInventory();
+    },
+    
+    updateCraftResult() {
+        const resultDiv = document.getElementById('workbench-result');
+        const tipDiv = document.getElementById('workbench-tip');
+        const craftBtn = document.getElementById('workbench-craft-btn');
+        
+        const filledSlots = this.workbenchSlots.filter(s => s !== null);
+        const craftResult = this.getCraftResult();
+        
+        if (craftResult) {
+            if (craftResult.type === 'upgrade') {
+                const starText = '⭐'.repeat(craftResult.newStar);
+                resultDiv.innerHTML = `<span class="wb-result-icon">${craftResult.skill.icon}</span><span class="wb-result-star">${starText}</span>`;
+                tipDiv.innerHTML = `✨ 升星合成: ${craftResult.skill.name} → ${starText}`;
+            } else if (craftResult.type === 'random') {
+                resultDiv.innerHTML = `<span class="wb-result-icon">❓</span><span class="wb-result-text">随机</span>`;
+                tipDiv.innerHTML = `🎲 随机合成: 将获得一个随机技能`;
+            }
+            resultDiv.classList.add('ready');
+            craftBtn.disabled = false;
+        } else {
+            resultDiv.innerHTML = '<span class="wb-empty">?</span>';
+            resultDiv.classList.remove('ready');
+            craftBtn.disabled = true;
+            
+            if (filledSlots.length === 0) {
+                tipDiv.innerHTML = '拖入技能进行合成：<br>• 3个相同技能 → 升星 (最高3星)<br>• 2个不同技能 → 随机新技能';
+            } else if (filledSlots.length === 1) {
+                tipDiv.innerHTML = '再添加1个技能进行随机合成，或添加2个相同技能进行升星';
+            } else if (filledSlots.length === 2) {
+                const s1 = filledSlots[0].skill;
+                const s2 = filledSlots[1].skill;
+                if (s1.id === s2.id && (s1.star || 1) === (s2.star || 1)) {
+                    tipDiv.innerHTML = '再添加1个相同技能可升星';
+                }
+            } else {
+                tipDiv.innerHTML = '无法合成，请检查技能组合';
+            }
+        }
+    },
+    
+    getCraftResult() {
+        const filledSlots = this.workbenchSlots.filter(s => s !== null);
+        
+        if (filledSlots.length === 3) {
+            // 检查是否3个相同技能且同星级
+            const s1 = filledSlots[0].skill;
+            const s2 = filledSlots[1].skill;
+            const s3 = filledSlots[2].skill;
+            const star1 = s1.star || 1;
+            const star2 = s2.star || 1;
+            const star3 = s3.star || 1;
+            
+            if (s1.id === s2.id && s2.id === s3.id && star1 === star2 && star2 === star3) {
+                if (star1 < 3) {
+                    return { type: 'upgrade', skill: s1, newStar: star1 + 1 };
+                }
+            }
+            // 3个不同的也可以随机合成
+            return { type: 'random' };
+        }
+        
+        if (filledSlots.length === 2) {
+            const s1 = filledSlots[0].skill;
+            const s2 = filledSlots[1].skill;
+            // 2个不同技能可以随机合成
+            if (s1.id !== s2.id || (s1.star || 1) !== (s2.star || 1)) {
+                return { type: 'random' };
+            }
+        }
+        
+        return null;
+    },
+    
+    doCraft() {
+        const craftResult = this.getCraftResult();
+        if (!craftResult) return;
+        
+        if (craftResult.type === 'upgrade') {
+            // 升星合成
+            const newSkill = { ...craftResult.skill, star: craftResult.newStar };
+            this.player.wand.inventory.push(newSkill);
+            this.workbenchSlots = [null, null, null];
+            this.addFloatingText(`升星成功! ${newSkill.name} ${'⭐'.repeat(craftResult.newStar)}`, this.player.x, this.player.y - 40, '#ffd700');
+        } else if (craftResult.type === 'random') {
+            // 随机合成
+            const allSkillIds = Object.keys(ALL_SKILLS);
+            const randomId = allSkillIds[Math.floor(Math.random() * allSkillIds.length)];
+            const randomSkill = { ...ALL_SKILLS[randomId], star: 1 };
+            this.player.wand.inventory.push(randomSkill);
+            this.workbenchSlots = [null, null, null];
+            this.addFloatingText(`获得: ${randomSkill.icon} ${randomSkill.name}!`, this.player.x, this.player.y - 40, '#00ffff');
+        }
+        
+        this.renderWorkbench();
+        this.renderInventory();
     }
 };
 

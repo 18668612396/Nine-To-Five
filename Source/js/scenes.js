@@ -2,7 +2,22 @@
 
 const SceneManager = {
     currentScene: null,
-    scenes: ['grass', 'ocean', 'desert'],  // 移除星空场景
+    scenes: ['grass', 'ocean', 'desert', 'snow'],
+    
+    // 场景映射（地图名 -> 场景名）
+    mapToScene: {
+        'forest': 'grass',
+        'desert': 'desert',
+        'snow': 'snow',
+        'ocean': 'ocean'
+    },
+    
+    // 设置指定场景
+    setScene(mapName) {
+        this.currentScene = this.mapToScene[mapName] || 'grass';
+        this.init();
+        return this.currentScene;
+    },
     
     // 随机选择场景
     randomScene() {
@@ -23,6 +38,9 @@ const SceneManager = {
                 break;
             case 'desert':
                 this.initDesert();
+                break;
+            case 'snow':
+                this.initSnow();
                 break;
         }
     },
@@ -421,6 +439,9 @@ const SceneManager = {
             case 'desert':
                 this.updateDesert(scrollSpeed, frameCount);
                 break;
+            case 'snow':
+                this.updateSnow(scrollSpeed, frameCount);
+                break;
         }
     },
     
@@ -435,6 +456,9 @@ const SceneManager = {
             case 'desert':
                 this.drawDesert(ctx, scrollY, frameCount);
                 break;
+            case 'snow':
+                this.drawSnow(ctx, scrollY, frameCount);
+                break;
         }
     },
     
@@ -444,7 +468,140 @@ const SceneManager = {
             case 'grass': return '#8ccf7e';
             case 'ocean': return '#1a5276';
             case 'desert': return '#f4d03f';
+            case 'snow': return '#e8f4f8';
             default: return '#8ccf7e';
         }
+    },
+    
+    // ========== 雪地场景 ==========
+    snowflakes: [],
+    snowTrees: [],
+    snowRocks: [],
+    
+    initSnow() {
+        this.snowflakes = [];
+        this.snowTrees = [];
+        this.snowRocks = [];
+        
+        // 生成雪花
+        for (let i = 0; i < 80; i++) {
+            this.snowflakes.push({
+                x: Math.random() * CONFIG.GAME_WIDTH,
+                y: Math.random() * CONFIG.GAME_HEIGHT,
+                size: 2 + Math.random() * 4,
+                speed: 1 + Math.random() * 2,
+                wobble: Math.random() * Math.PI * 2
+            });
+        }
+        
+        // 生成雪松
+        for (let i = 0; i < 12; i++) {
+            this.snowTrees.push({
+                x: Math.random() * CONFIG.GAME_WIDTH,
+                y: Math.random() * CONFIG.GAME_HEIGHT * 2 - CONFIG.GAME_HEIGHT,
+                size: 30 + Math.random() * 25
+            });
+        }
+        
+        // 生成雪堆/岩石
+        for (let i = 0; i < 8; i++) {
+            this.snowRocks.push({
+                x: Math.random() * CONFIG.GAME_WIDTH,
+                y: Math.random() * CONFIG.GAME_HEIGHT * 2 - CONFIG.GAME_HEIGHT,
+                size: 20 + Math.random() * 15
+            });
+        }
+    },
+    
+    updateSnow(scrollSpeed, frameCount) {
+        // 更新雪花
+        this.snowflakes.forEach(sf => {
+            sf.y += sf.speed;
+            sf.x += Math.sin(frameCount * 0.02 + sf.wobble) * 0.5;
+            if (sf.y > CONFIG.GAME_HEIGHT + 10) {
+                sf.y = -10;
+                sf.x = Math.random() * CONFIG.GAME_WIDTH;
+            }
+        });
+        
+        // 更新树
+        this.snowTrees.forEach(t => {
+            t.y += scrollSpeed;
+            if (t.y > CONFIG.GAME_HEIGHT + 100) {
+                t.y = -100;
+                t.x = Math.random() * CONFIG.GAME_WIDTH;
+            }
+        });
+        
+        // 更新雪堆
+        this.snowRocks.forEach(r => {
+            r.y += scrollSpeed;
+            if (r.y > CONFIG.GAME_HEIGHT + 50) {
+                r.y = -50;
+                r.x = Math.random() * CONFIG.GAME_WIDTH;
+            }
+        });
+    },
+    
+    drawSnow(ctx, scrollY, frameCount) {
+        // 雪地背景
+        const gradient = ctx.createLinearGradient(0, 0, 0, CONFIG.GAME_HEIGHT);
+        gradient.addColorStop(0, '#e8f4f8');
+        gradient.addColorStop(1, '#c5dde8');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, CONFIG.GAME_WIDTH, CONFIG.GAME_HEIGHT);
+        
+        // 雪堆
+        this.snowRocks.forEach(r => {
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(r.x, r.y, r.size * 1.2, r.size * 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#d0e8f0';
+            ctx.beginPath();
+            ctx.ellipse(r.x + 5, r.y + 3, r.size * 0.8, r.size * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        
+        // 雪松
+        this.snowTrees.forEach(t => {
+            // 树干
+            ctx.fillStyle = '#5d4037';
+            ctx.fillRect(t.x - 4, t.y - 5, 8, 15);
+            
+            // 树冠（三层）
+            ctx.fillStyle = '#2e7d32';
+            for (let i = 0; i < 3; i++) {
+                const layerY = t.y - 10 - i * (t.size * 0.35);
+                const layerSize = t.size * (1 - i * 0.25);
+                ctx.beginPath();
+                ctx.moveTo(t.x, layerY - layerSize * 0.8);
+                ctx.lineTo(t.x - layerSize * 0.6, layerY);
+                ctx.lineTo(t.x + layerSize * 0.6, layerY);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            // 雪覆盖
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < 3; i++) {
+                const layerY = t.y - 10 - i * (t.size * 0.35);
+                const layerSize = t.size * (1 - i * 0.25);
+                ctx.beginPath();
+                ctx.moveTo(t.x, layerY - layerSize * 0.8);
+                ctx.lineTo(t.x - layerSize * 0.3, layerY - layerSize * 0.5);
+                ctx.lineTo(t.x + layerSize * 0.3, layerY - layerSize * 0.5);
+                ctx.closePath();
+                ctx.fill();
+            }
+        });
+        
+        // 雪花
+        ctx.fillStyle = '#ffffff';
+        this.snowflakes.forEach(sf => {
+            ctx.beginPath();
+            ctx.arc(sf.x, sf.y, sf.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
     }
 };

@@ -15,11 +15,17 @@ const Input = {
         window.addEventListener('keydown', e => {
             this.keys[e.code] = true;
             
-            // ESC 键暂停并打开背包
-            if (e.code === 'Escape' && Game.state === 'PLAYING') {
-                Game.openInventory();
-            } else if (e.code === 'Escape' && Game.state === 'INVENTORY') {
-                Game.closeInventory();
+            // ESC 键处理
+            if (e.code === 'Escape') {
+                if (Game.state === 'PLAYING') {
+                    Game.openSettings();
+                } else if (Game.state === 'SETTINGS') {
+                    Game.closeSettings();
+                } else if (Game.state === 'INVENTORY') {
+                    Game.closeInventory();
+                } else if (Game.state === 'GM') {
+                    GM.closePanel();
+                }
             }
         });
         window.addEventListener('keyup', e => this.keys[e.code] = false);

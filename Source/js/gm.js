@@ -6,12 +6,18 @@ const GM = {
     },
     
     openPanel() {
+        // 保存真正的游戏状态（跳过SETTINGS）
+        if (Game.state !== 'SETTINGS' && Game.state !== 'GM') {
+            this.returnState = Game.state;
+        }
+        Game.state = 'GM';
         document.getElementById('gm-modal').classList.remove('hidden');
         this.render();
     },
     
     closePanel() {
         document.getElementById('gm-modal').classList.add('hidden');
+        Game.state = this.returnState || 'PLAYING';
         // 刷新背包显示
         if (Game.state === 'INVENTORY') {
             Game.renderInventory();
@@ -73,5 +79,11 @@ const GM = {
             Game.updateUI();
             this.render();
         }
+    },
+    
+    addGold(amount) {
+        Game.gold += amount;
+        Game.addFloatingText('+' + amount + ' 💰', Game.player.x, Game.player.y - 30, '#ffd700');
+        Game.updateUI();
     }
 };
