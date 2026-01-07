@@ -301,5 +301,47 @@ const Renderer = {
         this.drawLightPillars();
         this.drawExplosionEffects();
         this.drawFloatingTexts();
+    },
+    
+    // 绘制技能槽 UI
+    drawWandSlots(player) {
+        if (!player || !player.weapon) return;
+        
+        const weapon = player.weapon;
+        const slotSize = 36;
+        const padding = 4;
+        const startX = (CONFIG.GAME_WIDTH - (weapon.slotCount * (slotSize + padding))) / 2;
+        const startY = CONFIG.GAME_HEIGHT - 60;
+        
+        for (let i = 0; i < weapon.slotCount; i++) {
+            const x = startX + i * (slotSize + padding);
+            const y = startY;
+            const slot = weapon.slots[i];
+            
+            CTX.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            CTX.strokeStyle = '#666666';
+            CTX.lineWidth = 1;
+            CTX.fillRect(x, y, slotSize, slotSize);
+            CTX.strokeRect(x, y, slotSize, slotSize);
+            
+            if (slot) {
+                const isActive = slot.type === 'magic';
+                CTX.fillStyle = isActive ? 'rgba(255, 150, 0, 0.3)' : 'rgba(100, 150, 255, 0.3)';
+                CTX.fillRect(x + 2, y + 2, slotSize - 4, slotSize - 4);
+                
+                CTX.font = '20px Arial';
+                CTX.textAlign = 'center';
+                CTX.textBaseline = 'middle';
+                CTX.fillStyle = '#fff';
+                CTX.fillText(slot.icon, x + slotSize / 2, y + slotSize / 2);
+            }
+        }
+        
+        if (weapon.castTimer > 0) {
+            CTX.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            CTX.font = '14px Arial';
+            CTX.textAlign = 'center';
+            CTX.fillText('CD', CONFIG.GAME_WIDTH / 2, startY - 10);
+        }
     }
 };

@@ -478,28 +478,27 @@
     </div>
 
     <script>
-        // 模拟加载进度
-        const loadingBar = document.querySelector('.loading-bar');
-        const loadingText = document.querySelector('.loading-text');
-        let progress = 0;
-        
-        const loadingInterval = setInterval(() => {
-            progress += Math.random() * 15 + 5;
-            if (progress >= 100) {
-                progress = 100;
-                clearInterval(loadingInterval);
-                loadingText.textContent = '加载完成!';
+        // 加载进度动画
+        (function() {
+            const bar = document.querySelector('.loading-bar');
+            const text = document.querySelector('.loading-text');
+            let progress = 0;
+            
+            const tick = setInterval(() => {
+                progress = Math.min(100, progress + Math.random() * 15 + 5);
+                bar.style.width = progress + '%';
+                text.textContent = progress >= 100 ? '加载完成!' : '正在加载... ' + Math.floor(progress) + '%';
                 
-                setTimeout(() => {
-                    document.getElementById('loading-screen').classList.add('fade-out');
+                if (progress >= 100) {
+                    clearInterval(tick);
                     setTimeout(() => {
-                        document.getElementById('loading-screen').style.display = 'none';
-                    }, 500);
-                }, 300);
-            }
-            loadingBar.style.width = progress + '%';
-            loadingText.textContent = '正在加载... ' + Math.floor(progress) + '%';
-        }, 100);
+                        const screen = document.getElementById('loading-screen');
+                        screen.classList.add('fade-out');
+                        setTimeout(() => screen.style.display = 'none', 500);
+                    }, 300);
+                }
+            }, 100);
+        })();
     </script>
     
     <!-- 加载所有游戏脚本 -->
@@ -534,6 +533,7 @@
     <script src="js/ui/screens/skill-preload-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/gm-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/weapon-drop-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/loading-screen.js?v=__BUILD_TIME__"></script>
     
     <!-- 场景系统 -->
     <script src="js/scenes/scene-element.js?v=__BUILD_TIME__"></script>

@@ -9,7 +9,6 @@ const Game = {
     gems: [],
     projectiles: [],
     skillDrops: [],
-    sceneElements: [],
     
     // 游戏状态
     frameCount: 0,
@@ -230,7 +229,6 @@ const Game = {
         
         // 设置场景
         Scene.Manager.setScene(config.map);
-        this.generateSceneElements();
         
         // 显示HUD
         document.getElementById('hud')?.classList.remove('hidden');
@@ -246,7 +244,6 @@ const Game = {
         this.gems = [];
         this.projectiles = [];
         this.skillDrops = [];
-        this.sceneElements = [];
         this.gold = 0;
         this.frameCount = 0;
         this.time = 0;
@@ -312,8 +309,8 @@ const Game = {
             this.enemies.push(enemy);
         }
         
-        // 更新场景元素
-        this.updateSceneElements();
+        // 更新场景
+        Scene.Manager.update(this.frameCount, this.player);
         
         // 更新特效
         Renderer.updateEffects();
@@ -475,15 +472,8 @@ const Game = {
     draw() {
         if (!CTX) return;
         
-        // 清空画布
-        CTX.fillStyle = Scene.Manager.getBackgroundColor();
-        CTX.fillRect(0, 0, CANVAS.width, CANVAS.height);
-        
-        // 绘制背景
-        this.drawBackground();
-        
-        // 绘制场景元素
-        this.drawSceneElements();
+        // 绘制场景（背景 + 元素 + 粒子）
+        Scene.Manager.draw(CTX, cameraX, cameraY, CONFIG.GAME_WIDTH, CONFIG.GAME_HEIGHT, this.frameCount);
         
         if (!this.player) return;
         
@@ -515,294 +505,10 @@ const Game = {
         Renderer.drawExplosionEffects();
         
         // 绘制技能槽UI
-        this.drawWandSlots();
+        Renderer.drawWandSlots(this.player);
         
         // 绘制浮动文字
         Renderer.drawFloatingTexts();
-    },
-    
-    // 绘制背景
-    drawBackground() {
-        const scene = Scene.Manager.currentScene;
-        const gridSize = 100;
-        const startX = Math.floor(cameraX / gridSize) * gridSize;
-        const startY = Math.floor(cameraY / gridSize) * gridSize;
-        
-        if (scene === 'grass' || scene === 'forest') {
-            CTX.fillStyle = '#83c276';
-            for (let x = startX; x < cameraX + CONFIG.GAME_WIDTH + gridSize; x += gridSize) {
-                for (let y = startY; y < cameraY + CONFIG.GAME_HEIGHT + gridSize; y += gridSize) {
-                    if ((Math.floor(x / gridSize) + Math.floor(y / gridSize)) % 2 === 0) {
-                        CTX.fillRect(x - cameraX, y - cameraY, gridSize / 2, gridSize / 2);
-                    }
-                }
-            }
-        } else if (scene === 'ocean') {
-            CTX.strokeStyle = 'rgba(255,255,255,0.1)';
-            CTX.lineWidth = 2;
-            for (let y = startY; y < cameraY + CONFIG.GAME_HEIGHT + gridSize; y += gridSize) {
-                CTX.beginPath();
-                for (let x = startX; x < cameraX + CONFIG.GAME_WIDTH + gridSize; x += 20) {
-                    const waveY = y + Math.sin((x + this.frameCount * 2) * 0.02) * 10;
-                    if (x === startX) {
-                        CTX.moveTo(x - cameraX, waveY - cameraY);
-                    } else {
-                        CTX.lineTo(x - cameraX, waveY - cameraY);
-                    }
-                }
-                CTX.stroke();
-            }
-        } else if (scene === 'desert') {
-            CTX.strokeStyle = 'rgba(0,0,0,0.1)';
-            CTX.lineWidth = 1;
-            for (let x = startX; x < cameraX + CONFIG.GAME_WIDTH + gridSize; x += gridSize) {
-                CTX.beginPath();
-                CTX.moveTo(x - cameraX, 0);
-                CTX.lineTo(x - cameraX, CONFIG.GAME_HEIGHT);
-                CTX.stroke();
-            }
-            for (let y = startY; y < cameraY + CONFIG.GAME_HEIGHT + gridSize; y += gridSize) {
-                CTX.beginPath();
-                CTX.moveTo(0, y - cameraY);
-                CTX.lineTo(CONFIG.GAME_WIDTH, y - cameraY);
-                CTX.stroke();
-            }
-        }
-    },
-    
-    // 生成场景元素
-    generateSceneElements() {
-        this.sceneElements = [];
-        const range = 1500;
-        const count = 40;
-        
-        for (let i = 0; i < count; i++) {
-            this.sceneElements.push(this.createSceneElement(
-                this.player.x + (Math.random() - 0.5) * range * 2,
-                this.player.y + (Math.random() - 0.5) * range * 2
-            ));
-        }
-    },
-    
-    // 创建场景元素
-    createSceneElement(x, y) {
-        const scene = Scene.Manager.currentScene;
-        
-        if (scene === 'grass' || scene === 'forest') {
-            return {
-                x, y,
-                type: Math.random() > 0.3 ? 'tree' : 'rock',
-                size: 25 + Math.random() * 20
-            };
-        } else if (scene === 'ocean') {
-            return {
-                x, y,
-                type: 'seaweed',
-                height: 60 + Math.random() * 40,
-                phase: Math.random() * Math.PI * 2
-            };
-        } else if (scene === 'desert') {
-            return {
-                x, y,
-                type: Math.random() > 0.5 ? 'cactus' : 'dune',
-                size: 20 + Math.random() * 15,
-                width: 150 + Math.random() * 100,
-                height: 30 + Math.random() * 20
-            };
-        } else if (scene === 'snow') {
-            const rand = Math.random();
-            if (rand > 0.6) {
-                return { x, y, type: 'pine', size: 30 + Math.random() * 25 };
-            } else if (rand > 0.3) {
-                return { x, y, type: 'snowpile', size: 20 + Math.random() * 15 };
-            } else {
-                return { x, y, type: 'icerock', size: 15 + Math.random() * 20 };
-            }
-        }
-        return { x, y, type: 'tree', size: 30 };
-    },
-    
-    // 更新场景元素
-    updateSceneElements() {
-        const range = 1000;
-        this.sceneElements = this.sceneElements.filter(el => {
-            return Collision.distance(el.x, el.y, this.player.x, this.player.y) < range * 1.5;
-        });
-        
-        while (this.sceneElements.length < 40) {
-            const angle = Math.random() * Math.PI * 2;
-            const dist = range * 0.8 + Math.random() * range * 0.4;
-            this.sceneElements.push(this.createSceneElement(
-                this.player.x + Math.cos(angle) * dist,
-                this.player.y + Math.sin(angle) * dist
-            ));
-        }
-    },
-
-    // 绘制场景元素
-    drawSceneElements() {
-        const scene = Scene.Manager.currentScene;
-        
-        this.sceneElements.forEach(el => {
-            const x = el.x - cameraX;
-            const y = el.y - cameraY;
-            
-            if (x < -100 || x > CONFIG.GAME_WIDTH + 100 || y < -100 || y > CONFIG.GAME_HEIGHT + 100) return;
-            
-            if (scene === 'grass' || scene === 'forest') {
-                if (el.type === 'tree') {
-                    CTX.fillStyle = 'rgba(0,0,0,0.2)';
-                    CTX.beginPath();
-                    CTX.arc(x, y + 10, el.size, 0, Math.PI * 2);
-                    CTX.fill();
-                    CTX.fillStyle = '#8d6e63';
-                    CTX.fillRect(x - 5, y - 10, 10, 20);
-                    CTX.fillStyle = '#4caf50';
-                    CTX.beginPath();
-                    CTX.arc(x, y - 20, el.size, 0, Math.PI * 2);
-                    CTX.fill();
-                    CTX.fillStyle = '#66bb6a';
-                    CTX.beginPath();
-                    CTX.arc(x - 5, y - 25, el.size * 0.7, 0, Math.PI * 2);
-                    CTX.fill();
-                } else {
-                    CTX.fillStyle = 'rgba(0,0,0,0.2)';
-                    CTX.beginPath();
-                    CTX.arc(x, y + 5, el.size * 0.8, 0, Math.PI * 2);
-                    CTX.fill();
-                    CTX.fillStyle = '#9e9e9e';
-                    CTX.beginPath();
-                    CTX.moveTo(x - el.size, y);
-                    CTX.lineTo(x, y - el.size);
-                    CTX.lineTo(x + el.size, y);
-                    CTX.lineTo(x, y + el.size * 0.6);
-                    CTX.fill();
-                }
-            } else if (scene === 'ocean') {
-                CTX.strokeStyle = '#2e7d32';
-                CTX.lineWidth = 4;
-                CTX.beginPath();
-                CTX.moveTo(x, y + el.height);
-                const segments = 5;
-                for (let i = 0; i <= segments; i++) {
-                    const t = i / segments;
-                    const waveOffset = Math.sin(this.frameCount * 0.03 + el.phase + t * 3) * 15 * t;
-                    CTX.lineTo(x + waveOffset, y + el.height * (1 - t));
-                }
-                CTX.stroke();
-            } else if (scene === 'desert') {
-                if (el.type === 'cactus') {
-                    CTX.fillStyle = '#2d5a27';
-                    CTX.fillRect(x - 5, y - el.size, 10, el.size);
-                    CTX.fillRect(x - 15, y - el.size * 0.7, 10, el.size * 0.4);
-                    CTX.fillRect(x + 5, y - el.size * 0.5, 10, el.size * 0.3);
-                } else {
-                    CTX.fillStyle = '#c9a227';
-                    CTX.beginPath();
-                    CTX.ellipse(x, y, el.width, el.height, 0, 0, Math.PI * 2);
-                    CTX.fill();
-                }
-            } else if (scene === 'snow') {
-                if (el.type === 'pine') {
-                    CTX.fillStyle = 'rgba(0,0,0,0.15)';
-                    CTX.beginPath();
-                    CTX.ellipse(x, y + 5, el.size * 0.5, el.size * 0.2, 0, 0, Math.PI * 2);
-                    CTX.fill();
-                    CTX.fillStyle = '#5d4037';
-                    CTX.fillRect(x - 4, y - 8, 8, 18);
-                    for (let i = 0; i < 3; i++) {
-                        const layerY = y - 12 - i * (el.size * 0.35);
-                        const layerSize = el.size * (1 - i * 0.2);
-                        CTX.fillStyle = '#1b5e20';
-                        CTX.beginPath();
-                        CTX.moveTo(x, layerY - layerSize * 0.7);
-                        CTX.lineTo(x - layerSize * 0.5, layerY);
-                        CTX.lineTo(x + layerSize * 0.5, layerY);
-                        CTX.closePath();
-                        CTX.fill();
-                        CTX.fillStyle = '#e8f4ff';
-                        CTX.beginPath();
-                        CTX.moveTo(x, layerY - layerSize * 0.7);
-                        CTX.lineTo(x - layerSize * 0.25, layerY - layerSize * 0.4);
-                        CTX.lineTo(x + layerSize * 0.25, layerY - layerSize * 0.4);
-                        CTX.closePath();
-                        CTX.fill();
-                    }
-                } else if (el.type === 'snowpile') {
-                    CTX.fillStyle = '#d8e8f0';
-                    CTX.beginPath();
-                    CTX.ellipse(x, y, el.size * 1.2, el.size * 0.5, 0, 0, Math.PI * 2);
-                    CTX.fill();
-                    CTX.fillStyle = '#e8f4ff';
-                    CTX.beginPath();
-                    CTX.ellipse(x - 3, y - 2, el.size * 0.8, el.size * 0.35, 0, 0, Math.PI * 2);
-                    CTX.fill();
-                } else if (el.type === 'icerock') {
-                    CTX.fillStyle = 'rgba(0,0,0,0.1)';
-                    CTX.beginPath();
-                    CTX.ellipse(x, y + 3, el.size * 0.7, el.size * 0.3, 0, 0, Math.PI * 2);
-                    CTX.fill();
-                    CTX.fillStyle = '#8ab4c4';
-                    CTX.beginPath();
-                    CTX.moveTo(x - el.size * 0.8, y);
-                    CTX.lineTo(x - el.size * 0.3, y - el.size * 0.7);
-                    CTX.lineTo(x + el.size * 0.4, y - el.size * 0.5);
-                    CTX.lineTo(x + el.size * 0.7, y);
-                    CTX.lineTo(x, y + el.size * 0.3);
-                    CTX.closePath();
-                    CTX.fill();
-                    CTX.fillStyle = 'rgba(255,255,255,0.5)';
-                    CTX.beginPath();
-                    CTX.moveTo(x - el.size * 0.2, y - el.size * 0.4);
-                    CTX.lineTo(x + el.size * 0.1, y - el.size * 0.3);
-                    CTX.lineTo(x, y - el.size * 0.1);
-                    CTX.closePath();
-                    CTX.fill();
-                }
-            }
-        });
-    },
-    
-    // 绘制技能槽
-    drawWandSlots() {
-        if (!this.player || !this.player.wand) return;
-        
-        const wand = this.player.wand;
-        const slotSize = 36;
-        const padding = 4;
-        const startX = (CONFIG.GAME_WIDTH - (wand.slotCount * (slotSize + padding))) / 2;
-        const startY = CONFIG.GAME_HEIGHT - 60;
-        
-        for (let i = 0; i < wand.slotCount; i++) {
-            const x = startX + i * (slotSize + padding);
-            const y = startY;
-            const slot = wand.slots[i];
-            
-            CTX.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            CTX.strokeStyle = '#666666';
-            CTX.lineWidth = 1;
-            CTX.fillRect(x, y, slotSize, slotSize);
-            CTX.strokeRect(x, y, slotSize, slotSize);
-            
-            if (slot) {
-                const isActive = slot.type === 'active';
-                CTX.fillStyle = isActive ? 'rgba(255, 150, 0, 0.3)' : 'rgba(100, 150, 255, 0.3)';
-                CTX.fillRect(x + 2, y + 2, slotSize - 4, slotSize - 4);
-                
-                CTX.font = '20px Arial';
-                CTX.textAlign = 'center';
-                CTX.textBaseline = 'middle';
-                CTX.fillStyle = '#fff';
-                CTX.fillText(slot.icon, x + slotSize / 2, y + slotSize / 2);
-            }
-        }
-        
-        if (wand.cooldownTimer > 0) {
-            CTX.fillStyle = 'rgba(255, 255, 255, 0.7)';
-            CTX.font = '14px Arial';
-            CTX.textAlign = 'center';
-            CTX.fillText('CD', CONFIG.GAME_WIDTH / 2, startY - 10);
-        }
     },
     
     // ========== 游戏逻辑 ==========
