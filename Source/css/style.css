@@ -476,6 +476,20 @@ body {
     font-size: 24px;
 }
 
+/* 技能能量消耗显示 */
+.skill-cost {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    color: #66aaff;
+    background: rgba(0,0,0,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
 /* 背包物品 - 格子样式 */
 .inventory-grid {
     display: grid;
@@ -2622,33 +2636,12 @@ body {
     background: rgba(255,255,255,0.2);
 }
 
-/* ========== 能量条UI ========== */
-#energy-bar-container {
+/* ========== 武器信息行（武器+能量条） ========== */
+.weapon-info-row {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-top: 5px;
-}
-
-#energy-bar-bg {
-    width: 200px;
-    height: 16px;
-    background: rgba(0,0,0,0.5);
-    border-radius: 8px;
-    overflow: hidden;
-    border: 2px solid rgba(100,150,255,0.5);
-}
-
-#energy-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #4488cc, #66aaff);
-    transition: width 0.1s;
-}
-
-#energy-text {
-    font-size: 12px;
-    color: #66aaff;
-    min-width: 60px;
 }
 
 /* 武器信息显示 */
@@ -2659,7 +2652,6 @@ body {
     padding: 5px 10px;
     background: rgba(0,0,0,0.3);
     border-radius: 8px;
-    margin-top: 5px;
 }
 
 .weapon-info-icon {
@@ -2669,6 +2661,34 @@ body {
 .weapon-info-name {
     font-size: 12px;
     color: #ffd700;
+}
+
+/* 武器能量条（在武器信息右侧） */
+#weapon-energy-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#weapon-energy-bar-bg {
+    width: 150px;
+    height: 16px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid rgba(100,150,255,0.5);
+}
+
+#weapon-energy-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4488cc, #66aaff);
+    transition: width 0.1s;
+}
+
+#weapon-energy-text {
+    font-size: 12px;
+    color: #66aaff;
+    min-width: 50px;
 }
 
 @media (max-width: 768px) {
@@ -2681,8 +2701,14 @@ body {
         width: 90%;
     }
     
-    #energy-bar-bg {
-        width: 100px;
+    #weapon-energy-bar-bg {
+        width: 80px;
+    }
+    
+    .weapon-info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
     }
 }
 
@@ -2702,8 +2728,13 @@ body {
 
 .weapon-slots-container {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     justify-content: center;
+}
+
+.weapon-slot-wrapper {
+    display: flex;
+    align-items: center;
 }
 
 .weapon-slot {

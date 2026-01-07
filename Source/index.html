@@ -45,15 +45,17 @@
                             </div>
                             <div id="level-text">Lv.1</div>
                         </div>
-                        <div id="energy-bar-container">
-                            <div id="energy-bar-bg">
-                                <div id="energy-bar-fill"></div>
+                        <div class="weapon-info-row">
+                            <div class="weapon-info-display">
+                                <span class="weapon-info-icon" id="weapon-icon">🪄</span>
+                                <span class="weapon-info-name" id="weapon-name">学徒法杖</span>
                             </div>
-                            <div id="energy-text">100/100</div>
-                        </div>
-                        <div class="weapon-info-display">
-                            <span class="weapon-info-icon" id="weapon-icon">🪄</span>
-                            <span class="weapon-info-name" id="weapon-name">学徒法杖</span>
+                            <div id="weapon-energy-bar-container">
+                                <div id="weapon-energy-bar-bg">
+                                    <div id="weapon-energy-bar-fill"></div>
+                                </div>
+                                <div id="weapon-energy-text">100/100</div>
+                            </div>
                         </div>
                     </div>
                     <div class="hud-right">
@@ -200,7 +202,7 @@
             <div id="weapon-select-modal" class="screen hidden">
                 <div class="modal-container">
                     <div class="modal-header">
-                        <h2>🔮 选择初始武器</h2>
+                        <h2>🔮 选择初始魔法</h2>
                         <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
                     </div>
                     <div class="weapon-select-grid" id="weapon-select-grid"></div>

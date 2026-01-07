@@ -61,19 +61,14 @@ class Player extends Entity {
         this.projSpeed = 1;
         this.knockback = 1;
 
-        // 角色特性 + 初始技能
+        // 角色特性（不再设置初始技能，由 startWithConfig 设置）
         if (charType === 'guagua') {
             this.color = COLORS.guagua;
             this.speed = 4.5;
-            // 瓜瓜初始：急速施法 + 火花弹
-            this.wand.slots[0] = { ...MODIFIER_SKILLS.reduce_cooldown, star: 1 };
-            this.wand.slots[1] = { ...MAGIC_SKILLS.spark_bolt, star: 1 };
         } else {
             this.color = COLORS.kuikui;
             this.maxHp = 120;
             this.hp = 120;
-            // 葵葵初始：火球术
-            this.wand.slots[0] = { ...MAGIC_SKILLS.fireball, star: 1 };
         }
 
         this.facingRight = true;

@@ -114,10 +114,9 @@ const Game = {
         // 应用难度修正
         this.applyDifficulty(config.difficulty);
         
-        // 设置初始武器
+        // 设置初始魔法（直接装备到第一个槽位）
         if (config.weapon && MAGIC_SKILLS[config.weapon]) {
-            this.player.wand.addSkillToInventory(config.weapon, 1);
-            this.player.wand.equipSkill(0, 0);
+            this.player.wand.slots[0] = { ...MAGIC_SKILLS[config.weapon], star: 1 };
         }
         
         this.enemies = [];
@@ -273,6 +272,9 @@ const Game = {
         if (this.player.hp <= 0) {
             this.gameOver();
         }
+        
+        // 实时更新武器能量条
+        this.updateWeaponEnergyBar();
 
         // 更新屏幕震动
         if (this.shakeDuration > 0) {
@@ -809,6 +811,18 @@ const Game = {
     addFloatingText(text, x, y, color) {
         this.floatingTexts.push({ text, x, y, color, life: 40 });
     },
+    
+    // 实时更新武器能量条（每帧调用）
+    updateWeaponEnergyBar() {
+        if (this.player && this.player.weapon) {
+            const weapon = this.player.weapon;
+            const energyPct = (weapon.energy / weapon.maxEnergy) * 100;
+            const energyFill = document.getElementById('weapon-energy-bar-fill');
+            const energyText = document.getElementById('weapon-energy-text');
+            if (energyFill) energyFill.style.width = energyPct + '%';
+            if (energyText) energyText.innerText = `${Math.floor(weapon.energy)}/${weapon.maxEnergy}`;
+        }
+    },
 
     updateUI() {
         const hpPct = Math.max(0, (this.player.hp / this.player.maxHp) * 100);
@@ -826,8 +840,8 @@ const Game = {
         if (this.player.weapon) {
             const weapon = this.player.weapon;
             const energyPct = (weapon.energy / weapon.maxEnergy) * 100;
-            document.getElementById('energy-bar-fill').style.width = energyPct + '%';
-            document.getElementById('energy-text').innerText = `${Math.floor(weapon.energy)}/${weapon.maxEnergy}`;
+            document.getElementById('weapon-energy-bar-fill').style.width = energyPct + '%';
+            document.getElementById('weapon-energy-text').innerText = `${Math.floor(weapon.energy)}/${weapon.maxEnergy}`;
             document.getElementById('weapon-icon').innerText = weapon.icon;
             document.getElementById('weapon-name').innerText = weapon.name;
         }
@@ -837,6 +851,17 @@ const Game = {
         const m = Math.floor(sec / 60).toString().padStart(2, '0');
         const s = (sec % 60).toString().padStart(2, '0');
         return `${m}:${s}`;
+    },
+    
+    // 获取稀有度名称
+    getRarityName(rarity) {
+        const names = {
+            common: '普通',
+            uncommon: '优秀',
+            rare: '稀有',
+            epic: '史诗'
+        };
+        return names[rarity] || rarity;
     },
 
     // 暂停菜单 - ESC直接打开背包
@@ -1019,12 +1044,14 @@ const Game = {
             
             if (slot) {
                 const star = slot.star || 1;
+                const cost = SKILL_COSTS[slot.id] || 0;
                 div.classList.add('has-skill');
                 div.classList.add(slot.type === 'magic' ? 'magic-type' : 'modifier-type');
                 if (star >= 2) div.classList.add(`star-${star}`);
                 const starText = '⭐'.repeat(star);
-                div.innerHTML = `<span class="slot-index">${i + 1}</span><span class="slot-icon">${slot.icon}</span><span class="star-badge">${starText}</span>`;
-                div.title = `${slot.name} (${star}星)\n${slot.desc || ''}`;
+                const costText = cost > 0 ? `<span class="skill-cost">⚡${cost}</span>` : '';
+                div.innerHTML = `<span class="slot-index">${i + 1}</span><span class="slot-icon">${slot.icon}</span><span class="star-badge">${starText}</span>${costText}`;
+                div.title = `${slot.name} (${star}星)\n${slot.desc || ''}\n能量消耗: ${cost}`;
             } else {
                 div.innerHTML = `<span class="slot-index">${i + 1}</span>`;
             }
@@ -1087,14 +1114,16 @@ const Game = {
         // 先渲染已有物品
         wand.inventory.forEach((skill, idx) => {
             const star = skill.star || 1;
+            const cost = SKILL_COSTS[skill.id] || 0;
             const div = document.createElement('div');
             div.className = 'inventory-item ' + (skill.type === 'magic' ? 'magic-type' : 'modifier-type');
             if (star >= 2) div.classList.add(`star-${star}`);
             div.draggable = true;
             div.dataset.inventoryIndex = idx;
             const starText = '⭐'.repeat(star);
-            div.innerHTML = `<span class="item-icon">${skill.icon}</span><span class="star-badge">${starText}</span>`;
-            div.title = `${skill.name} (${star}星)\n${skill.desc || ''}`;
+            const costText = cost > 0 ? `<span class="skill-cost">⚡${cost}</span>` : '';
+            div.innerHTML = `<span class="item-icon">${skill.icon}</span><span class="star-badge">${starText}</span>${costText}`;
+            div.title = `${skill.name} (${star}星)\n${skill.desc || ''}\n能量消耗: ${cost}`;
             
             // 拖拽事件 - 背包物品拖出
             div.ondragstart = (e) => {
@@ -1244,27 +1273,65 @@ const Game = {
         for (let i = 0; i < player.weaponSlots.length; i++) {
             const weapon = player.weaponSlots[i];
             const div = document.createElement('div');
-            div.className = 'weapon-slot';
-            div.dataset.slotIndex = i;
+            div.className = 'weapon-slot-wrapper';
+            
+            const slotDiv = document.createElement('div');
+            slotDiv.className = 'weapon-slot';
+            slotDiv.dataset.slotIndex = i;
             
             if (weapon) {
-                div.classList.add(`rarity-${weapon.rarity}`);
+                slotDiv.classList.add(`rarity-${weapon.rarity}`);
                 if (i === player.currentWeaponIndex) {
-                    div.classList.add('active');
+                    slotDiv.classList.add('active');
                 }
-                div.innerHTML = `
+                slotDiv.innerHTML = `
                     <span class="weapon-slot-index">${i + 1}</span>
                     <span class="weapon-slot-icon">${weapon.icon}</span>
                     <span class="weapon-slot-name">${weapon.name}</span>
                 `;
-                div.title = `${weapon.name}\n能量: ${weapon.maxEnergy}\n槽位: ${weapon.slotCount}`;
+                
+                // 构建详细的 tooltip
+                const castIntervalSec = (weapon.getCastInterval() / 60).toFixed(2);
+                let tooltipText = `【${weapon.name}】\n`;
+                tooltipText += `稀有度: ${this.getRarityName(weapon.rarity)}\n`;
+                tooltipText += `─────────\n`;
+                tooltipText += `⚡ 能量: ${Math.floor(weapon.energy)}/${weapon.maxEnergy}\n`;
+                tooltipText += `💧 回复: ${weapon.getEnergyRegen().toFixed(1)}/秒\n`;
+                tooltipText += `⏱️ 攻击间隔: ${castIntervalSec}秒\n`;
+                tooltipText += `🔮 技能槽: ${weapon.slotCount}个\n`;
+                
+                // 词条
+                if (weapon.affixes && weapon.affixes.length > 0) {
+                    tooltipText += `─────────\n`;
+                    weapon.affixes.forEach(affix => {
+                        const def = WEAPON_AFFIXES[affix.id];
+                        if (def) {
+                            const desc = def.desc.replace('{value}', affix.value);
+                            tooltipText += `✦ ${desc}\n`;
+                        }
+                    });
+                }
+                
+                // 特殊槽
+                if (weapon.specialSlot) {
+                    const trigger = SPECIAL_TRIGGERS[weapon.specialSlot.trigger];
+                    if (trigger) {
+                        tooltipText += `─────────\n`;
+                        const triggerDesc = trigger.desc.replace('{value}', weapon.specialSlot.value);
+                        tooltipText += `⚡ 特殊槽(${weapon.specialSlot.slots}): ${triggerDesc}`;
+                    }
+                }
+                
+                slotDiv.title = tooltipText;
+                div.appendChild(slotDiv);
             } else {
-                div.classList.add('empty');
-                div.innerHTML = `<span class="weapon-slot-index">${i + 1}</span><span class="weapon-slot-icon">+</span>`;
+                slotDiv.classList.add('empty');
+                slotDiv.innerHTML = `<span class="weapon-slot-index">${i + 1}</span><span class="weapon-slot-icon">+</span>`;
+                div.appendChild(slotDiv);
             }
             
             // 点击切换武器
-            div.onclick = () => {
+            slotDiv.onclick = () => {
                 if (weapon) {
                     player.switchWeapon(i);
                     this.renderInventory();
@@ -1272,11 +1339,11 @@ const Game = {
             };
             
             // 拖拽接收
-            div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over'); };
-            div.ondragleave = () => div.classList.remove('drag-over');
-            div.ondrop = (e) => {
+            slotDiv.ondragover = (e) => { e.preventDefault(); slotDiv.classList.add('drag-over'); };
+            slotDiv.ondragleave = () => slotDiv.classList.remove('drag-over');
+            slotDiv.ondrop = (e) => {
                 e.preventDefault();
-                div.classList.remove('drag-over');
+                slotDiv.classList.remove('drag-over');
                 const type = e.dataTransfer.getData('type');
                 
                 if (type === 'weaponInventory') {
@@ -1315,7 +1382,40 @@ const Game = {
                 <span class="weapon-inv-icon">${weapon.icon}</span>
                 <span class="weapon-inv-name">${weapon.name}</span>
             `;
-            div.title = `${weapon.name}\n能量: ${weapon.maxEnergy}\n回复: ${weapon.baseEnergyRegen}/s\n槽位: ${weapon.slotCount}`;
+            
+            // 构建详细的 tooltip
+            const castIntervalSec = (weapon.getCastInterval() / 60).toFixed(2);
+            let tooltipText = `【${weapon.name}】\n`;
+            tooltipText += `稀有度: ${this.getRarityName(weapon.rarity)}\n`;
+            tooltipText += `─────────\n`;
+            tooltipText += `⚡ 能量: ${weapon.maxEnergy}\n`;
+            tooltipText += `💧 回复: ${weapon.getEnergyRegen().toFixed(1)}/秒\n`;
+            tooltipText += `⏱️ 攻击间隔: ${castIntervalSec}秒\n`;
+            tooltipText += `🔮 技能槽: ${weapon.slotCount}个\n`;
+            
+            // 词条
+            if (weapon.affixes && weapon.affixes.length > 0) {
+                tooltipText += `─────────\n`;
+                weapon.affixes.forEach(affix => {
+                    const def = WEAPON_AFFIXES[affix.id];
+                    if (def) {
+                        const desc = def.desc.replace('{value}', affix.value);
+                        tooltipText += `✦ ${desc}\n`;
+                    }
+                });
+            }
+            
+            // 特殊槽
+            if (weapon.specialSlot) {
+                const trigger = SPECIAL_TRIGGERS[weapon.specialSlot.trigger];
+                if (trigger) {
+                    tooltipText += `─────────\n`;
+                    const triggerDesc = trigger.desc.replace('{value}', weapon.specialSlot.value);
+                    tooltipText += `⚡ 特殊槽(${weapon.specialSlot.slots}): ${triggerDesc}`;
+                }
+            }
+            
+            div.title = tooltipText;
             
             // 拖拽开始
             div.ondragstart = (e) => {
