@@ -9,6 +9,7 @@ const Input = {
         currentX: 0,
         currentY: 0
     },
+    joystick: null, // 虚拟摇杆DOM元素
     
     init() {
         // 键盘输入
@@ -18,26 +19,28 @@ const Input = {
             // ESC 键处理
             if (e.code === 'Escape') {
                 if (Game.state === 'PLAYING') {
-                    // 游戏中按ESC直接打开背包
                     Game.openPauseMenu();
                 } else if (Game.state === 'INVENTORY') {
-                    // 背包按ESC返回游戏
                     Game.closePauseMenu();
                 } else if (Game.state === 'GM') {
-                    // GM面板按ESC返回背包
                     GM.closePanel();
                 } else if (Game.state === 'SETTINGS') {
-                    // 设置按ESC返回背包
                     Game.closeSettings();
                 }
             }
         });
         window.addEventListener('keyup', e => this.keys[e.code] = false);
         
-        // 触摸输入（虚拟摇杆）
+        // 手机端：创建虚拟摇杆
+        if (isMobile) {
+            this.createJoystick();
+        }
+        
+        // 触摸输入
         const canvas = document.getElementById('gameCanvas');
         
         canvas.addEventListener('touchstart', e => {
+            if (Game.state !== 'PLAYING') return;
             e.preventDefault();
             const touch = e.touches[0];
             this.touch.active = true;
@@ -45,21 +48,75 @@ const Input = {
             this.touch.startY = touch.clientY;
             this.touch.currentX = touch.clientX;
             this.touch.currentY = touch.clientY;
+            
+            if (isMobile && this.joystick) {
+                this.showJoystick(touch.clientX, touch.clientY);
+            }
         });
         
         canvas.addEventListener('touchmove', e => {
+            if (Game.state !== 'PLAYING') return;
             e.preventDefault();
             if (this.touch.active) {
                 const touch = e.touches[0];
                 this.touch.currentX = touch.clientX;
                 this.touch.currentY = touch.clientY;
+                
+                if (isMobile && this.joystick) {
+                    this.updateJoystick();
+                }
             }
         });
         
         canvas.addEventListener('touchend', e => {
             e.preventDefault();
             this.touch.active = false;
+            
+            if (isMobile && this.joystick) {
+                this.hideJoystick();
+            }
         });
+    },
+    
+    createJoystick() {
+        // 摇杆容器
+        const joystick = document.createElement('div');
+        joystick.id = 'virtual-joystick';
+        joystick.innerHTML = `
+            <div class="joystick-base"></div>
+            <div class="joystick-stick"></div>
+        `;
+        document.getElementById('ui-layer').appendChild(joystick);
+        this.joystick = joystick;
+        this.joystickStick = joystick.querySelector('.joystick-stick');
+    },
+    
+    showJoystick(x, y) {
+        this.joystick.style.display = 'block';
+        this.joystick.style.left = (x - 60) + 'px';
+        this.joystick.style.top = (y - 60) + 'px';
+        this.joystickStick.style.transform = 'translate(-50%, -50%)';
+    },
+    
+    updateJoystick() {
+        const deltaX = this.touch.currentX - this.touch.startX;
+        const deltaY = this.touch.currentY - this.touch.startY;
+        const maxDist = 40;
+        const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        let moveX = deltaX;
+        let moveY = deltaY;
+        
+        if (dist > maxDist) {
+            moveX = (deltaX / dist) * maxDist;
+            moveY = (deltaY / dist) * maxDist;
+        }
+        
+        this.joystickStick.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
+    },
+    
+    hideJoystick() {
+        this.joystick.style.display = 'none';
     },
     
     getAxis() {

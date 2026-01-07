@@ -1,5 +1,9 @@
 // --- 游戏配置和常量 (类幸存者风格) ---
 
+// 平台检测
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+    || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+
 const CONFIG = {
     // 游戏区域会动态适应屏幕
     GAME_WIDTH: 1920,
