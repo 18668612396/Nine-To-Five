@@ -66,9 +66,14 @@ const GM = {
     },
     
     addSkill(skillId) {
-        if (Game.player.wand.addSkillToInventory(skillId)) {
-            const skill = ALL_SKILLS[skillId];
+        const skill = ALL_SKILLS[skillId];
+        if (skill) {
+            Game.player.skillInventory.push({ ...skill, star: 1 });
             Game.addFloatingText('+' + skill.name, Game.player.x, Game.player.y - 30, '#00ff00');
+            // 如果背包界面打开，刷新显示
+            if (Game.state === 'INVENTORY') {
+                Game.renderInventory();
+            }
         }
     },
     

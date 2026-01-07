@@ -40,6 +40,9 @@ class Player extends Entity {
         this.currentWeaponIndex = 0;
         this.weaponInventory = []; // 武器背包
         
+        // 共享技能背包（所有武器共用）
+        this.skillInventory = [];
+        
         // 初始武器
         const starterWeapon = new Weapon(WEAPON_TEMPLATES.apprentice_wand, []);
         this.weaponSlots[0] = starterWeapon;

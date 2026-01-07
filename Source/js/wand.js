@@ -548,6 +548,7 @@ class Weapon {
         let nearest = null;
         let minDist = 800;
 
+        // 遍历普通敌人
         Game.enemies.forEach(e => {
             const dist = Math.sqrt((e.x - player.x) ** 2 + (e.y - player.y) ** 2);
             if (dist < minDist) {
@@ -555,6 +556,19 @@ class Weapon {
                 nearest = e;
             }
         });
+        
+        // 遍历Boss（优先攻击更近的目标）
+        if (typeof BossManager !== 'undefined' && BossManager.bosses) {
+            BossManager.bosses.forEach(boss => {
+                if (!boss.markedForDeletion) {
+                    const dist = Math.sqrt((boss.x - player.x) ** 2 + (boss.y - player.y) ** 2);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        nearest = boss;
+                    }
+                }
+            });
+        }
 
         if (nearest) {
             targetAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);

@@ -222,8 +222,8 @@ const MODIFIER_SKILLS = {
         name: '分裂',
         type: 'modifier',
         icon: '✴️',
-        desc: '消失时分裂3个小弹(30%伤害)',
-        modify: (mods) => { mods.splitOnDeath = true; mods.splitAmount = (mods.splitAmount || 0) + 3; mods.splitDamageMult = 0.3; }
+        desc: '命中敌人后分裂3个小弹(30%伤害)',
+        modify: (mods) => { mods.splitOnHit = true; mods.splitAmount = (mods.splitAmount || 0) + 3; mods.splitDamageMult = 0.3; }
     },
     hover: {
         id: 'hover',
@@ -651,6 +651,7 @@ class SkillProjectile {
         this.reflectCount = mods.reflectCount || 0;
         this.reflectDamageDecay = mods.reflectDamageDecay || 0.8;
         this.splitOnDeath = mods.splitOnDeath || false;
+        this.splitOnHit = mods.splitOnHit || false;
         this.splitAmount = mods.splitAmount || 0;
         this.splitDamageMult = mods.splitDamageMult || 0.3;
         this.hover = mods.hover || false;
@@ -701,6 +702,10 @@ class SkillProjectile {
             this.y = this.caster.y + Math.sin(this.orbitalAngle) * this.orbitalRadius;
             this.duration--;
             if (this.duration <= 0) {
+                // 分裂效果
+                if (this.splitOnDeath && this.splitAmount > 0) {
+                    this.spawnSplitProjectiles();
+                }
                 this.markedForDeletion = true;
             }
             return;
@@ -743,12 +748,24 @@ class SkillProjectile {
     findTarget() {
         let minDist = 500;
         this.target = null;
+        
+        // 遍历普通敌人
         Game.enemies.forEach(e => {
             if (!e.markedForDeletion && !this.hitList.includes(e)) {
                 const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
                 if (dist < minDist) { minDist = dist; this.target = e; }
             }
         });
+        
+        // 遍历Boss
+        if (typeof BossManager !== 'undefined' && BossManager.bosses) {
+            BossManager.bosses.forEach(boss => {
+                if (!boss.markedForDeletion && !this.hitList.includes(boss)) {
+                    const dist = Math.sqrt((boss.x - this.x) ** 2 + (boss.y - this.y) ** 2);
+                    if (dist < minDist) { minDist = dist; this.target = boss; }
+                }
+            });
+        }
     }
 
     getFinalDamage() {
@@ -776,6 +793,12 @@ class SkillProjectile {
         
         // 弹射
         if (this.bounceCount > 0) this.bounceToEnemy(enemy);
+        
+        // 分裂效果（命中时）
+        if (this.splitOnHit && this.splitAmount > 0) {
+            this.spawnSplitProjectiles();
+            Game.spawnParticles(enemy.x, enemy.y, '#ffaaff', 5);
+        }
         
         // 灼烧效果
         if (this.burning && this.burnDamage > 0) {
@@ -1145,7 +1168,10 @@ class SkillDrop {
         if (dist < player.pickupRange) {
             this.x += (dx / dist) * 6; this.y += (dy / dist) * 6;
             if (dist < player.radius + this.radius) {
-                if (player.wand.addSkillToInventory(this.skillId)) {
+                // 添加到共享技能背包
+                const skill = ALL_SKILLS[this.skillId];
+                if (skill) {
+                    player.skillInventory.push({ ...skill, star: 1 });
                     Game.addFloatingText('+' + this.skill.name, this.x, this.y, '#00ff00');
                     this.markedForDeletion = true;
                 }
