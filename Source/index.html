@@ -503,22 +503,189 @@
     </script>
     
     <!-- 加载所有游戏脚本 -->
+    <!-- 核心 -->
     <script src="js/config.js?v=__BUILD_TIME__"></script>
     <script src="js/utils.js?v=__BUILD_TIME__"></script>
-    <script src="js/audio.js?v=__BUILD_TIME__"></script>
     <script src="js/input.js?v=__BUILD_TIME__"></script>
+    <script src="js/core/events.js?v=__BUILD_TIME__"></script>
+    
+    <!-- UI系统 -->
+    <script src="js/ui/ui.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/elements/button.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/elements/label.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/elements/panel.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/elements/progress-bar.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/elements/image.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 界面系统 -->
+    <script src="js/ui/screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/title-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/lobby-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/game-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/gameover-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/inventory-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/settings-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/levelup-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/pause-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/char-select-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/adventure-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/talent-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/collection-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/skill-preload-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/gm-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/weapon-drop-screen.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 场景系统 -->
+    <script src="js/scenes/scene-element.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/elements/tree.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/elements/rock.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/elements/bush.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/elements/snow-tree.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/elements/snow-pile.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/elements/cactus.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/elements/seaweed.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/elements/coral.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/scene.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/types/grass-scene.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/types/snow-scene.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/types/desert-scene.js?v=__BUILD_TIME__"></script>
+    <script src="js/scenes/types/ocean-scene.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 音频系统 -->
+    <script src="js/audio/audio.js?v=__BUILD_TIME__"></script>
+    <script src="js/audio/sounds/shoot.js?v=__BUILD_TIME__"></script>
+    <script src="js/audio/sounds/hit.js?v=__BUILD_TIME__"></script>
+    <script src="js/audio/sounds/kill.js?v=__BUILD_TIME__"></script>
+    <script src="js/audio/sounds/levelup.js?v=__BUILD_TIME__"></script>
+    <script src="js/audio/sounds/pickup.js?v=__BUILD_TIME__"></script>
+    <script src="js/audio/sounds/hurt.js?v=__BUILD_TIME__"></script>
+    <script src="js/audio/sounds/death.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 基类 -->
+    <script src="js/core/entity.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/skill.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/projectile.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 主动技能 -->
+    <script src="js/skills/magic/spark-bolt.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/magic/fireball.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/magic/magic-arrow.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/magic/energy-orb.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/magic/magic-missile.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/magic/flying-sword.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/magic/black-hole.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 被动技能 -->
+    <script src="js/skills/modifiers/scatter.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/homing.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/piercing.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/bouncing.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/damage-plus.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/speed-up.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/explosive.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/lightning-chain.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/reduce-cooldown.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/burn.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/pull.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/thunder.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/poison.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/enlarge.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/reflect.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/split.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/hover.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/light-pillar.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/frenzy.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/rune-hammer.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/modifiers/prism-core.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 祝福 -->
+    <script src="js/skills/perks/extra-hp.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/regeneration.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/vampirism.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/damage-boost.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/attack-speed.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/critical-hit.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/movement-speed.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/greed.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/magnet.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/sacrifice.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/luck.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/arcane-barrier.js?v=__BUILD_TIME__"></script>
+    <script src="js/skills/perks/energy-siphon.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 技能系统入口（兼容层） -->
+    <script src="js/skills/index.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 武器系统 -->
+    <script src="js/weapons/weapon.js?v=__BUILD_TIME__"></script>
+    <script src="js/weapons/generator.js?v=__BUILD_TIME__"></script>
+    <script src="js/weapons/templates/apprentice-wand.js?v=__BUILD_TIME__"></script>
+    <script src="js/weapons/templates/rapid-wand.js?v=__BUILD_TIME__"></script>
+    <script src="js/weapons/templates/power-staff.js?v=__BUILD_TIME__"></script>
+    <script src="js/weapons/templates/trigger-wand.js?v=__BUILD_TIME__"></script>
+    <script src="js/weapons/templates/inferno-rod.js?v=__BUILD_TIME__"></script>
+    <script src="js/weapons/templates/storm-caller.js?v=__BUILD_TIME__"></script>
+    <script src="js/weapons/templates/vampiric-scepter.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 角色绘制（需要在玩家类之前加载） -->
     <script src="js/characters.js?v=__BUILD_TIME__"></script>
-    <script src="js/scenes.js?v=__BUILD_TIME__"></script>
-    <script src="js/weapons.js?v=__BUILD_TIME__"></script>
-    <script src="js/wand.js?v=__BUILD_TIME__"></script>
-    <script src="js/entities.js?v=__BUILD_TIME__"></script>
-    <script src="js/boss.js?v=__BUILD_TIME__"></script>
-    <script src="js/game.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 实体 -->
+    <script src="js/entities/player.js?v=__BUILD_TIME__"></script>
+    <script src="js/entities/players/guagua.js?v=__BUILD_TIME__"></script>
+    <script src="js/entities/players/kuikui.js?v=__BUILD_TIME__"></script>
+    <script src="js/entities/enemy.js?v=__BUILD_TIME__"></script>
+    <script src="js/entities/gem.js?v=__BUILD_TIME__"></script>
+    <script src="js/entities/bosses/boss.js?v=__BUILD_TIME__"></script>
+    <script src="js/entities/bosses/sakura-treant.js?v=__BUILD_TIME__"></script>
+    <script src="js/entities/bosses/lava-golem.js?v=__BUILD_TIME__"></script>
+    <script src="js/entities/bosses/abyssal-eye.js?v=__BUILD_TIME__"></script>
+    <script src="js/entities/bosses/frost-queen.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 游戏系统 -->
+    <script src="js/game/camera.js?v=__BUILD_TIME__"></script>
+    <script src="js/game/renderer.js?v=__BUILD_TIME__"></script>
+    <script src="js/game/collision.js?v=__BUILD_TIME__"></script>
+    <script src="js/game/spawner.js?v=__BUILD_TIME__"></script>
+    <script src="js/game/inventory.js?v=__BUILD_TIME__"></script>
+    <script src="js/game/game.js?v=__BUILD_TIME__"></script>
+    
+    <!-- GM面板 -->
     <script src="js/gm.js?v=__BUILD_TIME__"></script>
-    <script src="js/lobby.js?v=__BUILD_TIME__"></script>
+    
+    <!-- 大厅系统 -->
+    <script src="js/lobby/player-data.js?v=__BUILD_TIME__"></script>
+    <script src="js/lobby/talent.js?v=__BUILD_TIME__"></script>
+    <script src="js/lobby/lobby.js?v=__BUILD_TIME__"></script>
     
     <!-- 初始化游戏 -->
     <script>
+        // 初始化技能系统
+        initSkillRegistry();
+        initSkillCosts();
+        initUpgrades();
+        
+        // 初始化界面系统
+        Screen.Manager.init();
+        
+        // 注册界面实例
+        Screen.Manager.register('title', new TitleScreen());
+        Screen.Manager.register('lobby', new LobbyScreen());
+        Screen.Manager.register('game', new GameScreen());
+        Screen.Manager.register('gameover', new GameOverScreen());
+        Screen.Manager.register('inventory', new InventoryScreen());
+        Screen.Manager.register('settings', new SettingsScreen());
+        Screen.Manager.register('levelUp', new LevelUpScreen());
+        Screen.Manager.register('pause', new PauseScreen());
+        Screen.Manager.register('charSelect', new CharSelectScreen());
+        Screen.Manager.register('adventure', new AdventureScreen());
+        Screen.Manager.register('talent', new TalentScreen());
+        Screen.Manager.register('collection', new CollectionScreen());
+        Screen.Manager.register('skillPreload', new SkillPreloadScreen());
+        Screen.Manager.register('gm', new GMScreen());
+        Screen.Manager.register('weaponDrop', new WeaponDropScreen());
+        
+        // 初始化游戏
         Game.init();
         GM.init();
         Lobby.init();

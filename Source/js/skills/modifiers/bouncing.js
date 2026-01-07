@@ -1,0 +1,22 @@
+// --- 弹射 ---
+
+class BouncingModifier extends ModifierSkill {
+    constructor() {
+        super({
+            id: 'bouncing',
+            name: '弹射',
+            icon: '🔄',
+            desc: '弹射到范围内随机敌人(1星+2次/2星+4次/3星+6次)'
+        });
+    }
+    
+    modify(mods, star) {
+        const bounceValues = { 1: 2, 2: 4, 3: 6 };
+        const rangeValues = { 1: 200, 2: 300, 3: 400 };
+        mods.bounceCount = (mods.bounceCount || 0) + (bounceValues[star] || 2);
+        mods.bounceRange = (mods.bounceRange || 0) + (rangeValues[star] || 200);
+    }
+}
+
+// 注册技能
+SkillRegistry.registerModifier(new BouncingModifier());

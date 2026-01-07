@@ -1,0 +1,20 @@
+// --- 追踪 ---
+
+class HomingModifier extends ModifierSkill {
+    constructor() {
+        super({
+            id: 'homing',
+            name: '追踪',
+            icon: '🎯',
+            desc: '投射物追踪敌人'
+        });
+    }
+    
+    modify(mods, star) {
+        mods.homing = true;
+        mods.turnSpeed = (mods.turnSpeed || 0) + 0.05;
+    }
+}
+
+// 注册技能
+SkillRegistry.registerModifier(new HomingModifier());
