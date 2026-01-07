@@ -83,6 +83,9 @@ class Boss {
     update(player) {
         this.animationFrame++;
         
+        // 更新状态效果（灼烧、中毒等）
+        this.updateStatusEffects();
+        
         // 处理击退
         if (this.knockbackX !== 0 || this.knockbackY !== 0) {
             this.x += this.knockbackX;
@@ -149,10 +152,56 @@ class Boss {
             this.knockbackX += kbX * 0.3; // Boss击退减少
             this.knockbackY += kbY * 0.3;
             Game.addFloatingText('-' + Math.floor(amount), this.x, this.y - this.radius - 10, '#ff4444');
+            
+            // 能量虹吸 - 击中敌人恢复能量
+            if (Game.player && Game.player.energyOnHit > 0 && Game.player.weapon) {
+                Game.player.weapon.energy = Math.min(
+                    Game.player.weapon.maxEnergy,
+                    Game.player.weapon.energy + Game.player.energyOnHit
+                );
+            }
         }
         
         if (this.hp <= 0) {
             this.die();
+        }
+    }
+    
+    // 灼烧效果
+    addBurn(damage, duration) {
+        this.burnDamage = (this.burnDamage || 0) + damage;
+        this.burnDuration = Math.max(this.burnDuration || 0, duration);
+    }
+    
+    // 中毒效果
+    addPoison(stacks) {
+        this.poisonStacks = (this.poisonStacks || 0) + stacks;
+        this.poisonDuration = 300; // 5秒
+    }
+    
+    // 更新状态效果
+    updateStatusEffects() {
+        // 灼烧
+        if (this.burnDuration > 0) {
+            this.burnDuration--;
+            if (Game.frameCount % 30 === 0) { // 每0.5秒
+                this.hp -= this.burnDamage;
+                Game.addFloatingText('-' + Math.floor(this.burnDamage) + '🔥', this.x, this.y - this.radius - 30, '#ff6600');
+                Game.spawnParticles(this.x, this.y, '#ff6600', 3);
+            }
+            if (this.hp <= 0) this.die();
+        }
+        
+        // 中毒
+        if (this.poisonDuration > 0 && this.poisonStacks > 0) {
+            this.poisonDuration--;
+            if (Game.frameCount % 20 === 0) { // 每1/3秒
+                const poisonDmg = this.poisonStacks * 2;
+                this.hp -= poisonDmg;
+                Game.addFloatingText('-' + poisonDmg + '☠️', this.x, this.y - this.radius - 30, '#00ff00');
+                Game.spawnParticles(this.x, this.y, '#00ff00', 2);
+            }
+            if (this.hp <= 0) this.die();
         }
     }
     

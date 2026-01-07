@@ -6,11 +6,15 @@ const Lobby = {
     selectedDifficulty: 'easy',
     selectedMap: 'random',
     
+    // 预装技能槽（最多6个，只能装1星技能）
+    preloadedSkills: [],
+    
     // 玩家数据（持久化）
     playerData: {
         gold: 0,
         talents: {},
-        level: 1
+        level: 1,
+        preloadedSkills: [] // 保存预装技能
     },
     
     // 天赋定义
@@ -20,7 +24,8 @@ const Lobby = {
         speed_boost: { name: '速度强化', icon: '🏃', desc: '移速+3%', cost: 120, maxLevel: 10 },
         crit_boost: { name: '暴击强化', icon: '💢', desc: '暴击+2%', cost: 200, maxLevel: 5 },
         xp_boost: { name: '经验强化', icon: '📚', desc: '经验+10%', cost: 180, maxLevel: 5 },
-        gold_boost: { name: '财富强化', icon: '💰', desc: '金币+15%', cost: 250, maxLevel: 5 }
+        gold_boost: { name: '财富强化', icon: '💰', desc: '金币+15%', cost: 250, maxLevel: 5 },
+        skill_slot: { name: '技能槽位', icon: '📦', desc: '预装技能槽+1', cost: 500, maxLevel: 5 }
     },
     
     animationFrame: 0,
@@ -37,11 +42,17 @@ const Lobby = {
         const saved = localStorage.getItem('kuigua_player');
         if (saved) {
             this.playerData = JSON.parse(saved);
+            // 兼容旧数据
+            if (!this.playerData.preloadedSkills) {
+                this.playerData.preloadedSkills = [];
+            }
         }
+        this.preloadedSkills = [...this.playerData.preloadedSkills];
     },
     
     // 保存玩家数据
     savePlayerData() {
+        this.playerData.preloadedSkills = [...this.preloadedSkills];
         localStorage.setItem('kuigua_player', JSON.stringify(this.playerData));
     },
     
@@ -289,6 +300,120 @@ const Lobby = {
         return bonus;
     },
     
+    // 获取预装技能槽位数量（基础1个 + 天赋加成，最大6个）
+    getPreloadSlotCount() {
+        const talentLevel = this.playerData.talents.skill_slot || 0;
+        return Math.min(6, 1 + talentLevel);
+    },
+    
+    // 显示技能预装界面
+    showSkillPreload() {
+        document.getElementById('skill-preload-modal').classList.remove('hidden');
+        this.renderSkillPreload();
+    },
+    
+    // 渲染技能预装界面
+    renderSkillPreload() {
+        const slotsContainer = document.getElementById('preload-slots');
+        const skillsGrid = document.getElementById('preload-skills-grid');
+        const slotCount = this.getPreloadSlotCount();
+        
+        // 渲染槽位
+        slotsContainer.innerHTML = '';
+        for (let i = 0; i < 6; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'preload-slot' + (i >= slotCount ? ' locked' : '');
+            
+            if (i < slotCount) {
+                const skillId = this.preloadedSkills[i];
+                if (skillId) {
+                    const skillDef = ALL_SKILLS[skillId];
+                    // 判断技能类型并添加对应样式
+                    const isMagic = MAGIC_SKILLS[skillId] !== undefined;
+                    slot.classList.add(isMagic ? 'magic-type' : 'modifier-type');
+                    slot.innerHTML = `<span class="preload-skill-icon">${skillDef?.icon || '?'}</span>`;
+                    slot.title = skillDef?.name || skillId;
+                    slot.onclick = () => this.removePreloadSkill(i);
+                } else {
+                    slot.innerHTML = '<span class="preload-slot-empty">+</span>';
+                }
+            } else {
+                slot.innerHTML = '<span class="preload-slot-locked">🔒</span>';
+                slot.title = '升级天赋"技能槽位"解锁';
+            }
+            slotsContainer.appendChild(slot);
+        }
+        
+        // 渲染可选技能列表（分类显示）
+        skillsGrid.innerHTML = '';
+        
+        // 主动技能区域
+        const magicSection = document.createElement('div');
+        magicSection.className = 'skill-section';
+        magicSection.innerHTML = '<h5 class="skill-section-title">🔥 主动技能</h5>';
+        const magicGrid = document.createElement('div');
+        magicGrid.className = 'skill-section-grid';
+        
+        Object.values(MAGIC_SKILLS).forEach(skill => {
+            const div = this.createSkillItem(skill, slotCount, 'magic');
+            magicGrid.appendChild(div);
+        });
+        magicSection.appendChild(magicGrid);
+        skillsGrid.appendChild(magicSection);
+        
+        // 被动技能区域
+        const modifierSection = document.createElement('div');
+        modifierSection.className = 'skill-section';
+        modifierSection.innerHTML = '<h5 class="skill-section-title">💠 被动技能</h5>';
+        const modifierGrid = document.createElement('div');
+        modifierGrid.className = 'skill-section-grid';
+        
+        Object.values(MODIFIER_SKILLS).forEach(skill => {
+            const div = this.createSkillItem(skill, slotCount, 'modifier');
+            modifierGrid.appendChild(div);
+        });
+        modifierSection.appendChild(modifierGrid);
+        skillsGrid.appendChild(modifierSection);
+    },
+    
+    // 创建技能项
+    createSkillItem(skill, slotCount, type) {
+        const div = document.createElement('div');
+        const isEquipped = this.preloadedSkills.includes(skill.id);
+        const typeClass = type === 'magic' ? 'magic-type' : 'modifier-type';
+        div.className = 'preload-skill-item ' + typeClass + (isEquipped ? ' equipped' : '');
+        div.innerHTML = `<span class="skill-icon">${skill.icon}</span>`;
+        div.title = skill.name + (skill.desc ? ': ' + skill.desc : '');
+        if (!isEquipped && this.preloadedSkills.length < slotCount) {
+            div.onclick = () => this.addPreloadSkill(skill.id);
+        }
+        return div;
+    },
+    
+    // 添加预装技能
+    addPreloadSkill(skillId) {
+        const slotCount = this.getPreloadSlotCount();
+        if (this.preloadedSkills.length >= slotCount) return;
+        if (this.preloadedSkills.includes(skillId)) return;
+        
+        this.preloadedSkills.push(skillId);
+        this.savePlayerData();
+        this.renderSkillPreload();
+    },
+    
+    // 移除预装技能
+    removePreloadSkill(index) {
+        this.preloadedSkills.splice(index, 1);
+        this.savePlayerData();
+        this.renderSkillPreload();
+    },
+    
+    // 确认预装技能
+    confirmSkillPreload() {
+        this.savePlayerData();
+        this.closeModal();
+    },
+    
     showCollection() {
         document.getElementById('collection-modal').classList.remove('hidden');
         this.showCollectionTab('characters');
@@ -411,9 +536,17 @@ const Lobby = {
         document.getElementById('weapon-select-modal').classList.add('hidden');
         document.getElementById('talent-modal').classList.add('hidden');
         document.getElementById('collection-modal').classList.add('hidden');
+        document.getElementById('skill-preload-modal')?.classList.add('hidden');
     },
     
     showAdventure() {
+        // 检查预装技能中是否至少有一个主动技能
+        const hasMagicSkill = this.preloadedSkills.some(skillId => MAGIC_SKILLS[skillId] !== undefined);
+        if (!hasMagicSkill) {
+            alert('请至少预装一个主动技能！');
+            return;
+        }
+        
         this.hideAllScreens();
         document.getElementById('adventure-screen').classList.remove('hidden');
     },
@@ -454,7 +587,8 @@ const Lobby = {
             weapon: this.selectedWeapon,
             difficulty: this.selectedDifficulty,
             map: actualMap,
-            talentBonus: this.getTalentBonus()
+            talentBonus: this.getTalentBonus(),
+            preloadedSkills: [...this.preloadedSkills]
         });
     },
     
@@ -472,7 +606,8 @@ const Lobby = {
             weapon: this.selectedWeapon,
             difficulty: this.selectedDifficulty,
             map: actualMap,
-            talentBonus: this.getTalentBonus()
+            talentBonus: this.getTalentBonus(),
+            preloadedSkills: [...this.preloadedSkills]
         });
     },
     

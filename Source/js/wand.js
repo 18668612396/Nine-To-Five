@@ -263,6 +263,7 @@ const SKILL_COSTS = {
     energy_orb: 1,
     magic_missile: 1,
     flying_sword: 1,
+    black_hole: 10,
     
     // 被动技能消耗（统一为1）
     scatter: 1,
@@ -419,70 +420,68 @@ class Weapon {
     
     // 主槽施法
     castMainSlots(player) {
-        const result = this.castFromIndex(player, this.currentIndex, this.slots);
+        const result = this.castAllSlots(player, this.slots);
         if (result.fired) {
-            this.currentIndex = result.nextIndex;
             this.castTimer = this.getCastInterval();
-        } else {
-            this.currentIndex = 0;
         }
     }
     
     // 特殊槽施法
     castSpecialSlots(player) {
-        this.castFromIndex(player, 0, this.specialSlots, true);
+        this.castAllSlots(player, this.specialSlots);
     }
     
-    // 从指定索引开始施法
-    castFromIndex(player, startIndex, slots, isSpecial = false) {
+    // 一次轮播所有槽位
+    castAllSlots(player, slots) {
         const mods = this.getDefaultMods(player);
-        let index = startIndex;
-        let loopCount = 0;
         let totalCost = 0;
         const slotCount = slots.length;
         
-        // 先收集所有被动效果和计算总消耗
-        const modifierList = [];
-        let magicSkill = null;
-        let magicIndex = -1;
+        // 收集所有技能和计算总消耗
+        const skillSequence = []; // { type: 'modifier'|'magic', skill, mods snapshot }
         
-        while (loopCount < slotCount) {
-            const slot = slots[index];
-            if (slot === null) {
-                index = (index + 1) % slotCount;
-                loopCount++;
-                continue;
-            }
+        for (let i = 0; i < slotCount; i++) {
+            const slot = slots[i];
+            if (slot === null) continue;
+            
+            totalCost += this.getSkillCost(slot);
             
             if (slot.type === 'modifier') {
-                modifierList.push(slot);
-                totalCost += this.getSkillCost(slot);
-                index = (index + 1) % slotCount;
-                loopCount++;
+                // 应用被动效果到mods，传入星级
+                const star = slot.star || 1;
+                const starMult = this.getStarMultiplier(star);
+                if (slot.modify) {
+                    slot.modify(mods, star);
+                    // 星级增强数值效果（跳过已经按星级处理的属性）
+                    Object.keys(mods).forEach(key => {
+                        if (typeof mods[key] === 'number' && mods[key] > 1 && key !== 'penetrate') {
+                            mods[key] = 1 + (mods[key] - 1) * starMult;
+                        }
+                    });
+                }
             } else if (slot.type === 'magic') {
-                magicSkill = slot;
-                magicIndex = index;
-                totalCost += this.getSkillCost(slot);
-                break;
+                // 记录魔法技能和当前的mods快照
+                skillSequence.push({
+                    skill: slot,
+                    mods: { ...mods } // 复制当前mods状态
+                });
             }
         }
         
-        if (!magicSkill) {
-            return { fired: false, nextIndex: 0 };
+        if (skillSequence.length === 0) {
+            return { fired: false };
         }
         
-        // 检查免费施法
-        const isFree = this.checkFreecast(magicSkill);
+        // 检查能量（只检查一次，对所有技能）
+        const isFree = skillSequence.some(s => this.checkFreecast(s.skill));
         
-        // 检查能量
         if (!isFree && this.energy < totalCost) {
-            // 过载检查
             if (this.canOverload && player.hp > totalCost) {
                 player.hp -= totalCost;
                 Game.addFloatingText('过载!', player.x, player.y - 40, '#ff0000');
                 Game.screenShake(3, 5);
             } else {
-                return { fired: false, nextIndex: 0 };
+                return { fired: false };
             }
         } else if (!isFree) {
             this.energy -= totalCost;
@@ -493,35 +492,25 @@ class Weapon {
             Game.addFloatingText('免费!', player.x, player.y - 30, '#00ffff');
         }
         
-        // 应用被动效果
-        modifierList.forEach(mod => {
-            const starMult = this.getStarMultiplier(mod.star || 1);
-            if (mod.modify) {
-                mod.modify(mods);
-                // 星级增强数值效果
-                Object.keys(mods).forEach(key => {
-                    if (typeof mods[key] === 'number' && mods[key] > 1) {
-                        mods[key] = 1 + (mods[key] - 1) * starMult;
-                    }
-                });
-            }
+        // 发射所有魔法技能
+        skillSequence.forEach(({ skill, mods: skillMods }) => {
+            // 应用武器伤害加成
+            skillMods.damage *= this.getDamageMult();
+            
+            // 星级加成
+            const starMult = this.getStarMultiplier(skill.star || 1);
+            skillMods.damage *= starMult;
+            skillMods.star = skill.star || 1;
+            
+            this.fireSkill(player, skill, skillMods);
         });
         
-        // 应用武器伤害加成
-        mods.damage *= this.getDamageMult();
-        
-        // 星级加成
-        const starMult = this.getStarMultiplier(magicSkill.star || 1);
-        mods.damage *= starMult;
-        mods.star = magicSkill.star || 1; // 传递星级给技能
-        
-        // 发射
-        this.fireSkill(player, magicSkill, mods);
-        
-        return { 
-            fired: true, 
-            nextIndex: (magicIndex + 1) % slotCount 
-        };
+        return { fired: true };
+    }
+    
+    // 保留旧方法兼容（但不再使用）
+    castFromIndex(player, startIndex, slots, isSpecial = false) {
+        return this.castAllSlots(player, slots);
     }
     
     getStarMultiplier(star) {
@@ -547,66 +536,77 @@ class Weapon {
     }
     
     fireSkill(player, skill, mods) {
-        let targetAngle = 0;
-        let nearest = null;
-        let minDist = 800;
-
+        const count = mods.splitCount || 1;
+        
+        // 收集所有可攻击的目标
+        const targets = [];
+        
         // 遍历普通敌人
         Game.enemies.forEach(e => {
-            const dist = Math.sqrt((e.x - player.x) ** 2 + (e.y - player.y) ** 2);
-            if (dist < minDist) {
-                minDist = dist;
-                nearest = e;
+            if (!e.markedForDeletion) {
+                const dist = Math.sqrt((e.x - player.x) ** 2 + (e.y - player.y) ** 2);
+                if (dist < 800) {
+                    targets.push({ target: e, dist: dist });
+                }
             }
         });
         
-        // 遍历Boss（优先攻击更近的目标）
+        // 遍历Boss
         if (typeof BossManager !== 'undefined' && BossManager.bosses) {
             BossManager.bosses.forEach(boss => {
                 if (!boss.markedForDeletion) {
                     const dist = Math.sqrt((boss.x - player.x) ** 2 + (boss.y - player.y) ** 2);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        nearest = boss;
+                    if (dist < 800) {
+                        targets.push({ target: boss, dist: dist });
                     }
                 }
             });
         }
-
-        if (nearest) {
-            targetAngle = Math.atan2(nearest.y - player.y, nearest.x - player.x);
+        
+        // 按距离排序
+        targets.sort((a, b) => a.dist - b.dist);
+        
+        // 如果没有目标，朝前方发射
+        if (targets.length === 0) {
+            for (let i = 0; i < count; i++) {
+                const spreadAngle = count > 1 ? Math.PI / 6 : 0;
+                let angle = 0;
+                if (count > 1) {
+                    angle = (i - (count - 1) / 2) * (spreadAngle / (count - 1 || 1));
+                }
+                const proj = skill.create(player, { ...mods, angle, weapon: this });
+                if (proj) Game.projectiles.push(proj);
+            }
+            Audio.play('shoot');
+            return;
+        }
+        
+        // 狂暴系统 - 追踪最近目标
+        const nearest = targets[0].target;
+        if (mods.frenzy) {
+            const targetId = nearest.id || nearest;
+            if (this.lastTargetId === targetId) {
+                this.frenzyStacks = Math.min(this.frenzyStacks + 1, this.maxFrenzyStacks);
+            } else {
+                this.frenzyStacks = 0;
+                this.lastTargetId = targetId;
+            }
             
-            // 狂暴系统 - 追踪目标
-            if (mods.frenzy) {
-                const targetId = nearest.id || nearest;
-                if (this.lastTargetId === targetId) {
-                    // 同一目标，增加狂暴层数
-                    this.frenzyStacks = Math.min(this.frenzyStacks + 1, this.maxFrenzyStacks);
-                } else {
-                    // 不同目标，重置狂暴层数
-                    this.frenzyStacks = 0;
-                    this.lastTargetId = targetId;
-                }
-                
-                // 应用狂暴效果 - 每层减少冷却
-                const frenzyBonus = this.frenzyStacks * mods.frenzyReduction;
-                mods.cooldownMult = (mods.cooldownMult || 1) * (1 - frenzyBonus);
-                
-                // 显示狂暴层数
-                if (this.frenzyStacks > 0) {
-                    Game.addFloatingText('狂暴x' + this.frenzyStacks, player.x, player.y - 40, '#ff4444');
-                }
+            const frenzyBonus = this.frenzyStacks * mods.frenzyReduction;
+            mods.cooldownMult = (mods.cooldownMult || 1) * (1 - frenzyBonus);
+            
+            if (this.frenzyStacks > 0) {
+                Game.addFloatingText('狂暴x' + this.frenzyStacks, player.x, player.y - 40, '#ff4444');
             }
         }
-
-        const count = mods.splitCount || 1;
-        const spreadAngle = count > 1 ? Math.PI / 6 : 0;
-
+        
+        // 散射：每个投射物朝向不同的敌人
         for (let i = 0; i < count; i++) {
-            let angle = targetAngle;
-            if (count > 1) {
-                angle = targetAngle + (i - (count - 1) / 2) * (spreadAngle / (count - 1 || 1));
-            }
+            // 选择目标：优先选择不同的敌人，如果敌人不够则循环使用
+            const targetIndex = i % targets.length;
+            const target = targets[targetIndex].target;
+            const angle = Math.atan2(target.y - player.y, target.x - player.x);
+            
             const proj = skill.create(player, { ...mods, angle, weapon: this });
             if (proj) Game.projectiles.push(proj);
         }

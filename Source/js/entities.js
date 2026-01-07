@@ -274,8 +274,9 @@ class Enemy extends Entity {
             damage = 15;
         }
 
-        const diffMult = 1 + (Game.time / 60) * 0.2;
-        hp *= diffMult;
+        // 血量随时间缓慢增加：每分钟+10%
+        const hpMult = 1 + (Game.time / 60) * 0.1;
+        hp = Math.floor(hp * hpMult);
 
         super(x, y, r, c);
         this.type = type;
@@ -419,6 +420,14 @@ class Enemy extends Entity {
         Game.addFloatingText(Math.floor(amt), this.x, this.y - 20, '#fff');
         Game.damageDealt += amt;
         Audio.play('hit');
+        
+        // 能量虹吸 - 击中敌人恢复能量
+        if (Game.player && Game.player.energyOnHit > 0 && Game.player.weapon) {
+            Game.player.weapon.energy = Math.min(
+                Game.player.weapon.maxEnergy,
+                Game.player.weapon.energy + Game.player.energyOnHit
+            );
+        }
 
         if (this.hp <= 0 && !this.markedForDeletion) {
             this.die(projectile);

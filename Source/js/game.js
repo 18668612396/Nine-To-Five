@@ -116,7 +116,17 @@ const Game = {
         
         // 设置初始魔法（直接装备到第一个槽位）
         if (config.weapon && MAGIC_SKILLS[config.weapon]) {
-            this.player.wand.slots[0] = { ...MAGIC_SKILLS[config.weapon], star: 1 };
+            this.player.weapon.slots[0] = { ...MAGIC_SKILLS[config.weapon], star: 1 };
+        }
+        
+        // 添加预装技能到背包（1星）
+        if (config.preloadedSkills && config.preloadedSkills.length > 0) {
+            config.preloadedSkills.forEach(skillId => {
+                const skill = ALL_SKILLS[skillId];
+                if (skill) {
+                    this.player.weapon.inventory.push({ ...skill, star: 1 });
+                }
+            });
         }
         
         this.enemies = [];
@@ -211,6 +221,27 @@ const Game = {
                 width: 150 + Math.random() * 100,
                 height: 30 + Math.random() * 20
             };
+        } else if (scene === 'snow') {
+            const rand = Math.random();
+            if (rand > 0.6) {
+                return {
+                    x, y,
+                    type: 'pine',
+                    size: 30 + Math.random() * 25
+                };
+            } else if (rand > 0.3) {
+                return {
+                    x, y,
+                    type: 'snowpile',
+                    size: 20 + Math.random() * 15
+                };
+            } else {
+                return {
+                    x, y,
+                    type: 'icerock',
+                    size: 15 + Math.random() * 20
+                };
+            }
         }
         return { x, y, type: 'tree', size: 30 };
     },
@@ -618,6 +649,71 @@ const Game = {
                     CTX.ellipse(x, y, el.width, el.height, 0, 0, Math.PI * 2);
                     CTX.fill();
                 }
+            } else if (scene === 'snow') {
+                if (el.type === 'pine') {
+                    // 雪松阴影
+                    CTX.fillStyle = 'rgba(0,0,0,0.15)';
+                    CTX.beginPath();
+                    CTX.ellipse(x, y + 5, el.size * 0.5, el.size * 0.2, 0, 0, Math.PI * 2);
+                    CTX.fill();
+                    // 树干
+                    CTX.fillStyle = '#5d4037';
+                    CTX.fillRect(x - 4, y - 8, 8, 18);
+                    // 树冠（三层）
+                    for (let i = 0; i < 3; i++) {
+                        const layerY = y - 12 - i * (el.size * 0.35);
+                        const layerSize = el.size * (1 - i * 0.2);
+                        // 绿色树冠
+                        CTX.fillStyle = '#1b5e20';
+                        CTX.beginPath();
+                        CTX.moveTo(x, layerY - layerSize * 0.7);
+                        CTX.lineTo(x - layerSize * 0.5, layerY);
+                        CTX.lineTo(x + layerSize * 0.5, layerY);
+                        CTX.closePath();
+                        CTX.fill();
+                        // 雪覆盖
+                        CTX.fillStyle = '#e8f4ff';
+                        CTX.beginPath();
+                        CTX.moveTo(x, layerY - layerSize * 0.7);
+                        CTX.lineTo(x - layerSize * 0.25, layerY - layerSize * 0.4);
+                        CTX.lineTo(x + layerSize * 0.25, layerY - layerSize * 0.4);
+                        CTX.closePath();
+                        CTX.fill();
+                    }
+                } else if (el.type === 'snowpile') {
+                    // 雪堆
+                    CTX.fillStyle = '#d8e8f0';
+                    CTX.beginPath();
+                    CTX.ellipse(x, y, el.size * 1.2, el.size * 0.5, 0, 0, Math.PI * 2);
+                    CTX.fill();
+                    CTX.fillStyle = '#e8f4ff';
+                    CTX.beginPath();
+                    CTX.ellipse(x - 3, y - 2, el.size * 0.8, el.size * 0.35, 0, 0, Math.PI * 2);
+                    CTX.fill();
+                } else if (el.type === 'icerock') {
+                    // 冰岩
+                    CTX.fillStyle = 'rgba(0,0,0,0.1)';
+                    CTX.beginPath();
+                    CTX.ellipse(x, y + 3, el.size * 0.7, el.size * 0.3, 0, 0, Math.PI * 2);
+                    CTX.fill();
+                    CTX.fillStyle = '#8ab4c4';
+                    CTX.beginPath();
+                    CTX.moveTo(x - el.size * 0.8, y);
+                    CTX.lineTo(x - el.size * 0.3, y - el.size * 0.7);
+                    CTX.lineTo(x + el.size * 0.4, y - el.size * 0.5);
+                    CTX.lineTo(x + el.size * 0.7, y);
+                    CTX.lineTo(x, y + el.size * 0.3);
+                    CTX.closePath();
+                    CTX.fill();
+                    // 冰面高光
+                    CTX.fillStyle = 'rgba(255,255,255,0.5)';
+                    CTX.beginPath();
+                    CTX.moveTo(x - el.size * 0.2, y - el.size * 0.4);
+                    CTX.lineTo(x + el.size * 0.1, y - el.size * 0.3);
+                    CTX.lineTo(x, y - el.size * 0.1);
+                    CTX.closePath();
+                    CTX.fill();
+                }
             }
         });
     },
@@ -842,7 +938,9 @@ const Game = {
     },
 
     spawnEnemies() {
-        const baseRate = Math.max(10, 40 - Math.floor(this.time / 3));
+        // 刷新频率随时间增加，从40帧逐渐降到最低8帧
+        const minRate = 8;
+        const baseRate = Math.max(minRate, 40 - Math.floor(this.time / 10));
         
         if (this.frameCount % baseRate === 0) {
             const angle = Math.random() * Math.PI * 2;
@@ -859,7 +957,10 @@ const Game = {
     },
 
     addXp(amount) {
-        this.xp += amount;
+        // 经验值随时间增加（每分钟+20%）
+        const timeBonus = 1 + (this.time / 60) * 0.2;
+        const finalAmount = Math.floor(amount * timeBonus * (this.player.xpMult || 1));
+        this.xp += finalAmount;
         while (this.xp >= this.xpToNext) {
             this.xp -= this.xpToNext;
             this.levelUp();
@@ -869,7 +970,8 @@ const Game = {
 
     levelUp() {
         this.level++;
-        this.xpToNext = Math.floor(this.xpToNext * 1.15);
+        // 升级经验需求增长更快：每级+25%
+        this.xpToNext = Math.floor(this.xpToNext * 1.25);
         this.state = 'LEVEL_UP';
         Audio.play('levelup');
         this.showUpgradeMenu();

@@ -59,6 +59,16 @@ const MAGIC_SKILLS = {
         cooldown: 15,
         desc: '挥舞飞剑攻击前方，可抵挡敌人弹道',
         create: (caster, mods) => new FlyingSwordProjectile(caster, mods)
+    },
+    black_hole: {
+        id: 'black_hole',
+        name: '黑洞',
+        type: 'magic',
+        icon: '🕳️',
+        cooldown: 60,
+        energyCost: 10,
+        desc: '缓慢移动的黑洞，吸附并持续伤害附近敌人',
+        create: (caster, mods) => new BlackHoleProjectile(caster, mods)
     }
 };
 
@@ -86,8 +96,11 @@ const MODIFIER_SKILLS = {
         name: '穿透',
         type: 'modifier',
         icon: '📍',
-        desc: '穿透多个敌人',
-        modify: (mods) => { mods.penetrate = (mods.penetrate || 1) + 2; }
+        desc: '穿透多个敌人(1星+3/2星+6/3星+10)',
+        modify: (mods, star) => { 
+            const penetrateValues = { 1: 3, 2: 6, 3: 10 };
+            mods.penetrate = (mods.penetrate || 1) + (penetrateValues[star] || 3);
+        }
     },
     lightning_chain: {
         id: 'lightning_chain',
@@ -126,8 +139,13 @@ const MODIFIER_SKILLS = {
         name: '弹射',
         type: 'modifier',
         icon: '🔄',
-        desc: '弹射到其他敌人',
-        modify: (mods) => { mods.bounceCount = (mods.bounceCount || 0) + 2; }
+        desc: '弹射到范围内随机敌人(1星+2次/2星+4次/3星+6次)',
+        modify: (mods, star) => { 
+            const bounceValues = { 1: 2, 2: 4, 3: 6 };
+            const rangeValues = { 1: 200, 2: 300, 3: 400 };
+            mods.bounceCount = (mods.bounceCount || 0) + (bounceValues[star] || 2);
+            mods.bounceRange = (mods.bounceRange || 0) + (rangeValues[star] || 200);
+        }
     },
     reduce_cooldown: {
         id: 'reduce_cooldown',
@@ -342,10 +360,19 @@ const PERKS = {
     arcane_barrier: {
         id: 'arcane_barrier',
         name: '奥术屏障',
-        icon: '�️',
+        icon: '🛡️',
         desc: '击杀敌人时获得5护盾',
         stackable: true,
         apply: (player, level) => { player.shieldOnKill = (player.shieldOnKill || 0) + 5 * level; }
+    },
+    energy_siphon: {
+        id: 'energy_siphon',
+        name: '能量虹吸',
+        icon: '🔋',
+        desc: '击中敌人恢复1点能量',
+        stackable: true,
+        maxLevel: 10,
+        apply: (player, level) => { player.energyOnHit = (player.energyOnHit || 0) + 1 * level; }
     }
 };
 
@@ -580,6 +607,13 @@ class PerkManager {
         if (!perk) return false;
         
         const currentLevel = this.perks[perkId] || 0;
+        const maxLevel = perk.maxLevel || 999;
+        
+        // 检查是否已达最大等级
+        if (currentLevel >= maxLevel) {
+            return false;
+        }
+        
         const newLevel = currentLevel + 1;
         
         // 应用效果（增量）
@@ -591,6 +625,13 @@ class PerkManager {
     
     getPerkLevel(perkId) {
         return this.perks[perkId] || 0;
+    }
+    
+    isMaxLevel(perkId) {
+        const perk = PERKS[perkId];
+        if (!perk) return false;
+        const maxLevel = perk.maxLevel || 999;
+        return (this.perks[perkId] || 0) >= maxLevel;
     }
     
     getAllPerks() {
@@ -628,6 +669,7 @@ class SkillProjectile {
         this.explosiveOnKill = mods.explosiveOnKill || false;
         this.explosionRadius = mods.explosionRadius || 30;
         this.bounceCount = mods.bounceCount || 0;
+        this.bounceRange = mods.bounceRange || 200;
 
         // 新增效果属性
         this.burning = mods.burning || false;
@@ -1024,14 +1066,20 @@ class SkillProjectile {
     }
 
     bounceToEnemy(fromEnemy) {
-        let nextTarget = null, minDist = 300;
+        // 收集范围内所有未命中的敌人
+        const candidates = [];
         Game.enemies.forEach(e => {
             if (!e.markedForDeletion && e !== fromEnemy && !this.hitList.includes(e)) {
                 const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
-                if (dist < minDist) { minDist = dist; nextTarget = e; }
+                if (dist < this.bounceRange) {
+                    candidates.push(e);
+                }
             }
         });
-        if (nextTarget) {
+        
+        // 随机选择一个目标
+        if (candidates.length > 0) {
+            const nextTarget = candidates[Math.floor(Math.random() * candidates.length)];
             const dx = nextTarget.x - this.x, dy = nextTarget.y - this.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             this.dx = dx / dist; this.dy = dy / dist;
@@ -1437,6 +1485,229 @@ class FlyingSwordProjectile extends SkillProjectile {
         ctx.fillRect(swordOffset, -3 * scale, 12 * scale, 6 * scale);
         ctx.fillStyle = '#ffd700';
         ctx.fillRect(swordOffset + 10 * scale, -4 * scale, 3 * scale, 8 * scale);
+        
+        ctx.restore();
+    }
+}
+
+// 黑洞 - 吸附并持续伤害敌人
+class BlackHoleProjectile extends SkillProjectile {
+    constructor(caster, mods) {
+        super(caster, mods);
+        const star = mods.star || 1;
+        this.baseDamage = 5;
+        this.damage = this.baseDamage * (mods.damage || 1);
+        this.speed = 2 * (mods.speed || 1); // 缓慢移动
+        this.baseRadius = 40;
+        // 星级影响大小：1星40，2星60，3星90
+        const sizeMultipliers = { 1: 1, 2: 1.5, 3: 2.25 };
+        this.radius = this.baseRadius * (sizeMultipliers[star] || 1) * this.sizeScale;
+        this.pullRadius = this.radius * 3; // 吸附范围是黑洞大小的3倍
+        this.duration = 180; // 3秒
+        this.star = star;
+        this.penetrate = 999; // 可以打到多个敌人
+        this.hitList = []; // 不用hitList，因为是持续伤害
+        this.damageInterval = 10; // 每10帧造成一次伤害
+        this.damageTimer = 0;
+        this.rotationAngle = 0;
+        this.particles = [];
+        
+        // 星级影响伤害：1星1x，2星1.5x，3星2.5x
+        const damageMultipliers = { 1: 1, 2: 1.5, 3: 2.5 };
+        this.damage *= damageMultipliers[star] || 1;
+    }
+    
+    update() {
+        // 移动
+        this.x += this.dx * this.speed;
+        this.y += this.dy * this.speed;
+        
+        this.duration--;
+        this.rotationAngle += 0.1;
+        this.damageTimer++;
+        
+        // 生成漩涡粒子
+        if (Math.random() < 0.3) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = this.pullRadius * (0.5 + Math.random() * 0.5);
+            this.particles.push({
+                x: this.x + Math.cos(angle) * dist,
+                y: this.y + Math.sin(angle) * dist,
+                angle: angle,
+                dist: dist,
+                life: 30
+            });
+        }
+        
+        // 更新粒子
+        this.particles = this.particles.filter(p => {
+            p.life--;
+            p.dist -= 3; // 向中心移动
+            p.angle += 0.15; // 旋转
+            p.x = this.x + Math.cos(p.angle) * p.dist;
+            p.y = this.y + Math.sin(p.angle) * p.dist;
+            return p.life > 0 && p.dist > 5;
+        });
+        
+        // 吸附敌人
+        this.pullEnemies();
+        
+        // 持续伤害
+        if (this.damageTimer >= this.damageInterval) {
+            this.damageTimer = 0;
+            this.damageEnemiesInRange();
+        }
+        
+        if (this.duration <= 0) {
+            this.markedForDeletion = true;
+            // 消失时爆发粒子
+            for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                Game.particles.push({
+                    x: this.x,
+                    y: this.y,
+                    vx: Math.cos(angle) * (3 + Math.random() * 3),
+                    vy: Math.sin(angle) * (3 + Math.random() * 3),
+                    life: 30,
+                    color: '#9933ff',
+                    size: 4 + Math.random() * 4
+                });
+            }
+        }
+    }
+    
+    pullEnemies() {
+        // 吸附普通敌人
+        Game.enemies.forEach(e => {
+            if (!e.markedForDeletion) {
+                const dx = this.x - e.x;
+                const dy = this.y - e.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < this.pullRadius && dist > 5) {
+                    // 吸附力随距离减弱
+                    const pullForce = (1 - dist / this.pullRadius) * 3;
+                    e.x += (dx / dist) * pullForce;
+                    e.y += (dy / dist) * pullForce;
+                }
+            }
+        });
+        
+        // 吸附Boss（力度减半）
+        if (typeof BossManager !== 'undefined' && BossManager.bosses) {
+            BossManager.bosses.forEach(boss => {
+                if (!boss.markedForDeletion) {
+                    const dx = this.x - boss.x;
+                    const dy = this.y - boss.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < this.pullRadius && dist > 10) {
+                        const pullForce = (1 - dist / this.pullRadius) * 1.5;
+                        boss.x += (dx / dist) * pullForce;
+                        boss.y += (dy / dist) * pullForce;
+                    }
+                }
+            });
+        }
+    }
+    
+    damageEnemiesInRange() {
+        // 伤害范围内的敌人
+        Game.enemies.forEach(e => {
+            if (!e.markedForDeletion) {
+                const dx = e.x - this.x;
+                const dy = e.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < this.radius + e.radius) {
+                    e.takeDamage(this.damage, 0, 0, this);
+                    // 触发被动效果（只对普通敌人）
+                    this.onHit(e);
+                }
+            }
+        });
+        
+        // 伤害Boss（不触发onHit的被动效果，避免调用不存在的方法）
+        if (typeof BossManager !== 'undefined' && BossManager.bosses) {
+            BossManager.bosses.forEach(boss => {
+                if (!boss.markedForDeletion) {
+                    const dx = boss.x - this.x;
+                    const dy = boss.y - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < this.radius + boss.radius) {
+                        boss.takeDamage(this.damage, 0, 0);
+                    }
+                }
+            });
+        }
+    }
+    
+    draw(ctx, camX, camY) {
+        const x = this.x - camX;
+        const y = this.y - camY;
+        
+        ctx.save();
+        
+        // 绘制吸附范围（淡淡的）
+        ctx.globalAlpha = 0.1;
+        ctx.fillStyle = '#6600cc';
+        ctx.beginPath();
+        ctx.arc(x, y, this.pullRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制漩涡粒子
+        ctx.globalAlpha = 0.6;
+        this.particles.forEach(p => {
+            const px = p.x - camX;
+            const py = p.y - camY;
+            const size = 2 + (p.life / 30) * 3;
+            ctx.fillStyle = `rgba(153, 51, 255, ${p.life / 30})`;
+            ctx.beginPath();
+            ctx.arc(px, py, size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        
+        // 绘制黑洞外圈光环
+        ctx.globalAlpha = 0.5;
+        const gradient = ctx.createRadialGradient(x, y, this.radius * 0.5, x, y, this.radius * 1.2);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        gradient.addColorStop(0.5, 'rgba(102, 0, 204, 0.5)');
+        gradient.addColorStop(0.8, 'rgba(153, 51, 255, 0.3)');
+        gradient.addColorStop(1, 'rgba(153, 51, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, this.radius * 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制黑洞核心
+        ctx.globalAlpha = 1;
+        const coreGradient = ctx.createRadialGradient(x, y, 0, x, y, this.radius);
+        coreGradient.addColorStop(0, '#000000');
+        coreGradient.addColorStop(0.6, '#1a0033');
+        coreGradient.addColorStop(1, '#330066');
+        ctx.fillStyle = coreGradient;
+        ctx.beginPath();
+        ctx.arc(x, y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制旋转的光环
+        ctx.strokeStyle = '#cc66ff';
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.7;
+        for (let i = 0; i < 3; i++) {
+            const ringAngle = this.rotationAngle + (Math.PI * 2 / 3) * i;
+            ctx.beginPath();
+            ctx.arc(x, y, this.radius * 0.7, ringAngle, ringAngle + Math.PI * 0.5);
+            ctx.stroke();
+        }
+        
+        // 中心亮点
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(x, y, this.radius * 0.1, 0, Math.PI * 2);
+        ctx.fill();
         
         ctx.restore();
     }

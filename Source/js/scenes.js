@@ -468,7 +468,7 @@ const SceneManager = {
             case 'grass': return '#8ccf7e';
             case 'ocean': return '#1a5276';
             case 'desert': return '#f4d03f';
-            case 'snow': return '#e8f4f8';
+            case 'snow': return '#a8c8d8';
             default: return '#8ccf7e';
         }
     },
@@ -544,20 +544,20 @@ const SceneManager = {
     },
     
     drawSnow(ctx, scrollY, frameCount) {
-        // 雪地背景
+        // 雪地背景 - 使用更深的蓝灰色增加对比度
         const gradient = ctx.createLinearGradient(0, 0, 0, CONFIG.GAME_HEIGHT);
-        gradient.addColorStop(0, '#e8f4f8');
-        gradient.addColorStop(1, '#c5dde8');
+        gradient.addColorStop(0, '#a8c8d8');
+        gradient.addColorStop(1, '#7ba3b8');
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, CONFIG.GAME_WIDTH, CONFIG.GAME_HEIGHT);
         
-        // 雪堆
+        // 雪堆 - 使用淡蓝色而非纯白
         this.snowRocks.forEach(r => {
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = '#d8e8f0';
             ctx.beginPath();
             ctx.ellipse(r.x, r.y, r.size * 1.2, r.size * 0.6, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = '#d0e8f0';
+            ctx.fillStyle = '#c0d8e8';
             ctx.beginPath();
             ctx.ellipse(r.x + 5, r.y + 3, r.size * 0.8, r.size * 0.4, 0, 0, Math.PI * 2);
             ctx.fill();
@@ -566,11 +566,11 @@ const SceneManager = {
         // 雪松
         this.snowTrees.forEach(t => {
             // 树干
-            ctx.fillStyle = '#5d4037';
+            ctx.fillStyle = '#4a3728';
             ctx.fillRect(t.x - 4, t.y - 5, 8, 15);
             
-            // 树冠（三层）
-            ctx.fillStyle = '#2e7d32';
+            // 树冠（三层）- 使用更深的绿色
+            ctx.fillStyle = '#1b5e20';
             for (let i = 0; i < 3; i++) {
                 const layerY = t.y - 10 - i * (t.size * 0.35);
                 const layerSize = t.size * (1 - i * 0.25);
@@ -582,8 +582,8 @@ const SceneManager = {
                 ctx.fill();
             }
             
-            // 雪覆盖
-            ctx.fillStyle = '#ffffff';
+            // 雪覆盖 - 淡蓝白色
+            ctx.fillStyle = '#e8f4ff';
             for (let i = 0; i < 3; i++) {
                 const layerY = t.y - 10 - i * (t.size * 0.35);
                 const layerSize = t.size * (1 - i * 0.25);
@@ -596,8 +596,8 @@ const SceneManager = {
             }
         });
         
-        // 雪花
-        ctx.fillStyle = '#ffffff';
+        // 雪花 - 半透明白色
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         this.snowflakes.forEach(sf => {
             ctx.beginPath();
             ctx.arc(sf.x, sf.y, sf.size, 0, Math.PI * 2);

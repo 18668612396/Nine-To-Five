@@ -146,7 +146,7 @@
                             <span class="nav-icon">👤</span>
                             <span class="nav-text">英雄</span>
                         </button>
-                        <button class="nav-btn" onclick="Lobby.showWeaponSelect()">
+                        <button class="nav-btn" onclick="Lobby.showSkillPreload()">
                             <span class="nav-icon">🔮</span>
                             <span class="nav-text">装备</span>
                         </button>
@@ -207,6 +207,28 @@
                     </div>
                     <div class="weapon-select-grid" id="weapon-select-grid"></div>
                     <button class="modal-confirm" onclick="Lobby.confirmWeapon()">确认</button>
+                </div>
+            </div>
+
+            <!-- 技能预装弹窗 -->
+            <div id="skill-preload-modal" class="screen hidden">
+                <div class="modal-container wide">
+                    <div class="modal-header">
+                        <h2>🔮 预装技能</h2>
+                        <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
+                    </div>
+                    <div class="preload-content">
+                        <p class="preload-hint">选择开局携带的技能（1星）</p>
+                        <div class="preload-slots-container">
+                            <h4>技能槽位</h4>
+                            <div id="preload-slots" class="preload-slots"></div>
+                        </div>
+                        <div class="preload-skills-container">
+                            <h4>可选技能</h4>
+                            <div id="preload-skills-grid" class="preload-skills-grid"></div>
+                        </div>
+                    </div>
+                    <button class="modal-confirm" onclick="Lobby.confirmSkillPreload()">确认</button>
                 </div>
             </div>
 

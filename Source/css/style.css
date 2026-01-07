@@ -2972,3 +2972,156 @@ body {
         height: 55px;
     }
 }
+
+
+/* 技能预装界面 */
+.preload-content {
+    padding: 15px;
+}
+
+.preload-hint {
+    text-align: center;
+    color: #aaa;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.preload-slots-container {
+    margin-bottom: 20px;
+}
+
+.preload-slots-container h4,
+.preload-skills-container h4 {
+    margin-bottom: 10px;
+    color: #ffd700;
+    font-size: 14px;
+}
+
+.preload-slots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.preload-slot {
+    width: 50px;
+    height: 50px;
+    background: rgba(50, 50, 80, 0.8);
+    border: 2px solid #444;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.preload-slot:hover:not(.locked) {
+    border-color: #888;
+}
+
+.preload-slot.magic-type {
+    background: rgba(255, 150, 0, 0.3);
+    border-color: #ff9900;
+}
+
+.preload-slot.modifier-type {
+    background: rgba(100, 150, 255, 0.3);
+    border-color: #6699ff;
+}
+
+.preload-slot.locked {
+    background: rgba(30, 30, 50, 0.5);
+    border: 2px dashed #333;
+    cursor: not-allowed;
+}
+
+.preload-slot-empty {
+    font-size: 20px;
+    color: rgba(255,255,255,0.3);
+}
+
+.preload-slot-locked {
+    font-size: 16px;
+    opacity: 0.5;
+}
+
+.preload-skill-icon {
+    font-size: 22px;
+}
+
+.preload-skills-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.preload-skills-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* 技能分类 */
+.skill-section {
+    margin-bottom: 0;
+}
+
+.skill-section-title {
+    color: #aaa;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.skill-section-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 50px);
+    gap: 6px;
+    background: rgba(30, 30, 50, 0.8);
+    padding: 10px;
+    border-radius: 8px;
+    border: 2px solid #333;
+}
+
+/* 预装技能项 - 格子样式 */
+.preload-skill-item {
+    width: 50px;
+    height: 50px;
+    background: rgba(50, 50, 80, 0.8);
+    border: 2px solid #444;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.preload-skill-item:hover:not(.equipped) {
+    border-color: #888;
+}
+
+.preload-skill-item.equipped {
+    border-color: #ffd700;
+    background: rgba(255,215,0,0.2);
+    cursor: default;
+}
+
+.preload-skill-item.magic-type {
+    background: rgba(255, 150, 0, 0.3);
+    border-color: #ff9900;
+}
+
+.preload-skill-item.modifier-type {
+    background: rgba(100, 150, 255, 0.3);
+    border-color: #6699ff;
+}
+
+.preload-skill-item .skill-icon {
+    font-size: 22px;
+}
+
+.preload-skill-item .skill-name {
+    display: none;
+}
