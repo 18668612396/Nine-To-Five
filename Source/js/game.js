@@ -1307,8 +1307,10 @@ const Game = {
                 resultDiv.innerHTML = `<span class="wb-result-icon">${craftResult.skill.icon}</span><span class="wb-result-star">${starText}</span>`;
                 tipDiv.innerHTML = `✨ 升星合成: ${craftResult.skill.name} → ${starText}`;
             } else if (craftResult.type === 'random') {
+                // 计算并显示概率
+                const probText = this.getRandomCraftProbText(craftResult.slots);
                 resultDiv.innerHTML = `<span class="wb-result-icon">❓</span><span class="wb-result-text">随机</span>`;
-                tipDiv.innerHTML = `🎲 随机合成: 将获得一个随机技能`;
+                tipDiv.innerHTML = `🎲 随机合成<br>${probText}`;
             }
             resultDiv.classList.add('ready');
             craftBtn.disabled = false;
@@ -1333,6 +1335,29 @@ const Game = {
         }
     },
     
+    getRandomCraftProbText(slots) {
+        let totalValue = 0;
+        slots.forEach(slot => {
+            const star = slot.skill.star || 1;
+            totalValue += Math.pow(2, star - 1);
+        });
+        
+        if (totalValue >= 4) {
+            const p1 = Math.round(1 / totalValue * 100);
+            const p2 = Math.round(2 / totalValue * 100);
+            const p3 = 100 - p1 - p2;
+            return `⭐${p1}% ⭐⭐${p2}% ⭐⭐⭐${p3}%`;
+        } else if (totalValue >= 2) {
+            const p2 = Math.round((totalValue - 1) / totalValue * 100);
+            const p1 = 100 - p2;
+            if (totalValue === 2) {
+                return `必定获得 ⭐⭐`;
+            }
+            return `⭐${p1}% ⭐⭐${p2}%`;
+        }
+        return `必定获得 ⭐`;
+    },
+    
     getCraftResult() {
         const filledSlots = this.workbenchSlots.filter(s => s !== null);
         
@@ -1351,7 +1376,7 @@ const Game = {
                 }
             }
             // 3个不同的也可以随机合成
-            return { type: 'random' };
+            return { type: 'random', slots: filledSlots };
         }
         
         if (filledSlots.length === 2) {
@@ -1359,11 +1384,41 @@ const Game = {
             const s2 = filledSlots[1].skill;
             // 2个不同技能可以随机合成
             if (s1.id !== s2.id || (s1.star || 1) !== (s2.star || 1)) {
-                return { type: 'random' };
+                return { type: 'random', slots: filledSlots };
             }
         }
         
         return null;
+    },
+    
+    // 计算随机合成的结果星级
+    calculateRandomCraftStar(slots) {
+        // 计算总星值（每星等于2^(star-1)个1星）
+        let totalValue = 0;
+        slots.forEach(slot => {
+            const star = slot.skill.star || 1;
+            totalValue += Math.pow(2, star - 1);
+        });
+        
+        // 计算各星级概率
+        // 1星=1, 2星=2, 3星=4
+        // 例如：1星+2星 = 1+2 = 3，有 2/3 概率1星，1/3 概率2星
+        // 例如：2星+2星 = 2+2 = 4，必定2星
+        // 例如：1星+3星 = 1+4 = 5，有 4/5 概率1星，1/5 概率3星（简化为2星）
+        
+        const rand = Math.random() * totalValue;
+        
+        if (totalValue >= 4) {
+            // 有机会出3星
+            if (rand < 1) return 1;
+            if (rand < 3) return 2;
+            return 3;
+        } else if (totalValue >= 2) {
+            // 有机会出2星
+            if (rand < totalValue - 2 + 1) return 1;
+            return 2;
+        }
+        return 1;
     },
     
     doCraft() {
@@ -1376,18 +1431,68 @@ const Game = {
             this.player.wand.inventory.push(newSkill);
             this.workbenchSlots = [null, null, null];
             this.addFloatingText(`升星成功! ${newSkill.name} ${'⭐'.repeat(craftResult.newStar)}`, this.player.x, this.player.y - 40, '#ffd700');
+            Audio.play('levelup');
         } else if (craftResult.type === 'random') {
-            // 随机合成
+            // 随机合成 - 根据投入技能星级计算结果星级
+            const resultStar = this.calculateRandomCraftStar(craftResult.slots);
             const allSkillIds = Object.keys(ALL_SKILLS);
             const randomId = allSkillIds[Math.floor(Math.random() * allSkillIds.length)];
-            const randomSkill = { ...ALL_SKILLS[randomId], star: 1 };
+            const randomSkill = { ...ALL_SKILLS[randomId], star: resultStar };
             this.player.wand.inventory.push(randomSkill);
             this.workbenchSlots = [null, null, null];
-            this.addFloatingText(`获得: ${randomSkill.icon} ${randomSkill.name}!`, this.player.x, this.player.y - 40, '#00ffff');
+            const starText = resultStar > 1 ? ' ' + '⭐'.repeat(resultStar) : '';
+            this.addFloatingText(`获得: ${randomSkill.icon} ${randomSkill.name}${starText}!`, this.player.x, this.player.y - 40, '#00ffff');
+            Audio.play('pickup');
         }
         
         this.renderWorkbench();
         this.renderInventory();
+    },
+    
+    // 一键合成 - 自动合成所有可升星的技能
+    autoMergeAll() {
+        let mergeCount = 0;
+        let continueLoop = true;
+        
+        while (continueLoop) {
+            continueLoop = false;
+            const inventory = this.player.wand.inventory;
+            
+            // 统计每种技能每个星级的数量
+            const skillCounts = {};
+            inventory.forEach((skill, idx) => {
+                const key = `${skill.id}_${skill.star || 1}`;
+                if (!skillCounts[key]) {
+                    skillCounts[key] = { skill, star: skill.star || 1, indices: [] };
+                }
+                skillCounts[key].indices.push(idx);
+            });
+            
+            // 找到可以合成的（3个相同且星级<3）
+            for (const key in skillCounts) {
+                const data = skillCounts[key];
+                if (data.indices.length >= 3 && data.star < 3) {
+                    // 移除3个，添加1个升星的
+                    const toRemove = data.indices.slice(0, 3).sort((a, b) => b - a);
+                    toRemove.forEach(idx => inventory.splice(idx, 1));
+                    
+                    const newSkill = { ...data.skill, star: data.star + 1 };
+                    inventory.push(newSkill);
+                    
+                    mergeCount++;
+                    continueLoop = true;
+                    break; // 重新开始循环
+                }
+            }
+        }
+        
+        if (mergeCount > 0) {
+            this.addFloatingText(`一键合成完成! 合成了 ${mergeCount} 次`, this.player.x, this.player.y - 40, '#ffd700');
+            Audio.play('levelup');
+            this.renderInventory();
+        } else {
+            this.addFloatingText('没有可合成的技能', this.player.x, this.player.y - 40, '#888888');
+        }
     }
 };
 
