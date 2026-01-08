@@ -12,9 +12,9 @@ class BouncingModifier extends ModifierSkill {
     
     modify(mods, star) {
         const bounceValues = { 1: 2, 2: 4, 3: 6 };
-        const rangeValues = { 1: 200, 2: 300, 3: 400 };
+        const rangeValues = { 1: 300, 2: 450, 3: 600 };
         mods.bounceCount = (mods.bounceCount || 0) + (bounceValues[star] || 2);
-        mods.bounceRange = (mods.bounceRange || 0) + (rangeValues[star] || 200);
+        mods.bounceRange = (mods.bounceRange || 0) + (rangeValues[star] || 300);
         // 弹射是移动类效果，会覆盖环绕
         mods.orbital = false;
     }

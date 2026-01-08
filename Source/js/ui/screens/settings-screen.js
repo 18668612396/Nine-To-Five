@@ -1,5 +1,8 @@
 // --- 设置界面（浮动） ---
 
+// 是否为生产环境（GitHub Pages）
+const isProduction = window.location.hostname.includes('github.io');
+
 class SettingsScreen extends FloatScreen {
     constructor(config = {}) {
         super({
@@ -18,6 +21,13 @@ class SettingsScreen extends FloatScreen {
         const container = document.getElementById('ui-layer');
         if (!container) return;
         
+        // GM按钮只在非生产环境显示
+        const gmButton = isProduction ? '' : `
+            <button class="settings-item" onclick="GM.openPanel(); Game.closeSettingsOnly();">
+                <span>🛠️ GM指令</span>
+            </button>
+        `;
+        
         const el = document.createElement('div');
         el.id = 'settings-modal';
         el.className = 'screen hidden';
@@ -28,9 +38,7 @@ class SettingsScreen extends FloatScreen {
                     <button class="modal-close" onclick="Game.closeSettings()">✕</button>
                 </div>
                 <div class="settings-content">
-                    <button class="settings-item" onclick="GM.openPanel(); Game.closeSettingsOnly();">
-                        <span>🛠️ GM指令</span>
-                    </button>
+                    ${gmButton}
                     <button class="settings-item danger" onclick="Game.surrenderGame()">
                         <span>🏳️ 放弃战斗</span>
                     </button>
