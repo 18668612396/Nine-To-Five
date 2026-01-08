@@ -293,6 +293,11 @@ const Game = {
         this.bossKills = 0;
         this.maxCombo = 0;
         this.currentCombo = 0;
+        
+        // 清除法师僵尸的激光陷阱
+        if (typeof ZombieMage !== 'undefined') {
+            ZombieMage.clearTraps();
+        }
         this.lastKillTime = 0;
         
         Renderer.clearEffects();
@@ -397,6 +402,11 @@ const Game = {
         
         // 更新敌人
         this.enemies.forEach(e => e.update(this.player));
+        
+        // 更新法师僵尸的激光陷阱
+        if (typeof ZombieMage !== 'undefined') {
+            ZombieMage.updateTraps(this.player);
+        }
         
         // 敌人与场景元素碰撞
         Scene.Manager.handleEntitiesCollisions(this.enemies);
@@ -563,6 +573,11 @@ const Game = {
         
         // 绘制敌人
         this.enemies.forEach(e => e.draw(CTX, cameraX, cameraY));
+        
+        // 绘制法师僵尸的激光陷阱
+        if (typeof ZombieMage !== 'undefined') {
+            ZombieMage.drawTraps(CTX, cameraX, cameraY);
+        }
         
         // 绘制Boss
         Boss.Manager.draw(CTX, cameraX, cameraY);

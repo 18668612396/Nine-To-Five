@@ -14,7 +14,9 @@ const Spawner = {
         zombie_flag: { weight: 25, minTime: 10 },       // 旗帜僵尸，10秒后
         zombie_cone: { weight: 20, minTime: 20 },       // 路障僵尸，20秒后
         zombie_newspaper: { weight: 15, minTime: 30 },  // 读报僵尸，30秒后
-        zombie_bucket: { weight: 10, minTime: 45 }      // 铁桶僵尸，45秒后
+        zombie_bucket: { weight: 10, minTime: 45 },     // 铁桶僵尸，45秒后
+        zombie_gunner: { weight: 8, minTime: 60 },      // 持枪僵尸，60秒后
+        zombie_mage: { weight: 6, minTime: 90 }         // 法师僵尸，90秒后
     },
     
     // 选择僵尸类型

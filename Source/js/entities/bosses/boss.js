@@ -379,6 +379,16 @@ class BossProjectile {
             ctx.lineTo(-this.radius * 0.3, this.radius * 0.3);
             ctx.closePath();
             ctx.fill();
+        } else if (this.type === 'bullet') {
+            // 子弹样式
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, this.radius * 1.5, this.radius * 0.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.beginPath();
+            ctx.ellipse(this.radius * 0.3, -this.radius * 0.2, this.radius * 0.4, this.radius * 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
         } else {
             ctx.fillStyle = this.color;
             ctx.beginPath();
