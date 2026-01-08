@@ -6,7 +6,7 @@ class BoomerangSkill extends MagicSkill {
             id: 'boomerang',
             name: '回旋镖',
             icon: '🪃',
-            desc: '飞出后返回，去程回程都能造成伤害',
+            desc: '飞出后返回，去回双伤，伤害15x2',
             cooldown: 25,
             energyCost: 2
         });
@@ -23,8 +23,8 @@ class BoomerangProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
         const star = mods.star || 1;
-        this.damage = 12 * (mods.damage || 1) * (1 + (star - 1) * 0.3);
-        this.speed = 10 * (mods.speed || 1);
+        this.damage = 15 * (mods.damage || 1) * (1 + (star - 1) * 0.3);
+        this.speed = 9 * (mods.speed || 1);  // 中速
         this.radius = 10 * this.sizeScale;
         this.duration = 300;
         this.penetrate = 999;

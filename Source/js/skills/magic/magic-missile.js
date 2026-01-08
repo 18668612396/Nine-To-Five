@@ -6,9 +6,9 @@ class MagicMissileSkill extends MagicSkill {
             id: 'magic_missile',
             name: '魔导弹',
             icon: '🚀',
-            desc: '追踪敌人的导弹',
+            desc: '追踪敌人的导弹，伤害20',
             cooldown: 35,
-            energyCost: 1
+            energyCost: 3
         });
     }
     
@@ -20,8 +20,8 @@ class MagicMissileSkill extends MagicSkill {
 class MissileProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
-        this.damage = 25 * (mods.damage || 1);
-        this.speed = 5 * (mods.speed || 1);
+        this.damage = 20 * (mods.damage || 1);
+        this.speed = 4 * (mods.speed || 1);  // 慢速追踪
         this.radius = 6 * this.sizeScale;
         this.duration = 240;
         this.homing = true;

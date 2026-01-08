@@ -6,9 +6,9 @@ class BlackHoleSkill extends MagicSkill {
             id: 'black_hole',
             name: '黑洞',
             icon: '🕳️',
-            desc: '缓慢移动的黑洞，吸附并持续伤害附近敌人',
+            desc: '吸附并持续伤害敌人，伤害8/tick',
             cooldown: 60,
-            energyCost: 10
+            energyCost: 8
         });
     }
     
@@ -21,7 +21,7 @@ class BlackHoleProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
         const star = mods.star || 1;
-        this.baseDamage = 5;
+        this.baseDamage = 8;
         this.damage = this.baseDamage * (mods.damage || 1);
         this.speed = 2 * (mods.speed || 1);
         this.baseRadius = 40;

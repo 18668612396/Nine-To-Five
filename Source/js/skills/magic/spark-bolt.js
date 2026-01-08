@@ -6,7 +6,7 @@ class SparkBoltSkill extends MagicSkill {
             id: 'spark_bolt',
             name: '火花弹',
             icon: '✨',
-            desc: '快速的小型魔法弹',
+            desc: '快速的小型魔法弹，伤害6',
             cooldown: 8,
             energyCost: 1
         });
@@ -20,8 +20,8 @@ class SparkBoltSkill extends MagicSkill {
 class SparkProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
-        this.damage = 5 * (mods.damage || 1);
-        this.speed = 14 * (mods.speed || 1);
+        this.damage = 6 * (mods.damage || 1);
+        this.speed = 16 * (mods.speed || 1);  // 快速
         this.radius = 4 * this.sizeScale;
         this.color = '#ffff00';
         this.duration = 60;

@@ -6,9 +6,9 @@ class EnergyOrbSkill extends MagicSkill {
             id: 'energy_orb',
             name: '能量球',
             icon: '💠',
-            desc: '缓慢但强力的能量球',
+            desc: '缓慢但强力的能量球，伤害25，穿透5',
             cooldown: 40,
-            energyCost: 2
+            energyCost: 3
         });
     }
     
@@ -20,8 +20,8 @@ class EnergyOrbSkill extends MagicSkill {
 class PlasmaProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
-        this.damage = 17.5 * (mods.damage || 1);  // 伤害减半 (35 -> 17.5)
-        this.speed = 6 * (mods.speed || 1);
+        this.damage = 25 * (mods.damage || 1);
+        this.speed = 4 * (mods.speed || 1);  // 慢速
         this.radius = 14 * this.sizeScale;
         this.color = '#ff00ff';
         this.duration = 150;

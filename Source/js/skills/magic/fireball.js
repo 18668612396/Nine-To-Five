@@ -6,9 +6,9 @@ class FireballSkill extends MagicSkill {
             id: 'fireball',
             name: '火球术',
             icon: '🔥',
-            desc: '燃烧的火球',
+            desc: '燃烧的火球，伤害18',
             cooldown: 25,
-            energyCost: 1
+            energyCost: 2
         });
     }
     
@@ -20,8 +20,8 @@ class FireballSkill extends MagicSkill {
 class FireballProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
-        this.damage = 15 * (mods.damage || 1);
-        this.speed = 8 * (mods.speed || 1);
+        this.damage = 18 * (mods.damage || 1);
+        this.speed = 7 * (mods.speed || 1);  // 中速
         this.radius = 8 * this.sizeScale;
         this.color = '#ff6600';
         this.duration = 120;

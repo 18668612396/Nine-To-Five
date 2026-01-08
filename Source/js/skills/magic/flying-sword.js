@@ -6,9 +6,9 @@ class FlyingSwordSkill extends MagicSkill {
             id: 'flying_sword',
             name: '飞剑',
             icon: '🗡️',
-            desc: '挥舞飞剑攻击前方，可抵挡敌人弹道',
+            desc: '挥舞飞剑攻击前方，伤害15，可抵挡敌人弹道',
             cooldown: 15,
-            energyCost: 1
+            energyCost: 2
         });
     }
     
@@ -21,7 +21,7 @@ class FlyingSwordProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
         const star = mods.star || 1;
-        this.baseDamage = 12;
+        this.baseDamage = 15;
         this.damage = this.baseDamage * (mods.damage || 1) * (1 + (star - 1) * 0.5);
         this.speed = 0;
         this.radius = (30 + star * 10) * this.sizeScale;

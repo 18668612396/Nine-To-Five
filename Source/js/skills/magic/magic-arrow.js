@@ -6,7 +6,7 @@ class MagicArrowSkill extends MagicSkill {
             id: 'magic_arrow',
             name: '魔法箭',
             icon: '➤',
-            desc: '精准的魔法箭矢',
+            desc: '精准的魔法箭矢，伤害10',
             cooldown: 12,
             energyCost: 1
         });
@@ -20,8 +20,8 @@ class MagicArrowSkill extends MagicSkill {
 class LaserProjectile extends SkillProjectile {
     constructor(caster, mods) {
         super(caster, mods);
-        this.damage = 8 * (mods.damage || 1);
-        this.speed = 18 * (mods.speed || 1);
+        this.damage = 10 * (mods.damage || 1);
+        this.speed = 20 * (mods.speed || 1);  // 最快
         this.radius = 4 * this.sizeScale;
         this.color = '#00ffff';
         this.duration = 90;
