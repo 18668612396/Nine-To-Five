@@ -294,12 +294,15 @@ const TalentTree = {
         return PlayerData.getTalentLevel(talentId);
     },
     
-    // 获取升级费用（随等级递增）
+    // 获取升级费用
     getCost(talentId) {
         const talent = TALENT_TREE[talentId];
         if (!talent) return 0;
-        const level = this.getLevel(talentId);
-        return Math.floor(talent.cost * (1 + level * 0.5));
+        // 技能槽位固定100金币，其他固定20金币
+        if (talent.bonus && talent.bonus.stat === 'skillSlot') {
+            return 100;
+        }
+        return 20;
     },
     
     // 是否已满级
