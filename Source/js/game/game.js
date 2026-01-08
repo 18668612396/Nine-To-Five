@@ -109,7 +109,7 @@ const Game = {
             this.gold += goldDrop;
             Renderer.addFloatingText(`+${goldDrop} 💰`, data.x, data.y - 60, '#ffd700');
             
-            // Boss掉落武器
+            // Boss掉落武器（延迟显示）
             if (typeof WeaponGenerator !== 'undefined') {
                 const weapons = [];
                 const count = 2 + Math.floor(Math.random() * 2);
@@ -117,7 +117,10 @@ const Game = {
                     weapons.push(WeaponGenerator.generate(data.level || 1));
                 }
                 if (weapons.length > 0) {
-                    this.showWeaponDrop(weapons);
+                    // 延迟1秒后显示武器选择
+                    setTimeout(() => {
+                        this.showWeaponDrop(weapons);
+                    }, 1000);
                 }
             }
             

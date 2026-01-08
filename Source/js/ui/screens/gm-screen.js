@@ -45,6 +45,14 @@ class GMScreen extends FloatScreen {
                     </div>
                 </div>
                 <div class="gm-section">
+                    <h4>🗡️ 武器</h4>
+                    <div class="gm-weapon-btns">
+                        <button class="gm-btn weapon-type" onclick="GM.spawnWeaponDrop(1)">武器三选一 (Lv.1)</button>
+                        <button class="gm-btn weapon-type" onclick="GM.spawnWeaponDrop(3)">武器三选一 (Lv.3)</button>
+                        <button class="gm-btn weapon-type" onclick="GM.spawnWeaponDrop(5)">武器三选一 (Lv.5)</button>
+                    </div>
+                </div>
+                <div class="gm-section">
                     <h4>🔥 魔法</h4>
                     <div id="gm-magic-list" class="gm-list"></div>
                 </div>

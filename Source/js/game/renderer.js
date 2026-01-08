@@ -310,9 +310,14 @@ const Renderer = {
         const weapon = player.weapon;
         const slotSize = 36;
         const padding = 4;
-        const startX = (CONFIG.GAME_WIDTH - (weapon.slotCount * (slotSize + padding))) / 2;
+        
+        // 计算总槽位数（普通槽 + 特殊槽）
+        const specialSlotCount = (weapon.specialSlot && weapon.specialSlots) ? weapon.specialSlots.length : 0;
+        const totalSlots = weapon.slotCount + specialSlotCount;
+        const startX = (CONFIG.GAME_WIDTH - (totalSlots * (slotSize + padding))) / 2;
         const startY = CONFIG.GAME_HEIGHT - 60;
         
+        // 绘制普通技能槽
         for (let i = 0; i < weapon.slotCount; i++) {
             const x = startX + i * (slotSize + padding);
             const y = startY;
@@ -334,6 +339,37 @@ const Renderer = {
                 CTX.textBaseline = 'middle';
                 CTX.fillStyle = '#fff';
                 CTX.fillText(slot.icon, x + slotSize / 2, y + slotSize / 2);
+            }
+        }
+        
+        // 绘制特殊技能槽（紫色边框）
+        if (weapon.specialSlot && weapon.specialSlots) {
+            const specialSlotCount = weapon.specialSlots.length;
+            for (let i = 0; i < specialSlotCount; i++) {
+                const x = startX + (weapon.slotCount + i) * (slotSize + padding);
+                const y = startY;
+                const slot = weapon.specialSlots[i];
+                
+                // 特殊槽背景
+                CTX.fillStyle = 'rgba(80, 0, 120, 0.5)';
+                CTX.fillRect(x, y, slotSize, slotSize);
+                
+                // 特殊槽紫色边框
+                CTX.strokeStyle = '#cc66ff';
+                CTX.lineWidth = 2;
+                CTX.strokeRect(x, y, slotSize, slotSize);
+                
+                if (slot) {
+                    const isActive = slot.type === 'magic';
+                    CTX.fillStyle = isActive ? 'rgba(200, 100, 255, 0.3)' : 'rgba(150, 100, 200, 0.3)';
+                    CTX.fillRect(x + 2, y + 2, slotSize - 4, slotSize - 4);
+                    
+                    CTX.font = '20px Arial';
+                    CTX.textAlign = 'center';
+                    CTX.textBaseline = 'middle';
+                    CTX.fillStyle = '#fff';
+                    CTX.fillText(slot.icon, x + slotSize / 2, y + slotSize / 2);
+                }
             }
         }
         

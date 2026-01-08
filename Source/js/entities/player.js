@@ -195,6 +195,29 @@ class Player extends Entity {
         const oldWeapon = this.weaponSlots[slotIndex];
         
         if (oldWeapon) {
+            // 把旧武器上的技能放回背包
+            oldWeapon.slots.forEach(skill => {
+                if (skill) {
+                    this.skillInventory.push(skill);
+                }
+            });
+            oldWeapon.slots = new Array(oldWeapon.slotCount).fill(null);
+            
+            // 特殊槽的技能也放回背包
+            if (oldWeapon.specialSlots) {
+                oldWeapon.specialSlots.forEach(skill => {
+                    if (skill) {
+                        this.skillInventory.push(skill);
+                    }
+                });
+                const baseSpecialSlots = oldWeapon.specialSlot ? (oldWeapon.specialSlot.slots || 0) : 0;
+                oldWeapon.specialSlots = new Array(baseSpecialSlots).fill(null);
+            }
+            
+            // 重置槽位数量（因为拓展技能被移除了）
+            oldWeapon.slotCount = oldWeapon.baseSlotCount;
+            oldWeapon.slots = new Array(oldWeapon.baseSlotCount).fill(null);
+            
             this.weaponInventory.push(oldWeapon);
         }
         
@@ -217,7 +240,32 @@ class Player extends Entity {
         const equippedCount = this.weaponSlots.filter(w => w !== null).length;
         if (equippedCount <= 1) return false;
         
-        this.weaponInventory.push(this.weaponSlots[slotIndex]);
+        const weapon = this.weaponSlots[slotIndex];
+        
+        // 把武器上的技能放回背包
+        weapon.slots.forEach(skill => {
+            if (skill) {
+                this.skillInventory.push(skill);
+            }
+        });
+        weapon.slots = new Array(weapon.slotCount).fill(null);
+        
+        // 特殊槽的技能也放回背包
+        if (weapon.specialSlots) {
+            weapon.specialSlots.forEach(skill => {
+                if (skill) {
+                    this.skillInventory.push(skill);
+                }
+            });
+            const baseSpecialSlots = weapon.specialSlot ? (weapon.specialSlot.slots || 0) : 0;
+            weapon.specialSlots = new Array(baseSpecialSlots).fill(null);
+        }
+        
+        // 重置槽位数量
+        weapon.slotCount = weapon.baseSlotCount;
+        weapon.slots = new Array(weapon.baseSlotCount).fill(null);
+        
+        this.weaponInventory.push(weapon);
         this.weaponSlots[slotIndex] = null;
         
         if (slotIndex === this.currentWeaponIndex) {

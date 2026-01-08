@@ -2059,6 +2059,16 @@ body {
     transform: scale(1.05);
 }
 
+.gm-btn.weapon-type {
+    background: rgba(200, 100, 255, 0.3);
+    border-color: #cc66ff;
+}
+
+.gm-btn.weapon-type:hover {
+    background: rgba(200, 100, 255, 0.5);
+    transform: scale(1.05);
+}
+
 
 /* ========== 加载界面 ========== */
 #loading-screen {
@@ -2909,6 +2919,21 @@ body {
     bottom: 1px;
     right: 2px;
     font-size: 7px;
+}
+
+/* 特殊技能槽样式 */
+.weapon-wand-row .row-skill-slot.special-slot {
+    background: rgba(80, 0, 120, 0.3);
+    border: 2px solid #cc66ff;
+}
+
+.weapon-wand-row .row-skill-slot.special-slot:hover {
+    border-color: #dd88ff;
+    background: rgba(120, 50, 180, 0.4);
+}
+
+.weapon-wand-row .row-skill-slot.special-slot .slot-index {
+    color: #cc66ff;
 }
 
 .current-weapon-name {

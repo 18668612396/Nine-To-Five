@@ -88,5 +88,20 @@ const GM = {
         if (BossManager && BossManager.spawnBoss) {
             BossManager.spawnBoss(type);
         }
+    },
+    
+    // 生成武器三选一界面
+    spawnWeaponDrop(level = 1) {
+        if (typeof WeaponGenerator === 'undefined') {
+            console.warn('WeaponGenerator not found');
+            return;
+        }
+        const weapons = [];
+        const count = 3;
+        for (let i = 0; i < count; i++) {
+            weapons.push(WeaponGenerator.generate(level));
+        }
+        this.closePanel();
+        Game.showWeaponDrop(weapons);
     }
 };

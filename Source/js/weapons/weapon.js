@@ -261,22 +261,32 @@ class Weapon {
     // 更新槽位数量（根据拓展技能）
     updateSlotCount() {
         let expandSlots = 0;
+        let expandSpecialSlots = 0;
+        
+        // 统计普通槽中的拓展技能
         this.slots.forEach(slot => {
             if (slot && slot.id === 'expand') {
-                const star = slot.star || 1;
                 expandSlots += 4;
             }
         });
         
+        // 统计特殊槽中的拓展技能
+        if (this.specialSlots) {
+            this.specialSlots.forEach(slot => {
+                if (slot && slot.id === 'expand') {
+                    expandSpecialSlots += 2; // 特殊槽拓展数量较少
+                }
+            });
+        }
+        
+        // 更新普通槽数量
         const newSlotCount = this.baseSlotCount + expandSlots;
         
         if (newSlotCount > this.slotCount) {
-            // 扩展槽位
             while (this.slots.length < newSlotCount) {
                 this.slots.push(null);
             }
         } else if (newSlotCount < this.slotCount) {
-            // 缩减槽位，把多余的技能放回背包
             while (this.slots.length > newSlotCount) {
                 const removed = this.slots.pop();
                 if (removed) {
@@ -286,6 +296,27 @@ class Weapon {
         }
         
         this.slotCount = newSlotCount;
+        
+        // 更新特殊槽数量
+        if (this.specialSlot) {
+            const baseSpecialSlots = this.specialSlot.slots || 0;
+            const newSpecialSlotCount = baseSpecialSlots + expandSpecialSlots;
+            
+            if (newSpecialSlotCount > this.specialSlots.length) {
+                while (this.specialSlots.length < newSpecialSlotCount) {
+                    this.specialSlots.push(null);
+                }
+            } else if (newSpecialSlotCount < this.specialSlots.length) {
+                while (this.specialSlots.length > newSpecialSlotCount) {
+                    const removed = this.specialSlots.pop();
+                    if (removed) {
+                        this.inventory.push(removed);
+                    }
+                }
+            }
+            
+            this.specialSlot.slots = newSpecialSlotCount;
+        }
     }
     
     // 获取伤害倍率
@@ -347,11 +378,11 @@ class Weapon {
     
     // 特殊槽施法
     castSpecialSlots(player) {
-        this.castAllSlots(player, this.specialSlots);
+        this.castAllSlots(player, this.specialSlots, true);
     }
     
     // 一次轮播所有槽位
-    castAllSlots(player, slots) {
+    castAllSlots(player, slots, isSpecialSlot = false) {
         let totalCost = 0;
         let costReductionPercent = 0; // 能量消耗减少百分比
         
@@ -437,6 +468,11 @@ class Weapon {
             const starMult = this.getStarMultiplier(skill.star || 1);
             skillMods.damage *= starMult;
             skillMods.star = skill.star || 1;
+            
+            // 特殊槽伤害降低30%
+            if (isSpecialSlot) {
+                skillMods.damage *= 0.7;
+            }
             
             this.fireSkill(player, skill, skillMods);
         });

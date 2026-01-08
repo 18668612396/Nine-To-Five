@@ -186,6 +186,78 @@ const Inventory = {
                 skillSlotsDiv.appendChild(hintDiv);
             }
             
+            // 渲染特殊技能槽（紫色边框）
+            if (weapon && weapon.specialSlot && weapon.specialSlots) {
+                const specialSlotCount = weapon.specialSlot.slots || 0;
+                for (let i = 0; i < specialSlotCount; i++) {
+                    const slot = weapon.specialSlots[i];
+                    const slotDiv = document.createElement('div');
+                    slotDiv.className = 'row-skill-slot special-slot';
+                    slotDiv.dataset.weaponIndex = rowIdx;
+                    slotDiv.dataset.specialSlotIndex = i;
+                    slotDiv.draggable = true;
+                    
+                    if (slot) {
+                        const star = slot.star || 1;
+                        const cost = typeof SKILL_COSTS !== 'undefined' ? (SKILL_COSTS[slot.id] || 0) : 0;
+                        slotDiv.classList.add('has-skill');
+                        slotDiv.classList.add(slot.type === 'magic' ? 'magic-type' : 'modifier-type');
+                        const starText = '⭐'.repeat(star);
+                        const costText = cost > 0 ? `<span class="skill-cost">⚡${cost}</span>` : '';
+                        slotDiv.innerHTML = `<span class="slot-index">S${i + 1}</span>${slot.icon}<span class="star-badge">${starText}</span>${costText}`;
+                        const desc = (slot.getDesc && typeof slot.getDesc === 'function') ? slot.getDesc(star) : (slot.desc || '');
+                        slotDiv.title = `[特殊槽] ${slot.name} (${star}星)\n${desc}\n能量消耗: ${cost}`;
+                    } else {
+                        slotDiv.innerHTML = `<span class="slot-index">S${i + 1}</span>`;
+                        slotDiv.title = '特殊技能槽 - 满足条件时自动触发';
+                    }
+                    
+                    slotDiv.onclick = () => {
+                        if (weapon && weapon.specialSlots[i]) {
+                            this.unequipSkillFromSpecialSlot(i, weapon);
+                            this.render();
+                        }
+                    };
+                    
+                    slotDiv.ondragstart = (e) => {
+                        if (weapon && weapon.specialSlots[i]) {
+                            e.dataTransfer.setData('type', 'specialSlot');
+                            e.dataTransfer.setData('weaponIndex', rowIdx.toString());
+                            e.dataTransfer.setData('specialSlotIndex', i.toString());
+                            slotDiv.classList.add('dragging');
+                        } else {
+                            e.preventDefault();
+                        }
+                    };
+                    slotDiv.ondragend = () => slotDiv.classList.remove('dragging');
+                    
+                    slotDiv.ondragover = (e) => { e.preventDefault(); slotDiv.classList.add('drag-over'); };
+                    slotDiv.ondragleave = () => slotDiv.classList.remove('drag-over');
+                    slotDiv.ondrop = (e) => {
+                        e.preventDefault();
+                        slotDiv.classList.remove('drag-over');
+                        const type = e.dataTransfer.getData('type');
+                        
+                        if (type === 'specialSlot') {
+                            const fromWeaponIdx = parseInt(e.dataTransfer.getData('weaponIndex'));
+                            const fromSlotIdx = parseInt(e.dataTransfer.getData('specialSlotIndex'));
+                            if (fromWeaponIdx === rowIdx && fromSlotIdx !== i && weapon) {
+                                [weapon.specialSlots[fromSlotIdx], weapon.specialSlots[i]] = [weapon.specialSlots[i], weapon.specialSlots[fromSlotIdx]];
+                                this.render();
+                            }
+                        } else if (type === 'inventory') {
+                            const invIndex = parseInt(e.dataTransfer.getData('inventoryIndex'));
+                            if (!isNaN(invIndex) && weapon) {
+                                this.equipSkillToSpecialSlot(invIndex, i, weapon);
+                                this.render();
+                            }
+                        }
+                    };
+                    
+                    skillSlotsDiv.appendChild(slotDiv);
+                }
+            }
+            
             rowDiv.appendChild(skillSlotsDiv);
             container.appendChild(rowDiv);
         }
@@ -273,6 +345,58 @@ const Inventory = {
         const skill = weapon.slots[slotIndex];
         Game.player.skillInventory.push(skill);
         weapon.slots[slotIndex] = null;
+        
+        // 如果卸下的是拓展技能，更新槽位数量
+        if (skill.id === 'expand') {
+            weapon.updateSlotCount();
+        }
+        return true;
+    },
+    
+    // 装备技能到特殊槽
+    equipSkillToSpecialSlot(inventoryIndex, slotIndex, weapon) {
+        const inventory = Game.player.skillInventory;
+        if (!weapon.specialSlots) return false;
+        if (inventoryIndex < 0 || inventoryIndex >= inventory.length) return false;
+        if (slotIndex < 0 || slotIndex >= weapon.specialSlots.length) return false;
+        
+        const skill = inventory[inventoryIndex];
+        if (weapon.specialSlots[slotIndex] !== null) {
+            // 如果卸下的是拓展技能，先更新槽位
+            if (weapon.specialSlots[slotIndex].id === 'expand') {
+                inventory.push(weapon.specialSlots[slotIndex]);
+                weapon.specialSlots[slotIndex] = null;
+                weapon.updateSlotCount();
+                // 重新检查槽位是否有效
+                if (slotIndex >= weapon.specialSlots.length) {
+                    slotIndex = weapon.specialSlots.length - 1;
+                    if (weapon.specialSlots[slotIndex] !== null) {
+                        inventory.push(weapon.specialSlots[slotIndex]);
+                    }
+                }
+            } else {
+                inventory.push(weapon.specialSlots[slotIndex]);
+            }
+        }
+        weapon.specialSlots[slotIndex] = skill;
+        inventory.splice(inventoryIndex, 1);
+        
+        // 如果装备的是拓展技能，更新槽位数量
+        if (skill.id === 'expand') {
+            weapon.updateSlotCount();
+        }
+        return true;
+    },
+    
+    // 从特殊槽卸下技能
+    unequipSkillFromSpecialSlot(slotIndex, weapon) {
+        if (!weapon.specialSlots) return false;
+        if (slotIndex < 0 || slotIndex >= weapon.specialSlots.length) return false;
+        if (weapon.specialSlots[slotIndex] === null) return false;
+        
+        const skill = weapon.specialSlots[slotIndex];
+        Game.player.skillInventory.push(skill);
+        weapon.specialSlots[slotIndex] = null;
         
         // 如果卸下的是拓展技能，更新槽位数量
         if (skill.id === 'expand') {
