@@ -23,8 +23,8 @@ class TitleScreen extends FullScreen {
         el.className = 'screen hidden';
         el.innerHTML = `
             <div class="title-content">
-                <h1 class="game-title">葵瓜幸存者</h1>
-                <p class="game-subtitle">KuiGua Survivors</p>
+                <h1 class="game-title">小葵瓜幸存者</h1>
+                <p class="game-subtitle">Little KuiGua Survivors</p>
                 <div class="title-char-display">
                     <canvas id="title-char-1" width="120" height="120"></canvas>
                     <canvas id="title-char-2" width="120" height="120"></canvas>

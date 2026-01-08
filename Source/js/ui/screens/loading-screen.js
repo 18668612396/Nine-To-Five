@@ -25,7 +25,7 @@ class LoadingScreen extends FullScreen {
         el.innerHTML = `
             <div class="loading-content">
                 <div class="loading-icon">🌻</div>
-                <h1 class="loading-title">葵瓜幸存者</h1>
+                <h1 class="loading-title">小葵瓜幸存者</h1>
                 <div class="loading-bar-container">
                     <div class="loading-bar"></div>
                 </div>

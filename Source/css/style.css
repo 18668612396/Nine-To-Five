@@ -1424,6 +1424,14 @@ body {
     max-width: 700px;
 }
 
+/* 预装技能弹窗特殊样式 - 自适应高度 */
+#skill-preload-modal .modal-container.wide {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 80px);
+    overflow: hidden;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -3529,6 +3537,11 @@ body {
 /* 技能预装界面 */
 .preload-content {
     padding: 15px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .preload-hint {
@@ -3604,8 +3617,9 @@ body {
 }
 
 .preload-skills-container {
-    max-height: 300px;
+    flex: 1;
     overflow-y: auto;
+    min-height: 0;
 }
 
 .preload-skills-grid {

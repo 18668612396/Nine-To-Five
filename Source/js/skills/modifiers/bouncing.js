@@ -6,7 +6,7 @@ class BouncingModifier extends ModifierSkill {
             id: 'bouncing',
             name: '弹射',
             icon: '🔀',
-            desc: '弹射到范围内随机敌人(1星+2次/2星+4次/3星+6次)'
+            desc: '弹射到范围内随机敌人(1星+2次/2星+4次/3星+6次，范围300/450/600)'
         });
     }
     

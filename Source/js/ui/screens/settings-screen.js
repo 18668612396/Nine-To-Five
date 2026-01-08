@@ -1,8 +1,5 @@
 // --- 设置界面（浮动） ---
 
-// 是否为生产环境（GitHub Pages）
-const isProduction = window.location.hostname.includes('github.io');
-
 class SettingsScreen extends FloatScreen {
     constructor(config = {}) {
         super({

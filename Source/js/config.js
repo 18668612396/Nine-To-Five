@@ -4,6 +4,9 @@
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
     || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
 
+// 环境检测（GitHub Pages为生产环境）
+const isProduction = window.location.hostname.includes('github.io');
+
 const CONFIG = {
     // 游戏区域会动态适应屏幕
     GAME_WIDTH: 1920,

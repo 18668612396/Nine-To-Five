@@ -56,7 +56,10 @@ function initSkillRegistry() {
         };
     });
     
-    console.log(`技能系统初始化完成: ${Object.keys(MAGIC_SKILLS).length} 主动技能, ${Object.keys(MODIFIER_SKILLS).length} 被动技能, ${Object.keys(PERKS).length} 祝福`);
+    // 开发环境输出日志
+    if (!isProduction) {
+        console.log(`技能系统初始化完成: ${Object.keys(MAGIC_SKILLS).length} 主动技能, ${Object.keys(MODIFIER_SKILLS).length} 被动技能, ${Object.keys(PERKS).length} 祝福`);
+    }
 }
 
 // 技能能量消耗定义
