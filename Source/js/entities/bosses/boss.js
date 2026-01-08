@@ -388,6 +388,41 @@ class BossProjectile {
             ctx.lineTo(-this.radius * 0.3, this.radius * 0.3);
             ctx.closePath();
             ctx.fill();
+        } else if (this.type === 'icicle_large') {
+            // 大冰锥 - 带亮色描边
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = 10;
+            
+            // 冰锥本体
+            const grad = ctx.createLinearGradient(-this.radius, 0, this.radius, 0);
+            grad.addColorStop(0, '#4682b4');
+            grad.addColorStop(0.3, '#87ceeb');
+            grad.addColorStop(0.6, '#e0f7ff');
+            grad.addColorStop(1, '#ffffff');
+            
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(this.radius * 1.5, 0);
+            ctx.lineTo(-this.radius * 0.8, -this.radius * 0.7);
+            ctx.lineTo(-this.radius * 0.8, this.radius * 0.7);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 亮色描边
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.shadowBlur = 0;
+            
+            // 高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.beginPath();
+            ctx.moveTo(this.radius * 0.8, 0);
+            ctx.lineTo(-this.radius * 0.4, -this.radius * 0.35);
+            ctx.lineTo(-this.radius * 0.4, this.radius * 0.35);
+            ctx.closePath();
+            ctx.fill();
         } else if (this.type === 'bullet') {
             // 子弹样式
             ctx.fillStyle = this.color;

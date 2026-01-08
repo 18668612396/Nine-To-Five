@@ -350,12 +350,15 @@ class Weapon {
                 this.slots.push(null);
             }
         } else if (newSlotCount < this.slotCount) {
-            while (this.slots.length > newSlotCount) {
-                const removed = this.slots.pop();
-                if (removed) {
-                    this.inventory.push(removed);
+            // 先把要移除的槽位中的技能放回背包
+            for (let i = this.slots.length - 1; i >= newSlotCount; i--) {
+                if (this.slots[i]) {
+                    this.inventory.push(this.slots[i]);
+                    this.slots[i] = null;
                 }
             }
+            // 然后缩减数组
+            this.slots.length = newSlotCount;
         }
         
         this.slotCount = newSlotCount;
@@ -370,12 +373,15 @@ class Weapon {
                     this.specialSlots.push(null);
                 }
             } else if (newSpecialSlotCount < this.specialSlots.length) {
-                while (this.specialSlots.length > newSpecialSlotCount) {
-                    const removed = this.specialSlots.pop();
-                    if (removed) {
-                        this.inventory.push(removed);
+                // 先把要移除的槽位中的技能放回背包
+                for (let i = this.specialSlots.length - 1; i >= newSpecialSlotCount; i--) {
+                    if (this.specialSlots[i]) {
+                        this.inventory.push(this.specialSlots[i]);
+                        this.specialSlots[i] = null;
                     }
                 }
+                // 然后缩减数组
+                this.specialSlots.length = newSpecialSlotCount;
             }
             
             this.specialSlot.slots = newSpecialSlotCount;

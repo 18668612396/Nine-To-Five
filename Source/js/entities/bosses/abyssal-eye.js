@@ -38,7 +38,7 @@ class AbyssalEye extends Boss {
         
         // 技能3: 范围爆发
         this.novaCooldown = 0;
-        this.novaRadius = 600;
+        this.novaRadius = 500;
         
         // 初始化触手
         for (let i = 0; i < 8; i++) {

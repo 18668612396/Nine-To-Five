@@ -155,11 +155,11 @@ class FrostQueen extends Boss {
         const dy = player.y - this.y;
         const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.2;
         
-        // 发射冰锥
+        // 发射冰锥 - 更大的弹道
         const proj = new BossProjectile(
             this.x, this.y,
             Math.cos(angle) * 6, Math.sin(angle) * 6,
-            10, '#87ceeb', this.damage * 0.8, 'icicle'
+            18, '#87ceeb', this.damage * 0.8, 'icicle_large'
         );
         Events.emit(EVENT.PROJECTILE_FIRE, { projectile: proj, isBoss: true });
         
@@ -168,9 +168,9 @@ class FrostQueen extends Boss {
         // 发射粒子
         Events.emit(EVENT.PARTICLES, {
             x: this.x, y: this.y,
-            count: 3,
+            count: 5,
             color: '#00ffff',
-            spread: 4
+            spread: 5
         });
     }
     
@@ -194,7 +194,7 @@ class FrostQueen extends Boss {
             type: 'circle',
             x: this.x,
             y: this.y,
-            radius: 180,
+            radius: 500,
             progress: 0,
             maxTime: 120, // 2秒
             color: 'red',
@@ -205,7 +205,7 @@ class FrostQueen extends Boss {
     
     startBurst() {
         this.isBursting = true;
-        this.burstTimer = 30;
+        this.burstTimer = 45; // 延长爆发特效时间
         
         Events.emit(EVENT.FLOATING_TEXT, {
             text: '❄️ 冰霜爆发!',
@@ -219,13 +219,13 @@ class FrostQueen extends Boss {
         
         this.burstTimer--;
         
-        if (this.burstTimer === 25) {
+        if (this.burstTimer === 40) {
             // 爆发伤害
             const dx = player.x - this.x;
             const dy = player.y - this.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             
-            if (dist < 180) {
+            if (dist < 500) {
                 player.takeDamage(this.damage * 2.5);
                 player.slowEffect = 0.3;
                 player.slowTimer = 120;
@@ -336,6 +336,20 @@ class FrostQueen extends Boss {
         
         // 绘制寒冰领域
         this.drawFrostAura(ctx, camX, camY);
+        
+        // 绘制爆发特效（在预警之前绘制）
+        if (this.isBursting) {
+            const fadeProgress = this.burstTimer / 45;
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, 500);
+            gradient.addColorStop(0, `rgba(0, 255, 255, ${0.6 * fadeProgress})`);
+            gradient.addColorStop(0.3, `rgba(135, 206, 250, ${0.4 * fadeProgress})`);
+            gradient.addColorStop(0.7, `rgba(200, 240, 255, ${0.2 * fadeProgress})`);
+            gradient.addColorStop(1, 'rgba(135, 206, 250, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, 500, 0, Math.PI * 2);
+            ctx.fill();
+        }
         
         // 绘制攻击预警
         this.drawWarnings(ctx, camX, camY);
@@ -722,62 +736,63 @@ class FrostQueen extends Boss {
             ctx.save();
             
             if (w.type === 'circle' && w.color === 'red') {
-                // 红色圆形预警（周身爆发）
-                const alpha = 0.2 + progress * 0.3;
-                
-                // 外圈
-                ctx.strokeStyle = `rgba(255, 80, 80, ${alpha + 0.2})`;
-                ctx.lineWidth = 3;
+                // 红色圆形预警（周身爆发）- 与深渊之眼一致
+                // 浅红色 - 最大伤害范围（固定大小）
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
                 ctx.beginPath();
                 ctx.arc(wx, wy, w.radius, 0, Math.PI * 2);
-                ctx.stroke();
-                
-                // 填充进度 - 从外向内收缩
-                ctx.fillStyle = `rgba(255, 50, 50, ${alpha * 0.5})`;
-                ctx.beginPath();
-                ctx.arc(wx, wy, w.radius * (1 - progress * 0.3), 0, Math.PI * 2);
                 ctx.fill();
                 
-                // 内圈进度
-                ctx.fillStyle = `rgba(255, 100, 100, ${alpha * 0.7})`;
-                ctx.beginPath();
-                ctx.arc(wx, wy, w.radius * progress, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // 边缘闪烁
-                if (progress > 0.7) {
-                    const flash = Math.sin(this.animationFrame * 0.5) * 0.4 + 0.5;
-                    ctx.strokeStyle = `rgba(255, 255, 100, ${flash})`;
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    ctx.arc(wx, wy, w.radius, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
-                
-                // 警告图标
-                ctx.fillStyle = `rgba(255, 255, 255, ${0.5 + progress * 0.5})`;
-                ctx.font = 'bold 24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText('⚠️', wx, wy - w.radius - 10);
-            }
-            else if (w.type === 'fallingIcicle') {
-                // 天降冰锥预警
-                const alpha = 0.3 + progress * 0.4;
-                
-                // 外圈
-                ctx.strokeStyle = `rgba(255, 100, 100, ${alpha})`;
+                // 浅红色边框
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.arc(wx, wy, w.radius, 0, Math.PI * 2);
                 ctx.stroke();
                 
-                // 填充进度
-                ctx.fillStyle = `rgba(255, 80, 80, ${alpha * 0.4})`;
+                // 深红色 - 倒计时圈（从中心向外扩大）
+                const expandRadius = w.radius * progress;
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.35)';
                 ctx.beginPath();
-                ctx.arc(wx, wy, w.radius * progress, 0, Math.PI * 2);
+                ctx.arc(wx, wy, expandRadius, 0, Math.PI * 2);
                 ctx.fill();
                 
+                // 深红色边框
+                ctx.strokeStyle = 'rgba(255, 50, 50, 0.7)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(wx, wy, expandRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            else if (w.type === 'fallingIcicle') {
+                // 天降冰锥预警 - 也改为一致的红色风格
+                // 浅红色 - 最大范围
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
+                ctx.beginPath();
+                ctx.arc(wx, wy, w.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(wx, wy, w.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // 深红色 - 倒计时圈
+                const expandRadius = w.radius * progress;
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.35)';
+                ctx.beginPath();
+                ctx.arc(wx, wy, expandRadius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = 'rgba(255, 50, 50, 0.7)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(wx, wy, expandRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                
                 // 十字准星
+                const alpha = 0.3 + progress * 0.4;
                 ctx.strokeStyle = `rgba(255, 150, 150, ${alpha})`;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -786,16 +801,6 @@ class FrostQueen extends Boss {
                 ctx.moveTo(wx, wy - w.radius * 0.7);
                 ctx.lineTo(wx, wy + w.radius * 0.7);
                 ctx.stroke();
-                
-                // 边缘闪烁
-                if (progress > 0.8) {
-                    const flash = Math.sin(this.animationFrame * 0.6) * 0.4 + 0.5;
-                    ctx.strokeStyle = `rgba(255, 255, 0, ${flash})`;
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    ctx.arc(wx, wy, w.radius, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
             }
             
             ctx.restore();
