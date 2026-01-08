@@ -5,6 +5,71 @@ const Inventory = {
     workbenchSlots: [null, null, null],
     workbenchOpen: false,
     
+    // 长按计时器
+    longPressTimer: null,
+    longPressDelay: 500,
+    
+    // 显示技能详情弹窗
+    showSkillTooltip(skill, x, y) {
+        this.hideSkillTooltip();
+        
+        const star = skill.star || 1;
+        const cost = typeof SKILL_COSTS !== 'undefined' ? (SKILL_COSTS[skill.id] || 0) : 0;
+        const desc = (skill.getDesc && typeof skill.getDesc === 'function') ? skill.getDesc(star) : (skill.desc || '');
+        const typeText = skill.type === 'magic' ? '主动技能' : '被动技能';
+        
+        const tooltip = document.createElement('div');
+        tooltip.id = 'skill-tooltip';
+        tooltip.className = 'skill-tooltip';
+        tooltip.innerHTML = `
+            <div class="tooltip-header">
+                <span class="tooltip-icon">${skill.icon}</span>
+                <div class="tooltip-title">
+                    <span class="tooltip-name">${skill.name}</span>
+                    <span class="tooltip-star">${'⭐'.repeat(star)}</span>
+                </div>
+            </div>
+            <div class="tooltip-type">${typeText}</div>
+            <div class="tooltip-desc">${desc}</div>
+            ${cost > 0 ? `<div class="tooltip-cost">⚡ 能量消耗: ${cost}</div>` : ''}
+            <div class="tooltip-hint">点击任意处关闭</div>
+        `;
+        
+        document.body.appendChild(tooltip);
+        
+        // 点击任意处关闭
+        setTimeout(() => {
+            document.addEventListener('touchstart', this.hideSkillTooltip, { once: true });
+            document.addEventListener('click', this.hideSkillTooltip, { once: true });
+        }, 100);
+    },
+    
+    hideSkillTooltip() {
+        const tooltip = document.getElementById('skill-tooltip');
+        if (tooltip) tooltip.remove();
+    },
+    
+    // 绑定长按事件（移动端）
+    bindLongPress(element, skill) {
+        if (!isMobile) return;
+        
+        element.addEventListener('touchstart', (e) => {
+            this.longPressTimer = setTimeout(() => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                this.showSkillTooltip(skill, touch.clientX, touch.clientY);
+            }, this.longPressDelay);
+        }, { passive: false });
+        
+        element.addEventListener('touchend', () => {
+            clearTimeout(this.longPressTimer);
+        });
+        
+        element.addEventListener('touchmove', () => {
+            clearTimeout(this.longPressTimer);
+        });
+    },
+    
     // 打开背包（现在由 Screen.Manager 调用）
     open() {
         this.workbenchOpen = false;
@@ -109,7 +174,6 @@ const Inventory = {
                 slotDiv.className = 'row-skill-slot';
                 slotDiv.dataset.weaponIndex = rowIdx;
                 slotDiv.dataset.slotIndex = i;
-                slotDiv.draggable = true;
                 
                 if (slot) {
                     const star = slot.star || 1;
@@ -122,6 +186,11 @@ const Inventory = {
                     // 支持动态描述（如拓展技能根据星级显示不同描述）
                     const desc = (slot.getDesc && typeof slot.getDesc === 'function') ? slot.getDesc(star) : (slot.desc || '');
                     slotDiv.title = `${slot.name} (${star}星)\n${desc}\n能量消耗: ${cost}`;
+                    
+                    // 移动端长按显示详情
+                    if (isMobile) {
+                        this.bindLongPress(slotDiv, slot);
+                    }
                 } else {
                     slotDiv.innerHTML = `<span class="slot-index">${i + 1}</span>`;
                 }
@@ -133,17 +202,23 @@ const Inventory = {
                     }
                 };
                 
-                slotDiv.ondragstart = (e) => {
-                    if (weapon && weapon.slots[i]) {
-                        e.dataTransfer.setData('type', 'slot');
-                        e.dataTransfer.setData('weaponIndex', rowIdx.toString());
-                        e.dataTransfer.setData('slotIndex', i.toString());
-                        slotDiv.classList.add('dragging');
-                    } else {
-                        e.preventDefault();
-                    }
-                };
-                slotDiv.ondragend = () => slotDiv.classList.remove('dragging');
+                // 移动端禁用拖拽
+                if (isMobile) {
+                    slotDiv.draggable = false;
+                } else {
+                    slotDiv.draggable = true;
+                    slotDiv.ondragstart = (e) => {
+                        if (weapon && weapon.slots[i]) {
+                            e.dataTransfer.setData('type', 'slot');
+                            e.dataTransfer.setData('weaponIndex', rowIdx.toString());
+                            e.dataTransfer.setData('slotIndex', i.toString());
+                            slotDiv.classList.add('dragging');
+                        } else {
+                            e.preventDefault();
+                        }
+                    };
+                    slotDiv.ondragend = () => slotDiv.classList.remove('dragging');
+                }
                 
                 slotDiv.ondragover = (e) => { e.preventDefault(); slotDiv.classList.add('drag-over'); };
                 slotDiv.ondragleave = () => slotDiv.classList.remove('drag-over');
@@ -430,12 +505,19 @@ const Inventory = {
             const desc = (skill.getDesc && typeof skill.getDesc === 'function') ? skill.getDesc(star) : (skill.desc || '');
             div.title = `${skill.name} (${star}星)\n${desc}\n能量消耗: ${cost}`;
             
-            div.ondragstart = (e) => {
-                e.dataTransfer.setData('type', 'inventory');
-                e.dataTransfer.setData('inventoryIndex', idx.toString());
-                div.classList.add('dragging');
-            };
-            div.ondragend = () => div.classList.remove('dragging');
+            // 移动端：禁用拖拽，绑定长按
+            if (isMobile) {
+                div.draggable = false;
+                this.bindLongPress(div, skill);
+            } else {
+                div.draggable = true;
+                div.ondragstart = (e) => {
+                    e.dataTransfer.setData('type', 'inventory');
+                    e.dataTransfer.setData('inventoryIndex', idx.toString());
+                    div.classList.add('dragging');
+                };
+                div.ondragend = () => div.classList.remove('dragging');
+            }
             
             div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over'); };
             div.ondragleave = () => div.classList.remove('drag-over');

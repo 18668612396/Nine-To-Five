@@ -929,6 +929,75 @@ body {
     animation: star3-glow 1.5s ease-in-out infinite;
 }
 
+/* 技能详情弹窗（移动端长按） */
+.skill-tooltip {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 2px solid #4488cc;
+    border-radius: 12px;
+    padding: 16px;
+    min-width: 250px;
+    max-width: 300px;
+    z-index: 9999;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.tooltip-icon {
+    font-size: 36px;
+}
+
+.tooltip-title {
+    display: flex;
+    flex-direction: column;
+}
+
+.tooltip-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.tooltip-star {
+    font-size: 12px;
+}
+
+.tooltip-type {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.tooltip-desc {
+    font-size: 14px;
+    color: #ccc;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.tooltip-cost {
+    font-size: 13px;
+    color: #ffcc00;
+    margin-bottom: 8px;
+}
+
+.tooltip-hint {
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+    margin-top: 10px;
+}
+
+
 @keyframes star3-glow {
     0%, 100% { box-shadow: 0 0 12px rgba(255, 200, 50, 0.9); }
     50% { box-shadow: 0 0 20px rgba(255, 220, 100, 1); }
