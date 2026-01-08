@@ -13,8 +13,8 @@ class SakuraTreeant extends Boss {
         gold: 200
     };
     
-    constructor(x, y) {
-        super(x, y, SakuraTreeant.CONFIG);
+    constructor(x, y, scaleMult = 1) {
+        super(x, y, SakuraTreeant.CONFIG, scaleMult);
         this.petalAngle = 0;
         this.rootWarnings = [];
         this.fallingPetals = [];

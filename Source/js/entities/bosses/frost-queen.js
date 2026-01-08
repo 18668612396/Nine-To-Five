@@ -13,8 +13,8 @@ class FrostQueen extends Boss {
         gold: 160
     };
     
-    constructor(x, y) {
-        super(x, y, FrostQueen.CONFIG);
+    constructor(x, y, scaleMult = 1) {
+        super(x, y, FrostQueen.CONFIG, scaleMult);
         this.capeAngle = 0;
         this.iceZones = [];
         this.blizzardActive = false;

@@ -11,9 +11,12 @@ class ReflectModifier extends ModifierSkill {
     }
     
     modify(mods, star) {
+        // 反弹是移动类效果，会覆盖环绕
         mods.reflect = true;
         mods.reflectCount = (mods.reflectCount || 0) + 3;
         mods.reflectDamageDecay = 0.8;
+        // 禁用环绕
+        mods.orbital = false;
     }
 }
 

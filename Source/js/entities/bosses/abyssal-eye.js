@@ -13,8 +13,8 @@ class AbyssalEye extends Boss {
         gold: 180
     };
     
-    constructor(x, y) {
-        super(x, y, AbyssalEye.CONFIG);
+    constructor(x, y, scaleMult = 1) {
+        super(x, y, AbyssalEye.CONFIG, scaleMult);
         this.pupilSize = 20;
         this.tentacles = [];
         this.laserTarget = null;

@@ -7,13 +7,13 @@ class Boss extends Enemy {
     static difficultyMult = { enemy: 1, reward: 1 }; // 由外部设置
     static goldMult = 1; // 由外部设置
     
-    constructor(x, y, config) {
+    constructor(x, y, config, scaleMult = 1) {
         // 调用Enemy构造函数
         super(x, y, {
             radius: config.radius,
             color: config.color,
-            hp: config.hp * (Boss.difficultyMult?.enemy || 1),
-            damage: config.damage * (Boss.difficultyMult?.enemy || 1),
+            hp: config.hp * (Boss.difficultyMult?.enemy || 1) * scaleMult,
+            damage: config.damage * (Boss.difficultyMult?.enemy || 1) * scaleMult,
             speed: config.speed,
             xp: config.xp,
             gold: config.gold * (Boss.difficultyMult?.reward || 1)
@@ -27,6 +27,7 @@ class Boss extends Enemy {
         this.attackCooldown = 0;
         this.specialCooldown = 0;
         this.animationFrame = 0;
+        this.scaleMult = scaleMult; // 保存难度倍率
         
         // 特殊状态
         this.isEnraged = false;
@@ -40,13 +41,13 @@ class Boss extends Enemy {
     }
     
     // 创建Boss实例
-    static create(id, x, y) {
+    static create(id, x, y, diffMult = 1) {
         const entry = BOSS_TYPES[id];
         if (!entry) {
             console.error('未知Boss类型:', id);
             return null;
         }
-        return new entry.bossClass(x, y);
+        return new entry.bossClass(x, y, diffMult);
     }
     
     // 获取所有Boss类型ID
@@ -185,16 +186,27 @@ class Boss extends Enemy {
 Boss.Manager = {
     bosses: [],
     bossSpawnTimer: 0,
-    bossSpawnInterval: 300 * 60, // 5分钟
+    bossSpawnInterval: 120 * 60, // 2分钟
+    bossCount: 0, // 已生成的Boss数量
     player: null, // 由外部设置
     
     init() {
         this.bosses = [];
         this.bossSpawnTimer = 0;
+        this.bossCount = 0;
     },
     
     setPlayer(player) {
         this.player = player;
+    },
+    
+    // 根据Boss数量计算难度倍率
+    getDifficultyMult() {
+        // 第1个Boss: 0.5x, 第2个: 0.7x, 第3个: 0.9x, 第4个: 1.0x, 之后每个+0.15x
+        const baseMult = 0.5;
+        const increment = 0.2;
+        const mult = Math.min(baseMult + this.bossCount * increment, 2.0); // 最高2倍
+        return mult;
     },
     
     update() {
@@ -229,9 +241,13 @@ Boss.Manager = {
         const x = this.player.x + Math.cos(angle) * dist;
         const y = this.player.y + Math.sin(angle) * dist;
         
-        const boss = Boss.create(type, x, y);
+        // 计算当前难度倍率
+        const diffMult = this.getDifficultyMult();
+        
+        const boss = Boss.create(type, x, y, diffMult);
         if (boss) {
             this.bosses.push(boss);
+            this.bossCount++;
             Events.emit(EVENT.BOSS_SPAWN, { boss });
             Events.emit(EVENT.FLOATING_TEXT, {
                 text: '⚠️ ' + boss.name + ' 出现了!',

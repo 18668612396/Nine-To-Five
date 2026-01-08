@@ -13,8 +13,8 @@ class LavaGolem extends Boss {
         gold: 250
     };
     
-    constructor(x, y) {
-        super(x, y, LavaGolem.CONFIG);
+    constructor(x, y, scaleMult = 1) {
+        super(x, y, LavaGolem.CONFIG, scaleMult);
         this.fireTrails = [];
         this.isCharging = false;
         this.chargeTarget = null;

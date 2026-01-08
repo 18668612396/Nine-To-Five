@@ -5,7 +5,7 @@ class BouncingModifier extends ModifierSkill {
         super({
             id: 'bouncing',
             name: '弹射',
-            icon: '🔄',
+            icon: '🔀',
             desc: '弹射到范围内随机敌人(1星+2次/2星+4次/3星+6次)'
         });
     }
@@ -15,6 +15,8 @@ class BouncingModifier extends ModifierSkill {
         const rangeValues = { 1: 200, 2: 300, 3: 400 };
         mods.bounceCount = (mods.bounceCount || 0) + (bounceValues[star] || 2);
         mods.bounceRange = (mods.bounceRange || 0) + (rangeValues[star] || 200);
+        // 弹射是移动类效果，会覆盖环绕
+        mods.orbital = false;
     }
 }
 

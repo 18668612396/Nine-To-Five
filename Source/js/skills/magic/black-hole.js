@@ -42,18 +42,30 @@ class BlackHoleProjectile extends SkillProjectile {
         // 星级影响伤害
         const damageMultipliers = { 1: 1, 2: 1.5, 3: 2.5 };
         this.damage *= damageMultipliers[star] || 1;
+        
+        // 环绕时使用更大的半径
+        this.orbitalRadius = 100;
     }
     
     update() {
-        this.x += this.dx * this.speed;
-        this.y += this.dy * this.speed;
+        // 处理环绕移动
+        if (this.orbital) {
+            this.orbitalAngle += this.orbitalSpeed;
+            this.x = this.caster.x + Math.cos(this.orbitalAngle) * this.orbitalRadius;
+            this.y = this.caster.y + Math.sin(this.orbitalAngle) * this.orbitalRadius;
+        } else {
+            // 普通移动
+            this.x += this.dx * this.speed;
+            this.y += this.dy * this.speed;
+        }
         
         this.duration--;
         this.rotationAngle += 0.1;
         this.damageTimer++;
         
-        const enemies = SkillProjectile.enemies;
-        const bosses = SkillProjectile.bosses;
+        // 获取敌人列表
+        const enemies = SkillProjectile.enemies || [];
+        const bosses = SkillProjectile.bosses || [];
         
         // 生成漩涡粒子
         if (Math.random() < 0.3) {
@@ -78,8 +90,10 @@ class BlackHoleProjectile extends SkillProjectile {
             return p.life > 0 && p.dist > 5;
         });
         
+        // 持续吸引敌人
         this.pullEnemies(enemies, bosses);
         
+        // 持续伤害
         if (this.damageTimer >= this.damageInterval) {
             this.damageTimer = 0;
             this.damageEnemiesInRange(enemies, bosses);
@@ -97,6 +111,7 @@ class BlackHoleProjectile extends SkillProjectile {
     }
     
     pullEnemies(enemies, bosses) {
+        // 吸引普通敌人
         enemies.forEach(e => {
             if (!e.markedForDeletion) {
                 const dx = this.x - e.x;
@@ -111,6 +126,7 @@ class BlackHoleProjectile extends SkillProjectile {
             }
         });
         
+        // 吸引Boss（力度减半）
         bosses.forEach(boss => {
             if (!boss.markedForDeletion) {
                 const dx = this.x - boss.x;
@@ -135,7 +151,6 @@ class BlackHoleProjectile extends SkillProjectile {
                 
                 if (dist < this.radius + e.radius) {
                     e.takeDamage(this.damage, 0, 0, this);
-                    this.onHit(e);
                 }
             }
         });

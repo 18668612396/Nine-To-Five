@@ -13,6 +13,8 @@ class HomingModifier extends ModifierSkill {
     modify(mods, star) {
         mods.homing = true;
         mods.turnSpeed = (mods.turnSpeed || 0) + 0.05;
+        // 追踪是移动类效果，会覆盖环绕
+        mods.orbital = false;
     }
 }
 

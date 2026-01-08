@@ -99,7 +99,7 @@ class SkillProjectile {
             return;
         }
         
-        // 符文战锤 - 环绕玩家
+        // 环绕模式 - 环绕玩家移动，但不阻止其他效果
         if (this.orbital) {
             this.orbitalAngle += this.orbitalSpeed;
             this.x = this.caster.x + Math.cos(this.orbitalAngle) * this.orbitalRadius;
@@ -111,24 +111,25 @@ class SkillProjectile {
                 }
                 this.markedForDeletion = true;
             }
-            return;
+            // 不再 return，继续执行后续逻辑（如棱镜核心等）
+        } else {
+            // 非环绕模式的正常移动
+            if (this.homing) this.updateHoming();
+            this.x += this.dx * this.speed;
+            this.y += this.dy * this.speed;
+            this.duration--;
+            
+            if (this.duration <= 0) {
+                if (this.splitOnDeath && this.splitAmount > 0) {
+                    this.spawnSplitProjectiles();
+                }
+                this.markedForDeletion = true;
+            }
         }
-
-        if (this.homing) this.updateHoming();
-        this.x += this.dx * this.speed;
-        this.y += this.dy * this.speed;
-        this.duration--;
         
         // 棱镜核心 - 持续增加伤害
         if (this.rampingDamage) {
             this.rampingBonus += this.rampingRate;
-        }
-        
-        if (this.duration <= 0) {
-            if (this.splitOnDeath && this.splitAmount > 0) {
-                this.spawnSplitProjectiles();
-            }
-            this.markedForDeletion = true;
         }
     }
 
