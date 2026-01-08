@@ -170,6 +170,7 @@ class Weapon {
         this.energy = this.maxEnergy;
         this.baseEnergyRegen = template.energyRegen;
         this.baseCastInterval = template.castInterval;
+        this.baseSlotCount = template.slotCount;
         this.slotCount = template.slotCount;
         
         // 技能槽
@@ -252,6 +253,36 @@ class Weapon {
         return Math.max(1, Math.floor(baseCost * this.costMult));
     }
     
+    // 更新槽位数量（根据拓展技能）
+    updateSlotCount() {
+        let expandSlots = 0;
+        this.slots.forEach(slot => {
+            if (slot && slot.id === 'expand') {
+                const star = slot.star || 1;
+                expandSlots += 4;
+            }
+        });
+        
+        const newSlotCount = this.baseSlotCount + expandSlots;
+        
+        if (newSlotCount > this.slotCount) {
+            // 扩展槽位
+            while (this.slots.length < newSlotCount) {
+                this.slots.push(null);
+            }
+        } else if (newSlotCount < this.slotCount) {
+            // 缩减槽位，把多余的技能放回背包
+            while (this.slots.length > newSlotCount) {
+                const removed = this.slots.pop();
+                if (removed) {
+                    this.inventory.push(removed);
+                }
+            }
+        }
+        
+        this.slotCount = newSlotCount;
+    }
+    
     // 获取伤害倍率
     getDamageMult() {
         let mult = this.damageMult;
@@ -318,6 +349,7 @@ class Weapon {
     castAllSlots(player, slots) {
         const mods = this.getDefaultMods(player);
         let totalCost = 0;
+        let costReductionPercent = 0; // 能量消耗减少百分比
         
         // 收集所有技能和计算总消耗
         const skillSequence = [];
@@ -326,7 +358,10 @@ class Weapon {
             const slot = slots[i];
             if (slot === null) continue;
             
-            totalCost += this.getSkillCost(slot);
+            // 节能技能本身不消耗能量
+            if (slot.id !== 'energy_save') {
+                totalCost += this.getSkillCost(slot);
+            }
             
             if (slot.type === 'modifier') {
                 const star = slot.star || 1;
@@ -339,6 +374,11 @@ class Weapon {
                         }
                     });
                 }
+                // 累计能量消耗减少百分比
+                if (mods.costReductionPercent) {
+                    costReductionPercent += mods.costReductionPercent;
+                    mods.costReductionPercent = 0; // 重置，避免重复计算
+                }
             } else if (slot.type === 'magic') {
                 skillSequence.push({
                     skill: slot,
@@ -350,6 +390,9 @@ class Weapon {
         if (skillSequence.length === 0) {
             return { fired: false };
         }
+        
+        // 应用能量消耗减少（百分比）
+        totalCost = Math.max(0, Math.floor(totalCost * (1 - costReductionPercent)));
         
         // 检查能量
         const isFree = skillSequence.some(s => this.checkFreecast(s.skill));
@@ -523,6 +566,12 @@ class Weapon {
         }
         slots[slotIndex] = skill;
         this.inventory.splice(inventoryIndex, 1);
+        
+        // 如果装备的是拓展技能，更新槽位数量
+        if (!isSpecial && skill.id === 'expand') {
+            this.updateSlotCount();
+        }
+        
         return true;
     }
     
@@ -534,8 +583,15 @@ class Weapon {
         if (slotIndex < 0 || slotIndex >= slotCount) return false;
         if (slots[slotIndex] === null) return false;
         
-        this.inventory.push(slots[slotIndex]);
+        const skill = slots[slotIndex];
+        this.inventory.push(skill);
         slots[slotIndex] = null;
+        
+        // 如果卸下的是拓展技能，更新槽位数量
+        if (!isSpecial && skill.id === 'expand') {
+            this.updateSlotCount();
+        }
+        
         return true;
     }
     

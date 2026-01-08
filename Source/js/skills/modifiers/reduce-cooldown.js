@@ -1,10 +1,10 @@
-// --- 急速施法 ---
+// --- 加速 ---
 
 class ReduceCooldownModifier extends ModifierSkill {
     constructor() {
         super({
             id: 'reduce_cooldown',
-            name: '急速施法',
+            name: '加速',
             icon: '⏱️',
             desc: '冷却时间-30%'
         });
