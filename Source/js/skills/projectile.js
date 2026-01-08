@@ -223,7 +223,8 @@ class SkillProjectile {
         
         // 护盾效果
         if (this.shieldOnHit && this.shieldAmount > 0) {
-            this.caster.shield = (this.caster.shield || 0) + this.shieldAmount;
+            const maxShield = this.caster.maxHp * 0.5;
+            this.caster.shield = Math.min((this.caster.shield || 0) + this.shieldAmount, maxShield);
             Events.emit(EVENT.FLOATING_TEXT, {
                 text: '+🛡️',
                 x: this.caster.x, y: this.caster.y - 20,

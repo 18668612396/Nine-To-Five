@@ -82,7 +82,8 @@ const Game = {
             
             // 奥术屏障 - 击杀获得护盾
             if (this.player && this.player.shieldOnKill > 0) {
-                this.player.shield = (this.player.shield || 0) + this.player.shieldOnKill;
+                const maxShield = this.player.maxHp * 0.5;
+                this.player.shield = Math.min((this.player.shield || 0) + this.player.shieldOnKill, maxShield);
                 Renderer.addFloatingText('+🛡️' + this.player.shieldOnKill, this.player.x, this.player.y - 40, '#66ccff');
             }
             
