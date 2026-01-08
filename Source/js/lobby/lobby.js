@@ -156,15 +156,15 @@ const Lobby = {
         if (charClass && charClass.CONFIG) {
             if (name) name.textContent = charClass.CONFIG.name || this.selectedChar;
             // 根据 startPerks 显示描述
-            const perkDesc = this.selectedChar === 'guagua' ? '速度+10%' : '血量+20%';
+            const perkDesc = this.selectedChar === 'guagua' ? '速度+15%' : '血量+20';
             if (stats) stats.textContent = perkDesc;
         } else {
             if (this.selectedChar === 'guagua') {
                 if (name) name.textContent = '瓜瓜';
-                if (stats) stats.textContent = '速度+10%';
+                if (stats) stats.textContent = '速度+15%';
             } else {
                 if (name) name.textContent = '葵葵';
-                if (stats) stats.textContent = '血量+20%';
+                if (stats) stats.textContent = '血量+20';
             }
         }
     },
@@ -415,8 +415,8 @@ const Lobby = {
     renderCharacterCollection(grid) {
         // 从角色注册表获取
         const characters = [
-            { id: 'guagua', name: '瓜瓜', desc: '速度+10%', icon: '🍈', unlocked: true },
-            { id: 'kuikui', name: '葵葵', desc: '血量+20%', icon: '🌻', unlocked: true },
+            { id: 'guagua', name: '瓜瓜', desc: '速度+15%', icon: '🍈', unlocked: true },
+            { id: 'kuikui', name: '葵葵', desc: '血量+20', icon: '🌻', unlocked: true },
             { id: 'unknown1', name: '???', desc: '敬请期待', icon: '❓', unlocked: false },
             { id: 'unknown2', name: '???', desc: '敬请期待', icon: '❓', unlocked: false }
         ];

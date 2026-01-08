@@ -28,7 +28,7 @@ class GameScreen extends FullScreen {
                         <div id="hp-bar-bg">
                             <div id="hp-bar-fill"></div>
                         </div>
-                        <div id="hp-text">100/100</div>
+                        <div id="hp-text">20/20</div>
                     </div>
                     <div id="xp-bar-container">
                         <div id="xp-bar-bg">

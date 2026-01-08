@@ -49,7 +49,7 @@ class LobbyScreen extends FullScreen {
                 <canvas id="lobby-char-canvas" width="300" height="350"></canvas>
                 <div class="char-info-panel">
                     <h2 id="lobby-char-name">瓜瓜</h2>
-                    <p id="lobby-char-stats">速度+10%</p>
+                    <p id="lobby-char-stats">速度+15%</p>
                 </div>
             </div>
             
@@ -135,10 +135,10 @@ class LobbyScreen extends FullScreen {
         
         if (this.selectedChar === 'guagua') {
             if (name) name.textContent = '瓜瓜';
-            if (stats) stats.textContent = '速度+10%';
+            if (stats) stats.textContent = '速度+15%';
         } else {
             if (name) name.textContent = '葵葵';
-            if (stats) stats.textContent = '血量+20%';
+            if (stats) stats.textContent = '血量+20';
         }
     }
     

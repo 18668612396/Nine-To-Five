@@ -26,8 +26,10 @@ class GrassScene extends Scene {
         
         // 棋盘格纹理
         ctx.fillStyle = '#83c276';
-        const offsetX = -camX % this.tileSize;
-        const offsetY = -camY % this.tileSize;
+        
+        // 修复：确保偏移量始终为正数
+        const offsetX = (((-camX % this.tileSize) + this.tileSize) % this.tileSize);
+        const offsetY = (((-camY % this.tileSize) + this.tileSize) % this.tileSize);
         
         const startTileX = Math.floor(camX / this.tileSize);
         const startTileY = Math.floor(camY / this.tileSize);
@@ -58,11 +60,11 @@ class GrassScene extends Scene {
             for (let wy = startGrassY - grassSpacing; wy < camY + viewHeight + grassSpacing; wy += grassSpacing) {
                 // 用世界坐标生成伪随机偏移
                 const seed = (wx * 137 + wy * 89) % 1000;
-                const offsetX = (seed % 60) - 30;
-                const offsetY = ((seed * 7) % 60) - 30;
+                const gOffsetX = (seed % 60) - 30;
+                const gOffsetY = ((seed * 7) % 60) - 30;
                 
-                const screenX = wx + offsetX - camX;
-                const screenY = wy + offsetY - camY;
+                const screenX = wx + gOffsetX - camX;
+                const screenY = wy + gOffsetY - camY;
                 
                 ctx.beginPath();
                 ctx.moveTo(screenX, screenY);

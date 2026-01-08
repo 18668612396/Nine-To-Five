@@ -34,7 +34,7 @@ class CharSelectScreen extends FloatScreen {
                         <canvas class="char-card-canvas" width="80" height="80" data-char="guagua"></canvas>
                         <div class="char-card-info">
                             <h3>瓜瓜</h3>
-                            <p>速度+10%</p>
+                            <p>速度+15%</p>
                         </div>
                         <div class="char-card-check">✓</div>
                     </div>
@@ -42,7 +42,7 @@ class CharSelectScreen extends FloatScreen {
                         <canvas class="char-card-canvas" width="80" height="80" data-char="kuikui"></canvas>
                         <div class="char-card-info">
                             <h3>葵葵</h3>
-                            <p>血量+20%</p>
+                            <p>血量+20</p>
                         </div>
                         <div class="char-card-check">✓</div>
                     </div>

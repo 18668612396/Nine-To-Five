@@ -417,9 +417,11 @@ class SkillProjectile {
     }
 
     bounceToEnemy(fromEnemy) {
-        const enemies = SkillProjectile.enemies;
+        const enemies = SkillProjectile.enemies || [];
+        const bosses = SkillProjectile.bosses || [];
         const candidates = [];
         
+        // 收集范围内的敌人
         enemies.forEach(e => {
             if (!e.markedForDeletion && e !== fromEnemy && !this.hitList.includes(e)) {
                 const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
@@ -429,12 +431,39 @@ class SkillProjectile {
             }
         });
         
+        // 也检查Boss
+        bosses.forEach(b => {
+            if (!b.markedForDeletion && b !== fromEnemy && !this.hitList.includes(b)) {
+                const dist = Math.sqrt((b.x - this.x) ** 2 + (b.y - this.y) ** 2);
+                if (dist < this.bounceRange) {
+                    candidates.push(b);
+                }
+            }
+        });
+        
         if (candidates.length > 0) {
+            // 随机选择一个敌人
             const nextTarget = candidates[Math.floor(Math.random() * candidates.length)];
-            const dx = nextTarget.x - this.x, dy = nextTarget.y - this.y;
+            const dx = nextTarget.x - this.x;
+            const dy = nextTarget.y - this.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            this.dx = dx / dist; this.dy = dy / dist;
-            this.bounceCount--; this.penetrate++;
+            
+            // 设置新方向朝向目标
+            this.dx = dx / dist;
+            this.dy = dy / dist;
+            this.bounceCount--;
+            this.penetrate++;
+            
+            // 弹射特效
+            Events.emit(EVENT.PARTICLES, {
+                x: this.x, y: this.y,
+                count: 3,
+                color: '#ffaa00',
+                spread: 3
+            });
+        } else {
+            // 没有找到目标，消耗弹射次数但不改变方向
+            this.bounceCount--;
         }
     }
 

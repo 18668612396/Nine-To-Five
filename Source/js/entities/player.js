@@ -10,7 +10,7 @@ class Player extends Entity {
         
         // 基础属性（统一）
         this.speed = 4;
-        this.maxHp = 100;
+        this.maxHp = 20;
         this.hp = this.maxHp;
         this.regen = 0;
         this.pickupRange = 100;
@@ -109,6 +109,8 @@ class Player extends Entity {
     
     // 受伤
     takeDamage(amount) {
+        amount = Math.round(amount);
+        
         // 护盾吸收
         if (this.shield > 0) {
             const absorbed = Math.min(this.shield, amount);
@@ -116,7 +118,7 @@ class Player extends Entity {
             amount -= absorbed;
             if (absorbed > 0) {
                 Events.emit(EVENT.FLOATING_TEXT, {
-                    text: '护盾 -' + Math.floor(absorbed),
+                    text: '护盾 -' + absorbed,
                     x: this.x, y: this.y - 40,
                     color: '#66ccff'
                 });
@@ -126,7 +128,7 @@ class Player extends Entity {
         if (amount > 0) {
             this.hp -= amount;
             Events.emit(EVENT.FLOATING_TEXT, {
-                text: '-' + Math.floor(amount),
+                text: '-' + amount,
                 x: this.x, y: this.y - 30,
                 color: '#ff4444'
             });

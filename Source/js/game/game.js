@@ -252,6 +252,11 @@ const Game = {
             Perk.Manager.setPlayer(this.player);
         }
         
+        // 应用角色初始祝福
+        if (this.player.init) {
+            this.player.init();
+        }
+        
         // 初始化Boss管理器
         Boss.Manager.init();
         Boss.Manager.setPlayer(this.player);
@@ -627,7 +632,7 @@ const Game = {
     
     // 玩家受伤
     damagePlayer(damage, isBoss = false) {
-        let actualDamage = damage;
+        let actualDamage = Math.round(damage);
         
         // 护盾吸收
         if (this.player.shield && this.player.shield > 0) {
@@ -635,7 +640,7 @@ const Game = {
             this.player.shield -= absorbed;
             actualDamage -= absorbed;
             if (absorbed > 0) {
-                this.addFloatingText('🛡️-' + absorbed, this.player.x, this.player.y - 50, '#66ccff');
+                this.addFloatingText('🛡️-' + Math.round(absorbed), this.player.x, this.player.y - 50, '#66ccff');
             }
         }
         
