@@ -452,6 +452,23 @@ const Inventory = {
             };
             
             div.onclick = () => {
+                // 如果工作台打开，点击技能放入工作台
+                if (this.workbenchOpen) {
+                    // 找到第一个空的工作台槽位
+                    let targetSlot = -1;
+                    for (let i = 0; i < 3; i++) {
+                        if (this.workbenchSlots[i] === null) {
+                            targetSlot = i;
+                            break;
+                        }
+                    }
+                    if (targetSlot >= 0) {
+                        this.dropToWorkbench(idx, targetSlot);
+                    }
+                    return;
+                }
+                
+                // 否则装备到武器槽
                 if (!weapon) return;
                 let targetSlot = -1;
                 for (let i = 0; i < weapon.slotCount; i++) {
