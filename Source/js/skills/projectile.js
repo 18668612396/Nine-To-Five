@@ -71,6 +71,12 @@ class SkillProjectile {
         this.orbitalExpandSpeed = mods.orbitalExpandSpeed || 1.5;  // 扩展速度
         this.orbitalSpeed = 0.12;  // 旋转速度
         this.orbitalAngle = mods.angle || 0;
+        
+        // 环绕模式下立即设置正确的初始方向（切线方向+90度）
+        if (this.orbital) {
+            this.dx = -Math.cos(this.orbitalAngle);
+            this.dy = -Math.sin(this.orbitalAngle);
+        }
 
         this.duration = 180;
         this.radius = 6;
@@ -108,6 +114,10 @@ class SkillProjectile {
             // 跟随玩家位置
             this.x = this.caster.x + Math.cos(this.orbitalAngle) * this.orbitalRadius;
             this.y = this.caster.y + Math.sin(this.orbitalAngle) * this.orbitalRadius;
+            
+            // 更新弹道方向（切线方向+90度对齐弹道朝向）
+            this.dx = -Math.cos(this.orbitalAngle);
+            this.dy = -Math.sin(this.orbitalAngle);
             
             // 飞出屏幕范围后消失 (距离玩家超过1200)
             if (this.orbitalRadius > 1200) {

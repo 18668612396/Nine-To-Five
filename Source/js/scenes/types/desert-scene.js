@@ -10,8 +10,8 @@ class DesertScene extends Scene {
             worldHeight: 4000,
             elementDensity: 0.000008,
             elementTypes: [
-                { type: 'cactus', weight: 3, config: { sizeRange: [20, 35] } },
-                { type: 'rock', weight: 2, config: { sizeRange: [15, 30], color: '#c9a227' } }
+                { type: 'cactus', weight: 3, config: { sizeRange: [40, 70] } },
+                { type: 'rock', weight: 2, config: { sizeRange: [30, 55], color: '#c9a227' } }
             ]
         });
         
