@@ -111,6 +111,19 @@ class Boss extends Enemy {
         }
     }
     
+    // 开始绘制（应用闪烁效果）
+    beginDraw(ctx) {
+        this.updateDamageFlash();
+        if (this.damageFlash > 0) {
+            ctx.filter = 'sepia(1) saturate(5) hue-rotate(-20deg) brightness(0.9)';
+        }
+    }
+    
+    // 结束绘制
+    endDraw(ctx) {
+        ctx.filter = 'none';
+    }
+    
     die(source = null) {
         if (this.markedForDeletion) return;
         this.markedForDeletion = true;

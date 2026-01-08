@@ -190,6 +190,10 @@ class Player extends Entity {
         
         if (amount > 0) {
             this.hp -= amount;
+            
+            // 触发受伤闪烁
+            this.triggerDamageFlash();
+            
             Events.emit(EVENT.FLOATING_TEXT, {
                 text: '-' + amount,
                 x: this.x, y: this.y - 30,
@@ -383,6 +387,9 @@ class Player extends Entity {
 
     // 绘制 - 子类重写
     draw(ctx, camX, camY) {
+        // 更新闪烁状态
+        this.updateDamageFlash();
+        
         this.drawEffects(ctx, camX, camY);
         // 子类实现具体角色绘制
     }

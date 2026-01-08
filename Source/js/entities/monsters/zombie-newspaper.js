@@ -62,6 +62,7 @@ class ZombieNewspaper extends Monster {
         const wobble = Math.sin(this.animationFrame * 0.08) * (this.isAngry ? 2.5 : 1);
         
         ctx.save();
+        this.beginDraw(ctx);
         ctx.translate(x, y + bounce);
         
         // 阴影
@@ -193,6 +194,7 @@ class ZombieNewspaper extends Monster {
             ctx.fillRect(-barWidth/2, -r - 14, barWidth * hpPct, barHeight);
         }
         
+        this.endDraw(ctx, x, y, r);
         ctx.restore();
     }
 }

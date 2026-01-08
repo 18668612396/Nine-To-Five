@@ -205,6 +205,9 @@ class SakuraTreeant extends Boss {
         ctx.ellipse(x, y + r * 0.6, r * 0.8, r * 0.25, 0, 0, Math.PI * 2);
         ctx.fill();
         
+        // 应用受伤闪烁
+        this.beginDraw(ctx);
+        
         ctx.save();
         ctx.translate(x, y);
         
@@ -362,6 +365,9 @@ class SakuraTreeant extends Boss {
         ctx.fill();
         
         ctx.restore();
+        
+        // 结束受伤闪烁
+        this.endDraw(ctx);
         
         this.drawHealthBar(ctx, camX, camY);
     }

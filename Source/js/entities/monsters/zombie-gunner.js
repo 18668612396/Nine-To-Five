@@ -97,6 +97,7 @@ class ZombieGunner extends Monster {
         const bounce = Math.sin(this.animationFrame * 0.1) * 1.5;
         
         ctx.save();
+        this.beginDraw(ctx);
         ctx.translate(x, y + bounce);
         
         // 阴影
@@ -169,6 +170,7 @@ class ZombieGunner extends Monster {
             ctx.fillRect(-barWidth/2, -r - 20, barWidth * hpPct, barHeight);
         }
         
+        this.endDraw(ctx, x, y, r);
         ctx.restore();
     }
 }

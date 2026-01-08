@@ -373,6 +373,9 @@ class LavaGolem extends Boss {
             ctx.stroke();
         }
         
+        // 应用受伤闪烁
+        this.beginDraw(ctx);
+        
         ctx.save();
         ctx.translate(x, y + bounce);
         
@@ -551,6 +554,9 @@ class LavaGolem extends Boss {
         }
         
         ctx.restore();
+        
+        // 结束受伤闪烁
+        this.endDraw(ctx);
         
         // 血条
         this.drawHealthBar(ctx, camX, camY);

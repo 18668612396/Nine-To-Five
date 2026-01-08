@@ -244,6 +244,7 @@ class ZombieMage extends Monster {
         const float = Math.sin(this.animationFrame * 0.05) * 3; // 漂浮效果
         
         ctx.save();
+        this.beginDraw(ctx);
         ctx.translate(x, y + bounce - float);
         
         // 阴影
@@ -336,6 +337,7 @@ class ZombieMage extends Monster {
             ctx.fillRect(-barWidth/2, -r - 18, barWidth * hpPct, barHeight);
         }
         
+        this.endDraw(ctx, x, y, r);
         ctx.restore();
     }
 }

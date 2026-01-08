@@ -10,6 +10,31 @@ class Entity {
         this.radius = radius;
         this.color = color;
         this.markedForDeletion = false;
+        
+        // 受伤闪烁
+        this.damageFlash = 0;
+    }
+    
+    // 触发受伤闪烁
+    triggerDamageFlash() {
+        this.damageFlash = 8; // 闪烁8帧
+    }
+    
+    // 更新闪烁状态
+    updateDamageFlash() {
+        if (this.damageFlash > 0) {
+            this.damageFlash--;
+        }
+    }
+    
+    // 应用闪烁效果到绘制上下文
+    applyDamageFlash(ctx) {
+        if (this.damageFlash > 0) {
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.fillStyle = `rgba(255, 0, 0, ${0.5 + Math.sin(this.damageFlash * 1.5) * 0.3})`;
+            ctx.fillRect(-9999, -9999, 99999, 99999);
+            ctx.globalCompositeOperation = 'source-over';
+        }
     }
     
     // 绘制方法 - 子类应重写

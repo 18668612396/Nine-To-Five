@@ -31,12 +31,20 @@ class KuikuiPlayer extends Player {
     }
     
     draw(ctx, camX, camY) {
+        // 更新闪烁状态
+        this.updateDamageFlash();
+        
         this.drawEffects(ctx, camX, camY);
         
         const x = this.x - camX;
         const y = this.y - camY;
         const input = Input.getAxis();
         const isFlipped = !this.facingRight;
+        
+        // 受伤红色闪烁 - 用滤镜但保留一些对比度
+        if (this.damageFlash > 0) {
+            ctx.filter = 'sepia(1) saturate(5) hue-rotate(-20deg) brightness(0.9)';
+        }
         
         const tailState = KuikuiPlayer.drawCharacter(ctx, x, y, this.radius, Entity.frameCount, {
             input,
@@ -45,6 +53,8 @@ class KuikuiPlayer extends Player {
             lastTailY: this.lastTailY,
             lastTailAngle: this.lastTailAngle
         });
+        
+        ctx.filter = 'none';
         
         if (tailState) {
             this.lastTailX = tailState.tailX;

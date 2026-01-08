@@ -228,6 +228,9 @@ class AbyssalEye extends Boss {
         ctx.arc(x, y, this.radius * 1.5, 0, Math.PI * 2);
         ctx.fill();
         
+        // 应用受伤闪烁
+        this.beginDraw(ctx);
+        
         // 绘制触手
         this.tentacles.forEach(t => {
             const segments = 8;
@@ -336,6 +339,9 @@ class AbyssalEye extends Boss {
             ctx.lineTo(x + Math.cos(this.laserAngle) * 500, y + Math.sin(this.laserAngle) * 500);
             ctx.stroke();
         }
+        
+        // 结束受伤闪烁
+        this.endDraw(ctx);
         
         this.drawHealthBar(ctx, camX, camY);
     }

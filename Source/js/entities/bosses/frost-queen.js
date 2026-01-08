@@ -346,6 +346,9 @@ class FrostQueen extends Boss {
         // 绘制寒冰粒子
         this.drawFrostParticles(ctx, camX, camY);
         
+        // 应用受伤闪烁
+        this.beginDraw(ctx);
+        
         ctx.save();
         ctx.translate(x, y + bounce);
         
@@ -579,6 +582,9 @@ class FrostQueen extends Boss {
         }
         
         ctx.restore();
+        
+        // 结束受伤闪烁
+        this.endDraw(ctx);
         
         // 血条
         this.drawHealthBar(ctx, camX, camY);

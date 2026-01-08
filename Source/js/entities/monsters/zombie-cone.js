@@ -58,6 +58,7 @@ class ZombieCone extends Monster {
         const wobble = Math.sin(this.animationFrame * 0.07) * 1.5;
         
         ctx.save();
+        this.beginDraw(ctx);
         ctx.translate(x, y + bounce);
         
         // 阴影
@@ -166,6 +167,7 @@ class ZombieCone extends Monster {
             ctx.fillRect(-barWidth/2, -r * 1.7, barWidth * hpPct, barHeight);
         }
         
+        this.endDraw(ctx, x, y, r);
         ctx.restore();
     }
 }

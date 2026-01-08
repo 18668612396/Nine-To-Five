@@ -118,6 +118,9 @@ class Enemy extends Entity {
         this.knockbackX += kbX;
         this.knockbackY += kbY;
         
+        // 触发受伤闪烁
+        this.triggerDamageFlash();
+        
         Events.emit(EVENT.ENEMY_DAMAGE, {
             enemy: this,
             amount,
@@ -159,7 +162,16 @@ class Enemy extends Entity {
         const r = this.radius;
         const bounce = Math.sin(Enemy.frameCount * 0.15 + this.x) * 2;
         
+        // 更新闪烁状态
+        this.updateDamageFlash();
+        
         ctx.save();
+        
+        // 受伤时整体变红
+        if (this.damageFlash > 0) {
+            ctx.filter = 'sepia(1) saturate(5) hue-rotate(-20deg) brightness(0.9)';
+        }
+        
         ctx.translate(x, y + bounce);
         
         ctx.fillStyle = this.color;
@@ -202,6 +214,9 @@ class Enemy extends Entity {
         ctx.arc(-r * 0.3, -r * 0.2, r * 0.15, 0, Math.PI * 2);
         ctx.arc(r * 0.3, -r * 0.2, r * 0.15, 0, Math.PI * 2);
         ctx.fill();
+        
+        // 受伤红色闪烁
+        ctx.filter = 'none';
         
         // 血条
         if (this.hp < this.maxHp) {

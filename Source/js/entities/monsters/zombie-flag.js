@@ -36,6 +36,7 @@ class ZombieFlag extends Monster {
         const wobble = Math.sin(this.animationFrame * 0.1) * 1.5;
         
         ctx.save();
+        this.beginDraw(ctx);
         ctx.translate(x, y + bounce);
         
         // 阴影
@@ -160,6 +161,7 @@ class ZombieFlag extends Monster {
             ctx.fillRect(-barWidth/2, -r - 14, barWidth * hpPct, barHeight);
         }
         
+        this.endDraw(ctx, x, y, r);
         ctx.restore();
     }
 }
