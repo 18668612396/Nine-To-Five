@@ -29,6 +29,10 @@ class Player extends Entity {
         this.shield = 0;
         this.shieldOnKill = 0;
         this.energyOnHit = 0;
+        
+        // 中毒状态
+        this.poisonDamage = 0;
+        this.poisonDuration = 0;
 
         // 武器槽系统
         this.weaponSlots = [null, null, null];
@@ -78,6 +82,9 @@ class Player extends Entity {
             if (this.hp > this.maxHp) this.hp = this.maxHp;
         }
         
+        // 中毒伤害
+        this.updatePoison();
+        
         // 献祭 - 伤害光环
         if (this.damageAura > 0 && Player.frameCount % 30 === 0) {
             this.updateDamageAura(enemies);
@@ -90,6 +97,33 @@ class Player extends Entity {
 
         // 更新所有武器槽
         this.updateAllWeapons(enemies);
+    }
+    
+    // 添加中毒效果
+    addPoison(damagePerSecond, duration) {
+        this.poisonDamage = Math.max(this.poisonDamage, damagePerSecond);
+        this.poisonDuration = Math.max(this.poisonDuration, duration);
+    }
+    
+    // 更新中毒状态
+    updatePoison() {
+        if (this.poisonDuration > 0) {
+            this.poisonDuration--;
+            // 每秒造成伤害 (60帧=1秒)
+            if (Player.frameCount % 60 === 0) {
+                this.hp -= this.poisonDamage;
+                Events.emit(EVENT.FLOATING_TEXT, {
+                    text: '-' + this.poisonDamage + '☠️',
+                    x: this.x, y: this.y - 30,
+                    color: '#00ff00'
+                });
+                
+                if (this.hp <= 0) {
+                    this.hp = 0;
+                    Events.emit(EVENT.PLAYER_DEATH, { player: this });
+                }
+            }
+        }
     }
     
     // 更新所有武器
@@ -153,7 +187,7 @@ class Player extends Entity {
     }
     
     updateDamageAura(enemies) {
-        const auraRadius = 60 + this.damageAura * 2;
+        const auraRadius = 80 + this.damageAura * 12;
         enemies.forEach(e => {
             if (!e.markedForDeletion) {
                 const dist = Math.sqrt((e.x - this.x) ** 2 + (e.y - this.y) ** 2);
@@ -190,9 +224,6 @@ class Player extends Entity {
         
         if (amount > 0) {
             this.hp -= amount;
-            
-            // 触发受伤闪烁
-            this.triggerDamageFlash();
             
             Events.emit(EVENT.FLOATING_TEXT, {
                 text: '-' + amount,
@@ -349,7 +380,7 @@ class Player extends Entity {
         
         // 献祭火焰光环
         if (this.damageAura > 0) {
-            const auraRadius = 60 + this.damageAura * 2;
+            const auraRadius = 80 + this.damageAura * 12;
             const pulseAlpha = 0.12 + Math.sin(Player.frameCount * 0.15) * 0.05;
             
             const gradient = ctx.createRadialGradient(x, y, 0, x, y, auraRadius);
@@ -387,9 +418,6 @@ class Player extends Entity {
 
     // 绘制 - 子类重写
     draw(ctx, camX, camY) {
-        // 更新闪烁状态
-        this.updateDamageFlash();
-        
         this.drawEffects(ctx, camX, camY);
         // 子类实现具体角色绘制
     }

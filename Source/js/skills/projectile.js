@@ -61,6 +61,9 @@ class SkillProjectile {
         this.lightPillar = mods.lightPillar || false;
         this.pillarDamage = mods.pillarDamage || 0;
         
+        // 冰霜减速
+        this.frostSlow = mods.frostSlow || 0;
+        
         // 狂暴
         this.frenzy = mods.frenzy || false;
         this.frenzyReduction = mods.frenzyReduction || 0;
@@ -264,6 +267,12 @@ class SkillProjectile {
             this.isHovering = true;
             this.hoverTimer = this.hoverDuration;
             this.speed = 0;
+        }
+        
+        // 冰霜减速效果
+        if (this.frostSlow > 0 && enemy.addSlow) {
+            enemy.addSlow(this.frostSlow, 120); // 减速2秒
+            Events.emit(EVENT.PARTICLES, { x: enemy.x, y: enemy.y, color: '#00ffff', count: 3 });
         }
         
         // 反弹效果

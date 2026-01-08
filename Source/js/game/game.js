@@ -87,9 +87,9 @@ const Game = {
                 Renderer.addFloatingText('+🛡️' + this.player.shieldOnKill, this.player.x, this.player.y - 40, '#66ccff');
             }
             
-            // 通知武器击杀（回能等）
+            // 通知武器击杀（回能、生命汲取等）
             if (this.player && this.player.weapon) {
-                this.player.weapon.onKill();
+                this.player.weapon.onKill(this.player);
             }
             
             // 掉落技能
@@ -492,6 +492,11 @@ const Game = {
                             
                             if (p.onHit) p.onHit(e);
                             
+                            // 通知武器命中（用于命中计数触发）
+                            if (this.player && this.player.weapon) {
+                                this.player.weapon.onHit(e);
+                            }
+                            
                             if (p.hitList.length >= p.penetrate && !p.isHovering) {
                                 p.markedForDeletion = true;
                             }
@@ -511,6 +516,11 @@ const Game = {
                             Renderer.spawnParticles(boss.x, boss.y, boss.color, 5);
                             
                             if (p.onHit) p.onHit(boss);
+                            
+                            // 通知武器命中（用于命中计数触发）
+                            if (this.player && this.player.weapon) {
+                                this.player.weapon.onHit(boss);
+                            }
                             
                             if (p.hitList.length >= p.penetrate && !p.isHovering) {
                                 p.markedForDeletion = true;

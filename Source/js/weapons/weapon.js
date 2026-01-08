@@ -99,6 +99,49 @@ const WEAPON_AFFIXES = {
         type: 'special',
         valueRange: [1, 1],
         apply: (weapon, value) => { weapon.canOverload = true; }
+    },
+    
+    // 新增词缀
+    frost_affinity: {
+        id: 'frost_affinity',
+        name: '冰霜亲和',
+        desc: '命中敌人时减速{value}%',
+        type: 'element',
+        element: 'ice',
+        valueRange: [20, 40],
+        apply: (weapon, value) => { weapon.frostSlow = value / 100; }
+    },
+    void_penetration: {
+        id: 'void_penetration',
+        name: '虚空穿透',
+        desc: '弹道穿透+{value}',
+        type: 'attack',
+        valueRange: [2, 3],
+        apply: (weapon, value) => { weapon.bonusPenetrate = value; }
+    },
+    life_steal: {
+        id: 'life_steal',
+        name: '生命汲取',
+        desc: '击杀敌人回复{value}点生命',
+        type: 'special',
+        valueRange: [1, 3],
+        apply: (weapon, value) => { weapon.lifeOnKill = value; }
+    },
+    chaos_power: {
+        id: 'chaos_power',
+        name: '混沌之力',
+        desc: '每次施法随机增加{value}%伤害/速度/范围',
+        type: 'special',
+        valueRange: [15, 35],
+        apply: (weapon, value) => { weapon.chaosBonus = value / 100; }
+    },
+    multi_shot: {
+        id: 'multi_shot',
+        name: '多重射击',
+        desc: '每次施法额外发射{value}发弹道',
+        type: 'attack',
+        valueRange: [1, 2],
+        apply: (weapon, value) => { weapon.extraProjectiles = value; }
     }
 };
 
@@ -151,6 +194,18 @@ const SPECIAL_TRIGGERS = {
             }
             return false;
         }
+    },
+    hits: {
+        id: 'hits',
+        name: '命中',
+        desc: '命中{value}次敌人后触发',
+        check: (weapon, value) => {
+            if (weapon.hitCounter >= value) {
+                weapon.hitCounter -= value;
+                return true;
+            }
+            return false;
+        }
     }
 };
 
@@ -199,11 +254,19 @@ class Weapon {
         this.lowEnergyDamage = 0;
         this.canOverload = false;
         
+        // 新词缀效果
+        this.frostSlow = 0;        // 冰霜减速
+        this.bonusPenetrate = 0;   // 额外穿透
+        this.lifeOnKill = 0;       // 击杀回血
+        this.chaosBonus = 0;       // 混沌加成
+        this.extraProjectiles = 0; // 额外弹道
+        
         // 触发计数器
         this.energySpentCounter = 0;
         this.killCounter = 0;
         this.timerCounter = 0;
         this.hurtTrigger = false;
+        this.hitCounter = 0;
         
         // 狂暴系统
         this.lastTargetId = null;
@@ -486,11 +549,39 @@ class Weapon {
     }
     
     getDefaultMods(player) {
+        // 混沌加成 - 随机增强一项属性
+        let chaosDamage = 1, chaosSpeed = 1, chaosSize = 1;
+        if (this.chaosBonus > 0) {
+            const roll = Math.random();
+            if (roll < 0.33) {
+                chaosDamage = 1 + this.chaosBonus;
+                Events.emit(EVENT.FLOATING_TEXT, {
+                    text: '混沌:伤害↑',
+                    x: player.x, y: player.y - 40,
+                    color: '#ff00ff'
+                });
+            } else if (roll < 0.66) {
+                chaosSpeed = 1 + this.chaosBonus;
+                Events.emit(EVENT.FLOATING_TEXT, {
+                    text: '混沌:速度↑',
+                    x: player.x, y: player.y - 40,
+                    color: '#ff00ff'
+                });
+            } else {
+                chaosSize = 1 + this.chaosBonus;
+                Events.emit(EVENT.FLOATING_TEXT, {
+                    text: '混沌:范围↑',
+                    x: player.x, y: player.y - 40,
+                    color: '#ff00ff'
+                });
+            }
+        }
+        
         return {
-            damage: 1.0 * player.damageMult,
-            speed: 1.0 * player.projSpeed,
-            penetrate: 1,
-            splitCount: 1 + (player.extraProjectiles || 0),
+            damage: 1.0 * player.damageMult * chaosDamage,
+            speed: 1.0 * player.projSpeed * chaosSpeed,
+            penetrate: 1 + this.bonusPenetrate,
+            splitCount: 1 + (player.extraProjectiles || 0) + this.extraProjectiles,
             homing: false,
             turnSpeed: 0,
             chainCount: 0,
@@ -500,8 +591,9 @@ class Weapon {
             bounceCount: 0,
             bounceRange: 200,
             knockback: player.knockback || 1,
-            sizeScale: 1,
-            critChance: player.critChance || 0
+            sizeScale: 1 * chaosSize,
+            critChance: player.critChance || 0,
+            frostSlow: this.frostSlow
         };
     }
     
@@ -579,11 +671,25 @@ class Weapon {
     }
     
     // 击杀回调
-    onKill() {
+    onKill(player) {
         this.killCounter++;
         if (this.energyOnKill > 0) {
             this.energy = Math.min(this.maxEnergy, this.energy + this.energyOnKill);
         }
+        // 生命汲取
+        if (this.lifeOnKill > 0 && player) {
+            player.hp = Math.min(player.maxHp, player.hp + this.lifeOnKill);
+            Events.emit(EVENT.FLOATING_TEXT, {
+                text: '+' + this.lifeOnKill + '❤️',
+                x: player.x, y: player.y - 30,
+                color: '#00ff66'
+            });
+        }
+    }
+    
+    // 命中回调
+    onHit(enemy) {
+        this.hitCounter++;
     }
     
     // 暴击回调

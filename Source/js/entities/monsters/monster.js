@@ -58,17 +58,14 @@ class Monster extends Enemy {
         super.update(player);
     }
     
-    // 开始绘制（应用闪烁效果）
+    // 开始绘制
     beginDraw(ctx) {
-        this.updateDamageFlash();
-        if (this.damageFlash > 0) {
-            ctx.filter = 'sepia(1) saturate(5) hue-rotate(-20deg) brightness(0.9)';
-        }
+        // 空实现，保留接口
     }
     
     // 结束绘制
     endDraw(ctx, x, y, r) {
-        ctx.filter = 'none';
+        // 空实现，保留接口
     }
     
     draw(ctx, camX, camY) {

@@ -19,23 +19,32 @@ class AbyssalEye extends Boss {
         super(x, y, AbyssalEye.CONFIG, scaleMult);
         this.pupilSize = 20;
         this.tentacles = [];
-        this.laserTarget = null;
-        this.laserCharging = false;
-        this.laserFiring = false;
-        this.laserAngle = 0;
-        this.laserChargeTime = 0;
-        this.laserFireTime = 0;
-        this.teleportCooldown = 0;
         this.distortionEffect = 0;
+        
+        // 技能状态
+        this.currentSkill = null; // 'burst' | 'beam' | null
+        this.skillTimer = 0;
+        this.skillPhase = 0; // 0=预警, 1=释放
+        
+        // 技能1: 三连弹
+        this.burstCooldown = 0;
+        this.burstCount = 0;
+        
+        // 技能2: 射线
+        this.beamCooldown = 0;
+        this.beamAngle = 0;
+        this.beamTarget = null;
+        
+        // 技能3: 范围爆发
+        this.novaCooldown = 0;
+        this.novaRadius = 600;
         
         // 初始化触手
         for (let i = 0; i < 8; i++) {
             this.tentacles.push({
                 angle: (Math.PI * 2 / 8) * i,
                 length: 40 + Math.random() * 20,
-                phase: Math.random() * Math.PI * 2,
-                extending: false,
-                extendTime: 0
+                phase: Math.random() * Math.PI * 2
             });
         }
     }
@@ -59,34 +68,73 @@ class AbyssalEye extends Boss {
     }
     
     performAttacks(player) {
-        // 死亡凝视
-        if (this.attackCooldown <= 0 && !this.laserCharging && !this.laserFiring) {
-            this.startLaser(player);
+        // 更新触手动画
+        this.updateTentacles();
+        
+        // 如果正在释放技能，继续处理
+        if (this.currentSkill) {
+            this.updateCurrentSkill(player);
+            return;
         }
         
-        // 触手横扫
-        if (this.specialCooldown <= 0) {
-            this.tentacleSweep();
-            this.specialCooldown = this.phase >= 2 ? 90 : 150;
-        }
+        // 冷却减少
+        this.burstCooldown--;
+        this.beamCooldown--;
+        this.novaCooldown--;
         
-        // 虚空传送
-        if (this.teleportCooldown <= 0 && this.phase >= 2) {
-            this.teleport(player);
-            this.teleportCooldown = 240;
+        // 技能优先级: 范围爆发 > 射线 > 三连弹
+        if (this.novaCooldown <= 0) {
+            this.startNova(player);
+        } else if (this.beamCooldown <= 0) {
+            this.startBeam(player);
+        } else if (this.burstCooldown <= 0) {
+            this.startBurst(player);
         }
-        
-        this.teleportCooldown--;
-        this.updateLaser(player);
-        this.updateTentacles(player);
     }
     
-    startLaser(player) {
-        this.laserCharging = true;
-        this.laserTarget = { x: player.x, y: player.y };
-        this.laserChargeTime = 60;
+    // 技能1: 三连弹
+    startBurst(player) {
+        this.burstCount = 3;
+        this.burstCooldown = 120; // 2秒休息
+        this.fireBurstProjectile(player);
+    }
+    
+    fireBurstProjectile(player) {
+        if (this.burstCount <= 0) return;
+        
+        const dx = player.x - this.x;
+        const dy = player.y - this.y;
+        const angle = Math.atan2(dy, dx);
+        const speed = 5;
+        
+        // 发射弹道
+        Events.emit(EVENT.PROJECTILE_FIRE, {
+            projectile: new BossProjectile(
+                this.x, this.y,
+                Math.cos(angle) * speed,
+                Math.sin(angle) * speed,
+                12, '#9932cc', this.damage, 'normal'
+            )
+        });
+        
+        this.burstCount--;
+        
+        // 如果还有弹道，延迟发射下一个
+        if (this.burstCount > 0) {
+            setTimeout(() => this.fireBurstProjectile(player), 200);
+        }
+    }
+    
+    // 技能2: 射线 (2秒预警)
+    startBeam(player) {
+        this.currentSkill = 'beam';
+        this.skillPhase = 0;
+        this.skillTimer = 120; // 2秒预警
+        this.beamTarget = { x: player.x, y: player.y };
+        this.beamAngle = Math.atan2(player.y - this.y, player.x - this.x);
+        this.beamCooldown = 300; // 5秒冷却
         this.pupilSize = 10;
-        this.attackCooldown = 120;
+        
         Events.emit(EVENT.FLOATING_TEXT, {
             text: '⚡ 凝视!',
             x: this.x, y: this.y - 80,
@@ -94,28 +142,23 @@ class AbyssalEye extends Boss {
         });
     }
     
-    updateLaser(player) {
-        if (this.laserCharging) {
-            this.laserChargeTime--;
-            const dx = player.x - this.x;
-            const dy = player.y - this.y;
-            this.laserAngle = Math.atan2(dy, dx);
-            
-            if (this.laserChargeTime <= 0) {
-                this.laserCharging = false;
-                this.laserFiring = true;
-                this.laserFireTime = 30;
-            }
-        }
+    updateBeam(player) {
+        this.skillTimer--;
         
-        if (this.laserFiring) {
-            this.laserFireTime--;
+        if (this.skillPhase === 0) {
+            // 预警阶段 - 锁定方向
+            if (this.skillTimer <= 0) {
+                this.skillPhase = 1;
+                this.skillTimer = 30; // 射线持续0.5秒
+            }
+        } else {
+            // 发射阶段
             this.pupilSize = 5;
             
-            const laserLength = 500;
-            const laserWidth = 20;
-            const endX = this.x + Math.cos(this.laserAngle) * laserLength;
-            const endY = this.y + Math.sin(this.laserAngle) * laserLength;
+            const laserLength = 600;
+            const laserWidth = 25;
+            const endX = this.x + Math.cos(this.beamAngle) * laserLength;
+            const endY = this.y + Math.sin(this.beamAngle) * laserLength;
             
             const playerDist = this.pointToLineDistance(
                 player.x, player.y, this.x, this.y, endX, endY
@@ -125,10 +168,74 @@ class AbyssalEye extends Boss {
                 player.takeDamage(this.damage);
             }
             
-            if (this.laserFireTime <= 0) {
-                this.laserFiring = false;
+            if (this.skillTimer <= 0) {
+                this.currentSkill = null;
                 this.pupilSize = 20;
             }
+        }
+    }
+    
+    // 技能3: 范围爆发 (3秒预警，中毒效果)
+    startNova(player) {
+        this.currentSkill = 'nova';
+        this.skillPhase = 0;
+        this.skillTimer = 180; // 3秒预警
+        this.novaCooldown = 480; // 8秒冷却
+        
+        Events.emit(EVENT.FLOATING_TEXT, {
+            text: '🌀 深渊凝聚!',
+            x: this.x, y: this.y - 80,
+            color: '#00ff00'
+        });
+    }
+    
+    updateNova(player) {
+        this.skillTimer--;
+        
+        if (this.skillPhase === 0) {
+            // 预警阶段
+            if (this.skillTimer <= 0) {
+                this.skillPhase = 1;
+                this.skillTimer = 45; // 爆发持续0.75秒
+                
+                // 检测玩家是否在范围内
+                const dx = player.x - this.x;
+                const dy = player.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < this.novaRadius) {
+                    // 施加中毒效果: 每秒2点伤害，持续5秒
+                    player.addPoison(2, 300); // 2伤害/秒, 5秒=300帧
+                    
+                    Events.emit(EVENT.FLOATING_TEXT, {
+                        text: '☠️ 中毒!',
+                        x: player.x, y: player.y - 40,
+                        color: '#00ff00'
+                    });
+                }
+                
+                // 爆发特效
+                Events.emit(EVENT.PARTICLES, {
+                    x: this.x, y: this.y,
+                    count: 30,
+                    color: '#9932cc',
+                    altColor: '#ff00ff',
+                    spread: 15
+                });
+            }
+        } else {
+            // 爆发结束
+            if (this.skillTimer <= 0) {
+                this.currentSkill = null;
+            }
+        }
+    }
+    
+    updateCurrentSkill(player) {
+        if (this.currentSkill === 'beam') {
+            this.updateBeam(player);
+        } else if (this.currentSkill === 'nova') {
+            this.updateNova(player);
         }
     }
     
@@ -147,57 +254,10 @@ class AbyssalEye extends Boss {
         return Math.sqrt((px - xx) ** 2 + (py - yy) ** 2);
     }
     
-    tentacleSweep() {
-        this.tentacles.forEach(t => {
-            t.extending = true;
-            t.extendTime = 30;
-        });
-    }
-    
-    updateTentacles(player) {
+    updateTentacles() {
         this.tentacles.forEach(t => {
             t.angle += 0.01;
             t.phase += 0.1;
-            
-            if (t.extending) {
-                t.extendTime--;
-                t.length = 80 + Math.sin(t.extendTime * 0.2) * 40;
-                
-                const tipX = this.x + Math.cos(t.angle) * t.length;
-                const tipY = this.y + Math.sin(t.angle) * t.length;
-                const dx = player.x - tipX;
-                const dy = player.y - tipY;
-                if (Math.sqrt(dx*dx + dy*dy) < 20 + player.radius) {
-                    player.takeDamage(this.damage * 0.5);
-                }
-                
-                if (t.extendTime <= 0) {
-                    t.extending = false;
-                    t.length = 40 + Math.random() * 20;
-                }
-            }
-        });
-    }
-    
-    teleport(player) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 150 + Math.random() * 100;
-        
-        Events.emit(EVENT.PARTICLES, {
-            x: this.x, y: this.y,
-            count: 15,
-            color: '#9932cc',
-            spread: 8
-        });
-        
-        this.x = player.x + Math.cos(angle) * dist;
-        this.y = player.y + Math.sin(angle) * dist;
-        
-        Events.emit(EVENT.PARTICLES, {
-            x: this.x, y: this.y,
-            count: 15,
-            color: '#ff00ff',
-            spread: 8
         });
     }
 
@@ -216,6 +276,52 @@ class AbyssalEye extends Boss {
             ctx.arc(distortX, distortY, this.radius * 1.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.restore();
+        }
+        
+        // 范围爆发预警 - 红色半透明
+        if (this.currentSkill === 'nova' && this.skillPhase === 0) {
+            const progress = 1 - this.skillTimer / 180; // 0->1
+            
+            // 浅红色 - 最大伤害范围（固定大小）
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
+            ctx.beginPath();
+            ctx.arc(x, y, this.novaRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 浅红色边框
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, this.novaRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 深红色 - 倒计时圈（从中心向外扩大）
+            const expandRadius = this.novaRadius * progress;
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.35)';
+            ctx.beginPath();
+            ctx.arc(x, y, expandRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 深红色边框
+            ctx.strokeStyle = 'rgba(255, 50, 50, 0.7)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(x, y, expandRadius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        // 范围爆发释放
+        if (this.currentSkill === 'nova' && this.skillPhase === 1) {
+            const fadeProgress = this.skillTimer / 45;
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.novaRadius);
+            gradient.addColorStop(0, `rgba(153, 50, 204, ${0.7 * fadeProgress})`);
+            gradient.addColorStop(0.3, `rgba(255, 0, 255, ${0.5 * fadeProgress})`);
+            gradient.addColorStop(0.7, `rgba(153, 50, 204, ${0.3 * fadeProgress})`);
+            gradient.addColorStop(1, 'rgba(153, 50, 204, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, this.novaRadius, 0, Math.PI * 2);
+            ctx.fill();
         }
         
         // 能量光环
@@ -300,43 +406,52 @@ class AbyssalEye extends Boss {
         ctx.arc(x + 5, y + 5, 3, 0, Math.PI * 2);
         ctx.fill();
         
-        // 绘制激光
-        if (this.laserCharging) {
-            const chargeAlpha = 1 - this.laserChargeTime / 60;
-            ctx.strokeStyle = `rgba(255, 0, 255, ${chargeAlpha})`;
-            ctx.lineWidth = 3;
+        // 绘制射线预警 - 红色半透明
+        if (this.currentSkill === 'beam' && this.skillPhase === 0) {
+            const progress = 1 - this.skillTimer / 120;
+            const warningAlpha = 0.3 + progress * 0.5;
+            
+            // 预警线 - 红色
+            ctx.strokeStyle = `rgba(255, 50, 50, ${warningAlpha})`;
+            ctx.lineWidth = 8 + progress * 20;
+            ctx.setLineDash([15, 10]);
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.lineTo(x + Math.cos(this.laserAngle) * 100, y + Math.sin(this.laserAngle) * 100);
+            ctx.lineTo(x + Math.cos(this.beamAngle) * 600, y + Math.sin(this.beamAngle) * 600);
             ctx.stroke();
+            ctx.setLineDash([]);
             
+            // 蓄力圈 - 红色
+            ctx.strokeStyle = `rgba(255, 50, 50, ${warningAlpha})`;
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(x, y, this.radius + 20 * chargeAlpha, 0, Math.PI * 2);
+            ctx.arc(x, y, this.radius + 25 * progress, 0, Math.PI * 2);
             ctx.stroke();
         }
         
-        if (this.laserFiring) {
+        // 绘制射线发射
+        if (this.currentSkill === 'beam' && this.skillPhase === 1) {
             const laserGradient = ctx.createLinearGradient(
                 x, y,
-                x + Math.cos(this.laserAngle) * 500,
-                y + Math.sin(this.laserAngle) * 500
+                x + Math.cos(this.beamAngle) * 600,
+                y + Math.sin(this.beamAngle) * 600
             );
             laserGradient.addColorStop(0, '#ffffff');
             laserGradient.addColorStop(0.1, '#ff00ff');
             laserGradient.addColorStop(1, 'rgba(255, 0, 255, 0)');
             
             ctx.strokeStyle = laserGradient;
-            ctx.lineWidth = 20;
+            ctx.lineWidth = 25;
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.lineTo(x + Math.cos(this.laserAngle) * 500, y + Math.sin(this.laserAngle) * 500);
+            ctx.lineTo(x + Math.cos(this.beamAngle) * 600, y + Math.sin(this.beamAngle) * 600);
             ctx.stroke();
             
             ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 5;
+            ctx.lineWidth = 8;
             ctx.beginPath();
             ctx.moveTo(x, y);
-            ctx.lineTo(x + Math.cos(this.laserAngle) * 500, y + Math.sin(this.laserAngle) * 500);
+            ctx.lineTo(x + Math.cos(this.beamAngle) * 600, y + Math.sin(this.beamAngle) * 600);
             ctx.stroke();
         }
         
