@@ -22,7 +22,7 @@ class AbyssalEye extends Boss {
         this.distortionEffect = 0;
         
         // 技能状态
-        this.currentSkill = null; // 'burst' | 'beam' | null
+        this.currentSkill = null; // 'trap' | 'nova' | null
         this.skillTimer = 0;
         this.skillPhase = 0; // 0=预警, 1=释放
         
@@ -30,10 +30,11 @@ class AbyssalEye extends Boss {
         this.burstCooldown = 0;
         this.burstCount = 0;
         
-        // 技能2: 射线
-        this.beamCooldown = 0;
-        this.beamAngle = 0;
-        this.beamTarget = null;
+        // 技能2: 虚空陷阱
+        this.trapCooldown = 0;
+        this.traps = []; // 陷阱列表 {x, y, timer, phase}
+        this.trapCount = 0;
+        this.trapSpawnTimer = 0;
         
         // 技能3: 范围爆发
         this.novaCooldown = 0;
@@ -43,7 +44,7 @@ class AbyssalEye extends Boss {
         for (let i = 0; i < 8; i++) {
             this.tentacles.push({
                 angle: (Math.PI * 2 / 8) * i,
-                length: 40 + Math.random() * 20,
+                length: 60 + Math.random() * 30,
                 phase: Math.random() * Math.PI * 2
             });
         }
@@ -79,14 +80,17 @@ class AbyssalEye extends Boss {
         
         // 冷却减少
         this.burstCooldown--;
-        this.beamCooldown--;
+        this.trapCooldown--;
         this.novaCooldown--;
         
-        // 技能优先级: 范围爆发 > 射线 > 三连弹
+        // 更新陷阱
+        this.updateTraps(player);
+        
+        // 技能优先级: 范围爆发 > 虚空陷阱 > 三连弹
         if (this.novaCooldown <= 0) {
             this.startNova(player);
-        } else if (this.beamCooldown <= 0) {
-            this.startBeam(player);
+        } else if (this.trapCooldown <= 0) {
+            this.startTrap(player);
         } else if (this.burstCooldown <= 0) {
             this.startBurst(player);
         }
@@ -125,54 +129,85 @@ class AbyssalEye extends Boss {
         }
     }
     
-    // 技能2: 射线 (2秒预警)
-    startBeam(player) {
-        this.currentSkill = 'beam';
-        this.skillPhase = 0;
-        this.skillTimer = 120; // 2秒预警
-        this.beamTarget = { x: player.x, y: player.y };
-        this.beamAngle = Math.atan2(player.y - this.y, player.x - this.x);
-        this.beamCooldown = 300; // 5秒冷却
-        this.pupilSize = 10;
+    // 技能2: 虚空陷阱 (5个陷阱，每个间隔1秒，预警1秒)
+    startTrap(player) {
+        this.trapCooldown = 480; // 8秒冷却
+        this.trapCount = 5;
+        this.trapSpawnTimer = 0;
         
-        Events.emit(EVENT.FLOATING_TEXT, {
-            text: '⚡ 凝视!',
-            x: this.x, y: this.y - 80,
-            color: '#ff00ff'
-        });
+        // 立即生成第一个陷阱
+        this.spawnTrap(player);
     }
     
-    updateBeam(player) {
-        this.skillTimer--;
+    spawnTrap(player) {
+        if (this.trapCount <= 0) return;
         
-        if (this.skillPhase === 0) {
-            // 预警阶段 - 锁定方向
-            if (this.skillTimer <= 0) {
-                this.skillPhase = 1;
-                this.skillTimer = 30; // 射线持续0.5秒
-            }
-        } else {
-            // 发射阶段
-            this.pupilSize = 5;
-            
-            const laserLength = 600;
-            const laserWidth = 25;
-            const endX = this.x + Math.cos(this.beamAngle) * laserLength;
-            const endY = this.y + Math.sin(this.beamAngle) * laserLength;
-            
-            const playerDist = this.pointToLineDistance(
-                player.x, player.y, this.x, this.y, endX, endY
-            );
-            
-            if (playerDist < laserWidth + player.radius && Enemy.frameCount % 10 === 0) {
-                player.takeDamage(this.damage);
-            }
-            
-            if (this.skillTimer <= 0) {
-                this.currentSkill = null;
-                this.pupilSize = 20;
+        // 在玩家脚下生成陷阱
+        this.traps.push({
+            x: player.x,
+            y: player.y,
+            timer: 60, // 1秒预警
+            phase: 0,  // 0=预警, 1=爆发
+            burstTimer: 0,
+            angle: Math.random() * Math.PI * 2 // 触手方向
+        });
+        
+        this.trapCount--;
+    }
+    
+    updateTraps(player) {
+        // 生成新陷阱
+        if (this.trapCount > 0) {
+            this.trapSpawnTimer++;
+            if (this.trapSpawnTimer >= 60) { // 每1秒生成一个
+                this.spawnTrap(player);
+                this.trapSpawnTimer = 0;
             }
         }
+        
+        // 更新现有陷阱
+        this.traps = this.traps.filter(trap => {
+            trap.timer--;
+            
+            if (trap.phase === 0) {
+                // 预警阶段
+                if (trap.timer <= 0) {
+                    trap.phase = 1;
+                    trap.burstTimer = 30; // 爆发持续0.5秒
+                    
+                    // 检测玩家是否在陷阱范围内
+                    const dx = player.x - trap.x;
+                    const dy = player.y - trap.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < 50) { // 陷阱半径50
+                        player.takeDamage(this.damage);
+                        Events.emit(EVENT.FLOATING_TEXT, {
+                            text: '触手!',
+                            x: player.x, y: player.y - 30,
+                            color: '#9932cc'
+                        });
+                    }
+                    
+                    // 爆发特效
+                    Events.emit(EVENT.PARTICLES, {
+                        x: trap.x, y: trap.y,
+                        count: 8,
+                        color: '#9932cc',
+                        altColor: '#4a0080',
+                        spread: 5
+                    });
+                }
+            } else {
+                // 爆发阶段
+                trap.burstTimer--;
+                if (trap.burstTimer <= 0) {
+                    return false; // 移除陷阱
+                }
+            }
+            
+            return true;
+        });
     }
     
     // 技能3: 范围爆发 (3秒预警，中毒效果)
@@ -232,9 +267,7 @@ class AbyssalEye extends Boss {
     }
     
     updateCurrentSkill(player) {
-        if (this.currentSkill === 'beam') {
-            this.updateBeam(player);
-        } else if (this.currentSkill === 'nova') {
+        if (this.currentSkill === 'nova') {
             this.updateNova(player);
         }
     }
@@ -256,8 +289,10 @@ class AbyssalEye extends Boss {
     
     updateTentacles() {
         this.tentacles.forEach(t => {
-            t.angle += 0.01;
-            t.phase += 0.1;
+            t.angle += 0.015;
+            t.phase += 0.12;
+            // 动态伸缩效果
+            t.length = 50 + Math.sin(t.phase) * 25 + Math.sin(t.phase * 0.7) * 15;
         });
     }
 
@@ -406,54 +441,82 @@ class AbyssalEye extends Boss {
         ctx.arc(x + 5, y + 5, 3, 0, Math.PI * 2);
         ctx.fill();
         
-        // 绘制射线预警 - 红色半透明
-        if (this.currentSkill === 'beam' && this.skillPhase === 0) {
-            const progress = 1 - this.skillTimer / 120;
-            const warningAlpha = 0.3 + progress * 0.5;
+        // 绘制虚空陷阱
+        this.traps.forEach(trap => {
+            const trapX = trap.x - camX;
+            const trapY = trap.y - camY;
+            const trapRadius = 50;
             
-            // 预警线 - 红色
-            ctx.strokeStyle = `rgba(255, 50, 50, ${warningAlpha})`;
-            ctx.lineWidth = 8 + progress * 20;
-            ctx.setLineDash([15, 10]);
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + Math.cos(this.beamAngle) * 600, y + Math.sin(this.beamAngle) * 600);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            
-            // 蓄力圈 - 红色
-            ctx.strokeStyle = `rgba(255, 50, 50, ${warningAlpha})`;
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.arc(x, y, this.radius + 25 * progress, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-        
-        // 绘制射线发射
-        if (this.currentSkill === 'beam' && this.skillPhase === 1) {
-            const laserGradient = ctx.createLinearGradient(
-                x, y,
-                x + Math.cos(this.beamAngle) * 600,
-                y + Math.sin(this.beamAngle) * 600
-            );
-            laserGradient.addColorStop(0, '#ffffff');
-            laserGradient.addColorStop(0.1, '#ff00ff');
-            laserGradient.addColorStop(1, 'rgba(255, 0, 255, 0)');
-            
-            ctx.strokeStyle = laserGradient;
-            ctx.lineWidth = 25;
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + Math.cos(this.beamAngle) * 600, y + Math.sin(this.beamAngle) * 600);
-            ctx.stroke();
-            
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 8;
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x + Math.cos(this.beamAngle) * 600, y + Math.sin(this.beamAngle) * 600);
-            ctx.stroke();
-        }
+            if (trap.phase === 0) {
+                // 预警阶段 - 红色圆圈扩大
+                const progress = 1 - trap.timer / 60;
+                
+                // 浅红色最大范围
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
+                ctx.beginPath();
+                ctx.arc(trapX, trapY, trapRadius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(trapX, trapY, trapRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // 深红色倒计时圈
+                const expandRadius = trapRadius * progress;
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
+                ctx.beginPath();
+                ctx.arc(trapX, trapY, expandRadius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = 'rgba(255, 50, 50, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(trapX, trapY, expandRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            } else {
+                // 爆发阶段 - 触手冒出
+                const burstProgress = 1 - trap.burstTimer / 30;
+                const tentacleHeight = 80 * (1 - burstProgress * 0.5);
+                
+                // 绘制触手
+                ctx.strokeStyle = '#4a0080';
+                ctx.lineWidth = 10;
+                ctx.lineCap = 'round';
+                
+                for (let i = 0; i < 3; i++) {
+                    const angle = trap.angle + (i - 1) * 0.4;
+                    ctx.beginPath();
+                    ctx.moveTo(trapX, trapY);
+                    
+                    // 弯曲的触手
+                    const segments = 5;
+                    for (let j = 1; j <= segments; j++) {
+                        const segHeight = (tentacleHeight / segments) * j;
+                        const wave = Math.sin(this.animationFrame * 0.3 + j + i) * 8;
+                        const segX = trapX + Math.cos(angle) * wave;
+                        const segY = trapY - segHeight;
+                        ctx.lineTo(segX, segY);
+                    }
+                    ctx.stroke();
+                    
+                    // 触手尖端
+                    const tipX = trapX + Math.cos(angle) * Math.sin(this.animationFrame * 0.3 + 5 + i) * 8;
+                    const tipY = trapY - tentacleHeight;
+                    ctx.fillStyle = '#9932cc';
+                    ctx.beginPath();
+                    ctx.arc(tipX, tipY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // 底部裂缝效果
+                ctx.fillStyle = `rgba(74, 0, 128, ${0.6 * (1 - burstProgress)})`;
+                ctx.beginPath();
+                ctx.ellipse(trapX, trapY, trapRadius * 0.8, trapRadius * 0.3, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
         
         // 结束受伤闪烁
         this.endDraw(ctx);
