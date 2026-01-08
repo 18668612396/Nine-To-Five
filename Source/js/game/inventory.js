@@ -310,21 +310,21 @@ const Inventory = {
         
         const skill = inventory[inventoryIndex];
         if (weapon.slots[slotIndex] !== null) {
+            const oldSkill = weapon.slots[slotIndex];
             // 如果卸下的是拓展技能，先更新槽位
-            if (weapon.slots[slotIndex].id === 'expand') {
-                inventory.push(weapon.slots[slotIndex]);
+            if (oldSkill.id === 'expand') {
+                inventory.push(oldSkill);
                 weapon.slots[slotIndex] = null;
                 weapon.updateSlotCount();
                 // 重新检查槽位是否有效
                 if (slotIndex >= weapon.slotCount) {
-                    // 槽位已被移除，把技能放到最后一个有效槽位
                     slotIndex = weapon.slotCount - 1;
                     if (weapon.slots[slotIndex] !== null) {
                         inventory.push(weapon.slots[slotIndex]);
                     }
                 }
             } else {
-                inventory.push(weapon.slots[slotIndex]);
+                inventory.push(oldSkill);
             }
         }
         weapon.slots[slotIndex] = skill;
@@ -362,12 +362,12 @@ const Inventory = {
         
         const skill = inventory[inventoryIndex];
         if (weapon.specialSlots[slotIndex] !== null) {
+            const oldSkill = weapon.specialSlots[slotIndex];
             // 如果卸下的是拓展技能，先更新槽位
-            if (weapon.specialSlots[slotIndex].id === 'expand') {
-                inventory.push(weapon.specialSlots[slotIndex]);
+            if (oldSkill.id === 'expand') {
+                inventory.push(oldSkill);
                 weapon.specialSlots[slotIndex] = null;
                 weapon.updateSlotCount();
-                // 重新检查槽位是否有效
                 if (slotIndex >= weapon.specialSlots.length) {
                     slotIndex = weapon.specialSlots.length - 1;
                     if (weapon.specialSlots[slotIndex] !== null) {
@@ -375,7 +375,7 @@ const Inventory = {
                     }
                 }
             } else {
-                inventory.push(weapon.specialSlots[slotIndex]);
+                inventory.push(oldSkill);
             }
         }
         weapon.specialSlots[slotIndex] = skill;

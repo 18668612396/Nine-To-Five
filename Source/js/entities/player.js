@@ -83,10 +83,73 @@ class Player extends Entity {
             this.updateDamageAura(enemies);
         }
 
-        // 武器更新
-        if (this.weapon) {
-            this.weapon.update(this, enemies);
+        // 同步傀儡
+        if (typeof PuppetManager !== 'undefined') {
+            PuppetManager.syncWithWeapons(this);
         }
+
+        // 更新所有武器槽
+        this.updateAllWeapons(enemies);
+    }
+    
+    // 更新所有武器
+    updateAllWeapons(enemies) {
+        this.weaponSlots.forEach((weapon, idx) => {
+            if (!weapon) return;
+            
+            const isMainWeapon = idx === this.currentWeaponIndex;
+            
+            // 检查是否有傀儡技能
+            const hasPuppetSkill = weapon.slots.some(s => s && s.id === 'puppet') ||
+                                   (weapon.specialSlots && weapon.specialSlots.some(s => s && s.id === 'puppet'));
+            
+            // 只有主武器或有傀儡技能的武器才发射
+            if (!isMainWeapon && !hasPuppetSkill) {
+                // 仍然回复能量，但不发射
+                if (weapon.energy < weapon.maxEnergy) {
+                    weapon.energy = Math.min(weapon.maxEnergy, weapon.energy + weapon.getEnergyRegen() / 60);
+                }
+                return;
+            }
+            
+            // 确定发射位置
+            let caster = this; // 默认从玩家位置发射
+            
+            if (!isMainWeapon && hasPuppetSkill && typeof PuppetManager !== 'undefined') {
+                // 从傀儡位置发射
+                const puppet = PuppetManager.getPuppetForWeapon(weapon);
+                if (puppet) {
+                    caster = {
+                        x: puppet.x,
+                        y: puppet.y,
+                        facingRight: puppet.facingRight,
+                        damageMult: this.damageMult,
+                        projSpeed: this.projSpeed,
+                        cooldownMult: this.cooldownMult,
+                        knockback: this.knockback,
+                        critChance: this.critChance,
+                        extraProjectiles: this.extraProjectiles,
+                        hp: this.hp,
+                        maxHp: this.maxHp
+                    };
+                }
+            }
+            
+            // 非主武器有傀儡技能时，能量回复减半
+            if (!isMainWeapon && hasPuppetSkill) {
+                const puppetSkill = weapon.slots.find(s => s && s.id === 'puppet') ||
+                                    (weapon.specialSlots && weapon.specialSlots.find(s => s && s.id === 'puppet'));
+                const star = puppetSkill ? (puppetSkill.star || 1) : 1;
+                const energyMult = { 1: 0.5, 2: 0.6, 3: 0.7 }[star] || 0.5;
+                
+                const originalRegen = weapon.baseEnergyRegen;
+                weapon.baseEnergyRegen = originalRegen * energyMult;
+                weapon.update(caster, enemies);
+                weapon.baseEnergyRegen = originalRegen;
+            } else {
+                weapon.update(caster, enemies);
+            }
+        });
     }
     
     updateDamageAura(enemies) {

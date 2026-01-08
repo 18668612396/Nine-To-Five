@@ -298,6 +298,11 @@ const Game = {
         Camera.x = 0;
         Camera.y = 0;
         Camera.shakeDuration = 0;
+        
+        // 清空傀儡
+        if (typeof PuppetManager !== 'undefined') {
+            PuppetManager.clear();
+        }
     },
     
     // 应用难度
@@ -400,6 +405,11 @@ const Game = {
         
         // Boss与场景元素碰撞
         Scene.Manager.handleEntitiesCollisions(Boss.Manager.bosses);
+        
+        // 更新傀儡
+        if (typeof PuppetManager !== 'undefined') {
+            PuppetManager.update();
+        }
         
         // 更新宝石
         this.gems.forEach(g => g.update(this.player));
@@ -558,6 +568,11 @@ const Game = {
         
         // 绘制玩家
         this.player.draw(CTX, cameraX, cameraY);
+        
+        // 绘制傀儡
+        if (typeof PuppetManager !== 'undefined') {
+            PuppetManager.draw(CTX, cameraX, cameraY);
+        }
         
         // 绘制投射物
         this.projectiles.forEach(p => p.draw(CTX, cameraX, cameraY));
