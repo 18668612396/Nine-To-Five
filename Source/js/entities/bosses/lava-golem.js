@@ -25,7 +25,11 @@ class LavaGolem extends Boss {
         this.showShockwave = false;
         
         // 攻击预警系统
-        this.warnings = [];  // { type, x, y, angle, radius, progress, maxTime, ... }
+        this.warnings = [];
+        
+        // 岩浆池
+        this.lavaPools = [];
+        this.lavaPoolCooldown = 0;
     }
     
     onPhaseChange(phase) {
@@ -49,9 +53,9 @@ class LavaGolem extends Boss {
         // 更新预警
         this.updateWarnings();
         
-        // 熔岩喷射 - 添加扇形预警
+        // 熔岩喷射 - 无预警直接发射
         if (this.attackCooldown <= 0 && !this.isCharging) {
-            this.startLavaSprayWarning(player);
+            this.lavaSpray(player);
             this.attackCooldown = this.isEnraged ? 40 : 70;
         }
         
@@ -67,8 +71,16 @@ class LavaGolem extends Boss {
             this.summonCooldown = 300;
         }
         
+        // 岩浆池技能
+        if (this.lavaPoolCooldown <= 0) {
+            this.startLavaPoolWarning(player);
+            this.lavaPoolCooldown = this.isEnraged ? 180 : 240;
+        }
+        this.lavaPoolCooldown--;
+        
         this.updateCharge(player);
         this.updateFireTrails(player);
+        this.updateLavaPools(player);
         
         if (this.showShockwave) {
             this.shockwaveRadius += 8;
@@ -97,28 +109,73 @@ class LavaGolem extends Boss {
         this.warnings = this.warnings.filter(w => !w.done);
     }
     
-    // 熔岩喷射预警
-    startLavaSprayWarning(player) {
-        const dx = player.x - this.x;
-        const dy = player.y - this.y;
-        const angle = Math.atan2(dy, dx);
-        const count = this.phase >= 3 ? 5 : 3;
-        const spread = 0.3 * count;
+    // 岩浆池预警
+    startLavaPoolWarning(player) {
+        const offsetX = (Math.random() - 0.5) * 150;
+        const offsetY = (Math.random() - 0.5) * 150;
+        const targetX = player.x + offsetX;
+        const targetY = player.y + offsetY;
         
         this.warnings.push({
-            type: 'cone',
-            x: this.x,
-            y: this.y,
-            angle: angle,
-            spread: spread,
-            radius: 250,
+            type: 'lavaPool',
+            x: targetX,
+            y: targetY,
+            radius: 100,
             progress: 0,
-            maxTime: 30,
+            maxTime: 120, // 2秒预警
             color: '#ff4500',
-            onComplete: () => this.lavaSpray(player)
+            onComplete: () => this.createLavaPool(targetX, targetY)
         });
     }
     
+    // 创建岩浆池
+    createLavaPool(x, y) {
+        this.lavaPools.push({
+            x: x,
+            y: y,
+            radius: 100,
+            life: 300, // 5秒持续
+            maxLife: 300,
+            damage: this.damage * 0.3,
+            hitCooldown: 0
+        });
+        
+        Events.emit(EVENT.PARTICLES, {
+            x: x, y: y,
+            count: 15,
+            color: '#ff6600',
+            spread: 5
+        });
+    }
+    
+    // 更新岩浆池
+    updateLavaPools(player) {
+        this.lavaPools.forEach(pool => {
+            pool.life--;
+            if (pool.hitCooldown > 0) pool.hitCooldown--;
+            
+            // 检测玩家是否站在岩浆池中
+            if (player && pool.hitCooldown <= 0) {
+                const dx = player.x - pool.x;
+                const dy = player.y - pool.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < pool.radius + player.radius) {
+                    player.takeDamage(pool.damage);
+                    pool.hitCooldown = 30; // 0.5秒伤害间隔
+                    
+                    Events.emit(EVENT.PARTICLES, {
+                        x: player.x, y: player.y,
+                        count: 3,
+                        color: '#ff4500'
+                    });
+                }
+            }
+        });
+        
+        this.lavaPools = this.lavaPools.filter(p => p.life > 0);
+    }
+
     // 地震预警
     startEarthquakeWarning(player) {
         this.warnings.push({
@@ -255,6 +312,40 @@ class LavaGolem extends Boss {
         
         // 绘制攻击预警
         this.drawWarnings(ctx, camX, camY);
+        
+        // 绘制岩浆池
+        this.lavaPools.forEach(pool => {
+            const px = pool.x - camX;
+            const py = pool.y - camY;
+            const alpha = Math.min(1, pool.life / 60); // 淡出效果
+            const bubblePhase = this.animationFrame * 0.1;
+            
+            // 岩浆池底色
+            const gradient = ctx.createRadialGradient(px, py, 0, px, py, pool.radius);
+            gradient.addColorStop(0, `rgba(255, 100, 0, ${alpha * 0.9})`);
+            gradient.addColorStop(0.5, `rgba(255, 50, 0, ${alpha * 0.7})`);
+            gradient.addColorStop(0.8, `rgba(200, 30, 0, ${alpha * 0.5})`);
+            gradient.addColorStop(1, `rgba(100, 20, 0, 0)`);
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(px, py, pool.radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 岩浆气泡
+            for (let i = 0; i < 5; i++) {
+                const bubbleAngle = bubblePhase + i * 1.2;
+                const bubbleDist = (pool.radius * 0.5) * (0.5 + Math.sin(bubbleAngle * 2) * 0.3);
+                const bx = px + Math.cos(bubbleAngle) * bubbleDist;
+                const by = py + Math.sin(bubbleAngle) * bubbleDist;
+                const bubbleSize = 5 + Math.sin(bubbleAngle * 3) * 3;
+                
+                ctx.fillStyle = `rgba(255, 200, 50, ${alpha * 0.8})`;
+                ctx.beginPath();
+                ctx.arc(bx, by, bubbleSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
         
         // 绘制火焰路径
         this.fireTrails.forEach(trail => {
@@ -561,6 +652,32 @@ class LavaGolem extends Boss {
                     ctx.strokeStyle = `rgba(255, 255, 0, ${flash})`;
                     ctx.lineWidth = 3;
                     ctx.strokeRect(0, -w.width / 2, w.length, w.width);
+                }
+            }
+            else if (w.type === 'lavaPool') {
+                // 岩浆池预警 - 圆形
+                ctx.strokeStyle = `rgba(255, 100, 0, ${alpha})`;
+                ctx.lineWidth = 3;
+                ctx.setLineDash([10, 5]);
+                ctx.beginPath();
+                ctx.arc(wx, wy, w.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // 填充进度
+                ctx.fillStyle = `rgba(255, 80, 0, ${alpha * 0.4})`;
+                ctx.beginPath();
+                ctx.arc(wx, wy, w.radius * progress, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 边缘闪烁
+                if (progress > 0.7) {
+                    const flash = Math.sin(this.animationFrame * 0.5) * 0.3 + 0.5;
+                    ctx.strokeStyle = `rgba(255, 200, 0, ${flash})`;
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.arc(wx, wy, w.radius, 0, Math.PI * 2);
+                    ctx.stroke();
                 }
             }
             

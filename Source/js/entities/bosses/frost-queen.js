@@ -267,7 +267,7 @@ class FrostQueen extends Boss {
             y: targetY,
             radius: 40,
             progress: 0,
-            maxTime: 180, // 3秒
+            maxTime: 120, // 2秒
             color: 'ice',
             onComplete: () => this.dropIcicle(targetX, targetY)
         });
