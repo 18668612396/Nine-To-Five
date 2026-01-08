@@ -446,25 +446,28 @@ body {
 
 .inventory-container {
     background: #1a1a2e;
-    border-radius: 15px;
-    padding: 25px;
-    width: 640px;
+    border-radius: 12px;
+    padding: 15px;
+    width: 580px;
     max-width: 95vw;
-    max-height: 90vh;
-    overflow-y: auto;
+    max-height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .inventory-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     border-bottom: 1px solid #444;
-    padding-bottom: 15px;
+    padding-bottom: 8px;
 }
 
 .inventory-header h2 {
     margin: 0;
+    font-size: 18px;
 }
 
 .inventory-header-btns {
@@ -497,12 +500,28 @@ body {
 }
 
 .inventory-section {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+/* 技能背包区域可伸缩 */
+.inventory-section:nth-child(3) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100px;
+    overflow: hidden;
+}
+
+/* 武器背包区域 */
+.inventory-section.weapon-inventory-section {
+    flex-shrink: 0;
+    margin-bottom: 0;
 }
 
 .inventory-section h3 {
-    margin-bottom: 10px;
-    font-size: 16px;
+    margin-bottom: 8px;
+    font-size: 14px;
     color: #aaa;
 }
 
@@ -514,11 +533,11 @@ body {
 }
 
 .wand-slot {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     background: rgba(50, 50, 80, 0.8);
     border: 2px solid #444;
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -554,7 +573,7 @@ body {
 }
 
 .slot-icon {
-    font-size: 24px;
+    font-size: 22px;
 }
 
 /* 技能能量消耗显示 */
@@ -574,14 +593,16 @@ body {
 /* 背包物品 - 格子样式 */
 .inventory-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(10, 48px);
+    gap: 5px;
     background: rgba(30, 30, 50, 0.8);
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 6px;
     border: 2px solid #333;
-    max-height: 250px;
+    flex: 1;
     overflow-y: auto;
+    align-content: start;
+    min-height: 60px;
 }
 
 .inventory-grid::-webkit-scrollbar {
@@ -603,8 +624,8 @@ body {
 }
 
 .inventory-item {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     background: rgba(50, 50, 80, 0.8);
     border: 2px solid #444;
     border-radius: 6px;
@@ -630,7 +651,7 @@ body {
 }
 
 .item-icon {
-    font-size: 22px;
+    font-size: 20px;
 }
 
 .item-name {
@@ -639,8 +660,8 @@ body {
 
 /* 背包空槽位 */
 .inventory-slot-empty {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     background: rgba(40, 40, 60, 0.5);
     border: 2px dashed #333;
     border-radius: 6px;
@@ -660,10 +681,10 @@ body {
 
 .inventory-tip {
     color: #888;
-    font-size: 12px;
+    font-size: 11px;
     text-align: center;
-    margin-top: 15px;
-    padding-top: 15px;
+    margin-top: 8px;
+    padding-top: 8px;
     border-top: 1px solid #333;
 }
 
@@ -844,13 +865,13 @@ body {
 
 /* 合成按钮 */
 .merge-btn {
-    padding: 8px 15px;
+    padding: 6px 12px;
     background: linear-gradient(135deg, #00cc66, #009944);
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     color: #fff;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: bold;
 }
 
@@ -923,9 +944,9 @@ body {
 
 /* 新版工作台区域（内联显示） */
 #workbench-area {
-    padding: 10px;
+    padding: 8px;
     background: rgba(68, 136, 204, 0.1);
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid rgba(68, 136, 204, 0.3);
 }
 
@@ -934,33 +955,33 @@ body {
 }
 
 #workbench-area h3 {
-    margin: 0 0 10px 0;
+    margin: 0 0 6px 0;
     color: #4488cc;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .workbench-content {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     justify-content: center;
     flex-wrap: wrap;
 }
 
 .workbench-arrow {
-    font-size: 20px;
+    font-size: 18px;
     color: #4488cc;
 }
 
 #workbench-area .workbench-tip {
-    margin-top: 8px;
-    font-size: 11px;
+    margin-top: 6px;
+    font-size: 10px;
     color: #888;
     text-align: center;
 }
 
 #workbench-area .workbench-auto-btn {
-    margin-top: 8px;
+    margin-top: 6px;
     width: 100%;
 }
 
@@ -977,11 +998,11 @@ body {
 }
 
 .workbench-slot {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     background: rgba(0, 0, 0, 0.5);
     border: 2px dashed #4488cc;
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1020,11 +1041,11 @@ body {
 }
 
 .workbench-result {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     background: rgba(0, 0, 0, 0.5);
     border: 2px solid #666;
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1043,7 +1064,7 @@ body {
 }
 
 .workbench-result .wb-result-icon {
-    font-size: 24px;
+    font-size: 20px;
 }
 
 .workbench-result .wb-result-star {
@@ -1068,13 +1089,12 @@ body {
 }
 
 .workbench-craft-btn {
-    width: 100%;
-    padding: 10px;
+    padding: 6px 12px;
     background: linear-gradient(135deg, #ffd700, #ffaa00);
     border: none;
-    border-radius: 6px;
+    border-radius: 5px;
     color: #000;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
@@ -2485,40 +2505,44 @@ body {
     
     /* 背包界面 */
     .inventory-container {
-        padding: 15px;
+        padding: 10px;
         max-width: 95vw;
-        max-height: 85vh;
-        overflow-y: auto;
+        max-height: 90vh;
     }
     
     .inventory-section {
-        margin-bottom: 15px;
+        margin-bottom: 8px;
     }
     
     .inventory-section h3 {
-        font-size: 14px;
-        margin-bottom: 8px;
+        font-size: 12px;
+        margin-bottom: 4px;
     }
     
     /* 武器槽行在移动端更紧凑 */
     .weapon-wand-row {
-        padding: 6px;
-        gap: 4px;
+        padding: 4px;
+        gap: 3px;
     }
     
     .row-weapon-slot {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
     }
     
     .row-skill-slot {
-        width: 28px !important;
-        height: 28px !important;
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 12px !important;
     }
     
     /* 技能背包网格更紧凑 */
-    #inventory-items {
-        gap: 4px;
+    .inventory-grid {
+        grid-template-columns: repeat(8, 36px);
+        gap: 3px;
+        padding: 6px;
+        max-height: 100px;
     }
     
     .inventory-item {
@@ -2526,27 +2550,27 @@ body {
         height: 36px;
     }
     
-    /* 祝福区域更紧凑 */
-    #perks-display {
-        max-height: 80px;
-        overflow-y: auto;
-    }
-    
-    .perk-item {
-        padding: 4px 8px;
+    .inventory-slot-empty {
+        width: 36px;
+        height: 36px;
     }
     
     /* 武器背包更紧凑 */
-    #weapon-inventory {
-        max-height: 60px;
-        overflow-y: auto;
+    .weapon-inventory-grid {
+        gap: 4px;
+        padding: 6px;
+    }
+    
+    .weapon-inv-item {
+        width: 45px;
+        height: 45px;
     }
     
     .inv-back-btn,
     .inv-settings-btn,
     .inv-surrender-btn {
-        padding: 10px 15px;
-        font-size: 14px;
+        padding: 8px 12px;
+        font-size: 12px;
     }
     
     /* 天赋树 */
@@ -2603,6 +2627,52 @@ body {
     
     #hp-bar-bg, #xp-bar-bg {
         width: 90px;
+    }
+}
+
+/* 小高度屏幕 - 进一步压缩背包 */
+@media (max-height: 700px) {
+    .inventory-container {
+        padding: 8px;
+    }
+    
+    .inventory-header {
+        margin-bottom: 4px;
+        padding-bottom: 4px;
+    }
+    
+    .inventory-section {
+        margin-bottom: 6px;
+    }
+    
+    .inventory-section h3 {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+    
+    .inventory-grid {
+        max-height: 100px;
+        gap: 3px;
+        padding: 6px;
+    }
+    
+    .weapon-wand-section {
+        padding-bottom: 6px;
+        margin-bottom: 6px;
+    }
+    
+    .weapon-wand-container {
+        gap: 4px;
+    }
+    
+    .weapon-wand-row {
+        padding: 4px;
+        gap: 4px;
+    }
+    
+    .weapon-inventory-section {
+        padding-top: 6px;
+        margin-top: 6px;
     }
 }
 
@@ -2687,13 +2757,13 @@ body {
 /* ========== 一键合成按钮 ========== */
 .workbench-auto-btn {
     width: 100%;
-    padding: 8px;
-    margin-top: 8px;
+    padding: 6px;
+    margin-top: 6px;
     background: linear-gradient(135deg, #4488cc, #3377bb);
     border: none;
-    border-radius: 6px;
+    border-radius: 5px;
     color: #fff;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s;
@@ -2990,8 +3060,8 @@ body {
 /* ========== 武器+技能槽系统（合并行） ========== */
 .weapon-wand-section {
     border-bottom: 2px solid rgba(255,215,0,0.3);
-    padding-bottom: 15px;
-    margin-bottom: 15px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
 }
 
 .weapon-switch-hint {
@@ -3003,16 +3073,16 @@ body {
 .weapon-wand-container {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .weapon-wand-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px;
+    padding: 6px;
     background: rgba(0,0,0,0.2);
-    border-radius: 8px;
+    border-radius: 6px;
     border: 2px solid transparent;
     transition: all 0.2s;
 }
@@ -3023,12 +3093,12 @@ body {
 }
 
 .weapon-wand-row .row-weapon-slot {
-    width: 50px;
-    height: 50px;
-    min-width: 50px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
     background: rgba(0,0,0,0.4);
     border: 2px solid rgba(255,255,255,0.2);
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -3054,7 +3124,7 @@ body {
 }
 
 .row-weapon-slot .row-weapon-icon {
-    font-size: 22px;
+    font-size: 20px;
 }
 
 .row-weapon-slot .row-weapon-index {
@@ -3078,18 +3148,18 @@ body {
 }
 
 .weapon-wand-row .row-skill-slot {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
     background: rgba(0,0,0,0.4);
     border: 2px dashed rgba(255,255,255,0.2);
-    border-radius: 6px;
+    border-radius: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .weapon-wand-row .row-skill-slot.has-skill {
@@ -3163,8 +3233,8 @@ body {
 /* 武器背包 */
 .weapon-inventory-section {
     border-top: 2px solid rgba(255,215,0,0.3);
-    padding-top: 15px;
-    margin-top: 15px;
+    padding-top: 10px;
+    margin-top: 10px;
 }
 
 .weapon-inventory-grid {
@@ -3174,15 +3244,15 @@ body {
     min-height: 60px;
     padding: 10px;
     background: rgba(0,0,0,0.2);
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 .weapon-inv-item {
-    width: 70px;
-    height: 70px;
+    width: 60px;
+    height: 60px;
     background: rgba(255,255,255,0.05);
     border: 2px solid rgba(255,255,255,0.2);
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
