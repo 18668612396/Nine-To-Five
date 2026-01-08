@@ -406,6 +406,7 @@ body {
     background: rgba(0, 0, 0, 0.9);
     position: relative;
     z-index: 100;
+    overflow-y: auto;
 }
 
 .inventory-container {
@@ -413,6 +414,9 @@ body {
     border-radius: 15px;
     padding: 25px;
     width: 640px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 .inventory-header {
@@ -535,13 +539,13 @@ body {
 /* 背包物品 - 格子样式 */
 .inventory-grid {
     display: grid;
-    grid-template-columns: repeat(10, 50px);
+    grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
     gap: 6px;
     background: rgba(30, 30, 50, 0.8);
     padding: 10px;
     border-radius: 8px;
     border: 2px solid #333;
-    max-height: 290px;
+    max-height: 250px;
     overflow-y: auto;
 }
 
@@ -764,6 +768,8 @@ body {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    max-height: 120px;
+    overflow-y: auto;
 }
 
 .perk-item {
@@ -2402,7 +2408,60 @@ body {
     /* 背包界面 */
     .inventory-container {
         padding: 15px;
-        max-width: 95%;
+        max-width: 95vw;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+    
+    .inventory-section {
+        margin-bottom: 15px;
+    }
+    
+    .inventory-section h3 {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    
+    /* 武器槽行在移动端更紧凑 */
+    .weapon-wand-row {
+        padding: 6px;
+        gap: 4px;
+    }
+    
+    .row-weapon-slot {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .row-skill-slot {
+        width: 28px !important;
+        height: 28px !important;
+    }
+    
+    /* 技能背包网格更紧凑 */
+    #inventory-items {
+        gap: 4px;
+    }
+    
+    .inventory-item {
+        width: 36px;
+        height: 36px;
+    }
+    
+    /* 祝福区域更紧凑 */
+    #perks-display {
+        max-height: 80px;
+        overflow-y: auto;
+    }
+    
+    .perk-item {
+        padding: 4px 8px;
+    }
+    
+    /* 武器背包更紧凑 */
+    #weapon-inventory {
+        max-height: 60px;
+        overflow-y: auto;
     }
     
     .inv-back-btn,

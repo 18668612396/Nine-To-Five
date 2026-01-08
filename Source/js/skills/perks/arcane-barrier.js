@@ -6,13 +6,13 @@ class ArcaneBarrierPerk extends Perk {
             id: 'arcane_barrier',
             name: '奥术屏障',
             icon: '🛡️',
-            desc: '击杀敌人时获得5护盾',
+            desc: '击杀敌人时获得1护盾',
             stackable: true
         });
     }
     
     apply(player, level) {
-        player.shieldOnKill = (player.shieldOnKill || 0) + 5 * level;
+        player.shieldOnKill = (player.shieldOnKill || 0) + 1 * level;
     }
 }
 

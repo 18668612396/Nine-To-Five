@@ -186,7 +186,7 @@ class Boss extends Enemy {
 Boss.Manager = {
     bosses: [],
     bossSpawnTimer: 0,
-    bossSpawnInterval: 120 * 60, // 2分钟
+    bossSpawnInterval: 60 * 60, // 1分钟
     bossCount: 0, // 已生成的Boss数量
     player: null, // 由外部设置
     
