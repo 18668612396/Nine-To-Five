@@ -10,11 +10,11 @@ const Spawner = {
     
     // 僵尸出现概率配置 (根据游戏时间)
     ZOMBIE_SPAWN_WEIGHTS: {
-        zombie_normal: { weight: 50, minTime: 0 },      // 普通僵尸，一开始就有
-        zombie_flag: { weight: 20, minTime: 30 },       // 旗帜僵尸，30秒后
-        zombie_cone: { weight: 15, minTime: 60 },       // 路障僵尸，1分钟后
-        zombie_newspaper: { weight: 10, minTime: 90 },  // 读报僵尸，1.5分钟后
-        zombie_bucket: { weight: 5, minTime: 120 }      // 铁桶僵尸，2分钟后
+        zombie_normal: { weight: 40, minTime: 0 },      // 普通僵尸，一开始就有
+        zombie_flag: { weight: 25, minTime: 10 },       // 旗帜僵尸，10秒后
+        zombie_cone: { weight: 20, minTime: 20 },       // 路障僵尸，20秒后
+        zombie_newspaper: { weight: 15, minTime: 30 },  // 读报僵尸，30秒后
+        zombie_bucket: { weight: 10, minTime: 45 }      // 铁桶僵尸，45秒后
     },
     
     // 选择僵尸类型
