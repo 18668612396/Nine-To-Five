@@ -15,18 +15,18 @@ function checkCircleCollide(c1, c2) {
 // 请求浏览器全屏
 function requestFullscreen() {
     const el = document.documentElement;
-    const promise = el.requestFullscreen ? el.requestFullscreen() :
-                    el.webkitRequestFullscreen ? el.webkitRequestFullscreen() :
-                    el.msRequestFullscreen ? el.msRequestFullscreen() : null;
     
-    if (promise && promise.then) {
-        promise.then(() => {
-            // 全屏后确保焦点在 canvas 上
-            setTimeout(() => {
-                const canvas = document.getElementById('gameCanvas');
-                if (canvas) canvas.focus();
-            }, 100);
-        }).catch(() => {});
+    try {
+        if (el.requestFullscreen) {
+            el.requestFullscreen().catch(() => {});
+        } else if (el.webkitRequestFullscreen) {
+            // iOS Safari 使用 webkitRequestFullscreen，不返回 Promise
+            el.webkitRequestFullscreen();
+        } else if (el.msRequestFullscreen) {
+            el.msRequestFullscreen();
+        }
+    } catch (e) {
+        console.log('全屏请求失败:', e);
     }
 }
 

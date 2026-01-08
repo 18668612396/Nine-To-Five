@@ -11,6 +11,13 @@ body {
     overflow: hidden;
     font-family: 'Segoe UI', Arial, sans-serif;
     color: #fff;
+    /* 禁用移动端长按选中 */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* 全屏状态 */
