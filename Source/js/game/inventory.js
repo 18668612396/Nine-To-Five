@@ -662,7 +662,8 @@ const Inventory = {
                         <span class="perk-level">Lv.${level}</span>
                     </div>
                 `;
-                div.title = perk.desc;
+                const desc = perk.getDesc ? perk.getDesc(level) : perk.desc;
+                div.title = desc;
                 container.appendChild(div);
             });
         }

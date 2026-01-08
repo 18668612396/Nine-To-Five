@@ -12,7 +12,12 @@ class AttackSpeedPerk extends Perk {
     }
     
     apply(player, level) {
-        player.cooldownMult *= Math.pow(0.9, level);
+        player.cooldownMult -= 0.1 * level;
+        if (player.cooldownMult < 0.1) player.cooldownMult = 0.1; // 最低10%
+    }
+    
+    getDesc(level) {
+        return `施法冷却-${10 * level}%`;
     }
 }
 

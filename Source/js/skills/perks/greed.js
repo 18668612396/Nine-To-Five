@@ -12,7 +12,11 @@ class GreedPerk extends Perk {
     }
     
     apply(player, level) {
-        player.xpMult = (player.xpMult || 1) * Math.pow(1.2, level);
+        player.xpMult = (player.xpMult || 1) + 0.2 * level;
+    }
+    
+    getDesc(level) {
+        return `经验获取+${20 * level}%`;
     }
 }
 

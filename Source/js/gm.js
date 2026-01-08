@@ -55,7 +55,7 @@ const GM = {
             const btn = document.createElement('button');
             btn.className = 'gm-btn perk-type';
             btn.innerHTML = `${perk.icon} ${perk.name}${level > 0 ? ` (${level})` : ''}`;
-            btn.title = perk.desc;
+            btn.title = perk.getDesc ? perk.getDesc(Math.max(1, level)) : perk.desc;
             btn.onclick = () => this.addPerk(perk.id);
             perkList.appendChild(btn);
         });

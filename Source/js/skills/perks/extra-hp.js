@@ -15,6 +15,10 @@ class ExtraHpPerk extends Perk {
         player.maxHp += 20 * level;
         player.hp += 20 * level;
     }
+    
+    getDesc(level) {
+        return `最大生命+${20 * level}`;
+    }
 }
 
 // 注册祝福

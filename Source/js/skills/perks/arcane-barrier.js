@@ -14,6 +14,10 @@ class ArcaneBarrierPerk extends Perk {
     apply(player, level) {
         player.shieldOnKill = (player.shieldOnKill || 0) + 1 * level;
     }
+    
+    getDesc(level) {
+        return `击杀敌人时获得${level}护盾`;
+    }
 }
 
 // 注册祝福

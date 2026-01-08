@@ -6,13 +6,17 @@ class VampirismPerk extends Perk {
             id: 'vampirism',
             name: '吸血',
             icon: '🧛',
-            desc: '击杀敌人恢复生命',
+            desc: '击杀敌人恢复2生命',
             stackable: true
         });
     }
     
     apply(player, level) {
         player.vampirism = (player.vampirism || 0) + 2 * level;
+    }
+    
+    getDesc(level) {
+        return `击杀敌人恢复${2 * level}生命`;
     }
 }
 

@@ -12,7 +12,12 @@ class MagnetPerk extends Perk {
     }
     
     apply(player, level) {
-        player.pickupRange *= Math.pow(1.3, level);
+        // 基于基础拾取范围100计算加成
+        player.pickupRange = 100 * (1 + 0.3 * Perk.Manager.getPerkLevel('magnet'));
+    }
+    
+    getDesc(level) {
+        return `拾取范围+${30 * level}%`;
     }
 }
 

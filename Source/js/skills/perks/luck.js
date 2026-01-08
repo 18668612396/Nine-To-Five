@@ -12,7 +12,11 @@ class LuckPerk extends Perk {
     }
     
     apply(player, level) {
-        player.dropRate = (player.dropRate || 1) * Math.pow(1.25, level);
+        player.dropRate = (player.dropRate || 1) + 0.25 * level;
+    }
+    
+    getDesc(level) {
+        return `技能掉落率+${25 * level}%`;
     }
 }
 

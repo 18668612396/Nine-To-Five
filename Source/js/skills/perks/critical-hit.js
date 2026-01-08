@@ -14,6 +14,10 @@ class CriticalHitPerk extends Perk {
     apply(player, level) {
         player.critChance = (player.critChance || 0) + 0.1 * level;
     }
+    
+    getDesc(level) {
+        return `${10 * level}%几率双倍伤害`;
+    }
 }
 
 // 注册祝福

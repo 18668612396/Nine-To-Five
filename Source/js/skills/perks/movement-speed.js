@@ -12,7 +12,16 @@ class MovementSpeedPerk extends Perk {
     }
     
     apply(player, level) {
-        player.speed *= Math.pow(1.15, level);
+        // 基于基础速度4计算加成
+        player.speed = 4 * (1 + 0.15 * this.getTotalLevel(player));
+    }
+    
+    getTotalLevel(player) {
+        return Perk.Manager.getPerkLevel('movement_speed');
+    }
+    
+    getDesc(level) {
+        return `移动速度+${15 * level}%`;
     }
 }
 

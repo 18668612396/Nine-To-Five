@@ -798,7 +798,8 @@ const Game = {
             const perkDiv = document.createElement('div');
             perkDiv.className = 'hud-perk-item';
             perkDiv.innerHTML = `<span class="hud-perk-icon">${perk.icon}</span><span class="hud-perk-level">${level}</span>`;
-            perkDiv.title = `${perk.name} Lv.${level}\n${perk.desc}`;
+            const desc = perk.getDesc ? perk.getDesc(level) : perk.desc;
+            perkDiv.title = `${perk.name} Lv.${level}\n${desc}`;
             container.appendChild(perkDiv);
         });
     },

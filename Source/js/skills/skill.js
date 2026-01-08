@@ -69,6 +69,11 @@ class Perk extends Skill {
     apply(player, level) {
         throw new Error('Perk.apply must be overridden');
     }
+    
+    // 获取描述 - 子类可重写以显示等级相关数值
+    getDesc(level) {
+        return this.desc;
+    }
 }
 
 // 祝福管理器 (静态)

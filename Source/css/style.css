@@ -3876,3 +3876,116 @@ body {
         padding: 10px 15px;
     }
 }
+
+
+/* ========== 升级界面当前祝福显示 ========== */
+.current-perks-container {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.current-perks-title {
+    font-size: 14px;
+    color: #888;
+    margin-bottom: 10px;
+}
+
+.current-perks-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.current-perk-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: rgba(255, 100, 255, 0.2);
+    border: 1px solid rgba(255, 100, 255, 0.4);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.current-perk-item:hover {
+    background: rgba(255, 100, 255, 0.3);
+    border-color: rgba(255, 100, 255, 0.6);
+}
+
+.current-perk-icon {
+    font-size: 16px;
+}
+
+.current-perk-level {
+    font-size: 12px;
+    color: #ff99ff;
+    font-weight: bold;
+}
+
+/* 祝福详情弹窗 */
+.perk-detail-tooltip {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #2a1a3a, #1a1a2e);
+    border: 2px solid #ff66ff;
+    border-radius: 12px;
+    padding: 16px 20px;
+    min-width: 220px;
+    max-width: 280px;
+    z-index: 10000;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    animation: tooltip-pop 0.15s ease-out;
+}
+
+@keyframes tooltip-pop {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.perk-tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.perk-tooltip-icon {
+    font-size: 28px;
+}
+
+.perk-tooltip-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    flex: 1;
+}
+
+.perk-tooltip-level {
+    font-size: 14px;
+    color: #ff99ff;
+    font-weight: bold;
+}
+
+.perk-tooltip-desc {
+    font-size: 14px;
+    color: #ccc;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.perk-tooltip-hint {
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+}

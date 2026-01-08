@@ -12,7 +12,11 @@ class DamageBoostPerk extends Perk {
     }
     
     apply(player, level) {
-        player.damageMult *= Math.pow(1.15, level);
+        player.damageMult += 0.15 * level;
+    }
+    
+    getDesc(level) {
+        return `所有伤害+${15 * level}%`;
     }
 }
 

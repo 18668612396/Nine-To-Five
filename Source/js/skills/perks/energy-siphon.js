@@ -15,6 +15,10 @@ class EnergySiphonPerk extends Perk {
     apply(player, level) {
         player.energyOnHit = (player.energyOnHit || 0) + 1 * level;
     }
+    
+    getDesc(level) {
+        return `击中敌人恢复${level}点能量`;
+    }
 }
 
 // 注册祝福
