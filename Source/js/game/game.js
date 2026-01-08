@@ -169,6 +169,23 @@ const Game = {
                 this.projectiles.push(data.projectile);
             }
         });
+        
+        // 技能施放效果
+        Events.on(EVENT.SKILL_CAST, (data) => {
+            if (data.type === 'lightning') {
+                // 闪电链效果
+                Renderer.addLightning(data.x1, data.y1, data.x2, data.y2, data.color || '#ffdd00');
+            } else if (data.type === 'lightPillar') {
+                // 光之柱效果
+                Renderer.addLightPillar(data.x, data.y, data.radius, data.damage);
+            } else if (data.type === 'distort') {
+                // 扭曲效果
+                Renderer.addDistort(data.x, data.y, data.targetX || data.x, data.targetY || data.y);
+            } else if (data.type === 'explosion') {
+                // 爆炸效果
+                Renderer.addExplosion(data.x, data.y, data.radius);
+            }
+        });
     },
     
     // 开始游戏
@@ -336,6 +353,12 @@ const Game = {
         
         // 更新光柱伤害
         this.updateLightPillarDamage();
+        
+        // 设置SkillProjectile的敌人引用（用于闪电链等效果）
+        if (typeof SkillProjectile !== 'undefined') {
+            SkillProjectile.enemies = this.enemies;
+            SkillProjectile.bosses = Boss.Manager.bosses;
+        }
         
         // 更新玩家
         const input = Input.getAxis();

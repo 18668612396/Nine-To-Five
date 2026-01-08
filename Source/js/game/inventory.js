@@ -428,14 +428,16 @@ const Inventory = {
         if (perks.length === 0) {
             container.innerHTML = '<div class="perks-empty">暂无祝福，升级后可获得</div>';
         } else {
-            perks.forEach(perk => {
+            perks.forEach(item => {
+                const perk = item.perk;
+                const level = item.level;
                 const div = document.createElement('div');
                 div.className = 'perk-item';
                 div.innerHTML = `
                     <span class="perk-icon">${perk.icon}</span>
                     <div class="perk-info">
                         <span class="perk-name">${perk.name}</span>
-                        <span class="perk-level">Lv.${perk.level}</span>
+                        <span class="perk-level">Lv.${level}</span>
                     </div>
                 `;
                 div.title = perk.desc;
