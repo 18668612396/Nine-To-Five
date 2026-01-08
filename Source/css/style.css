@@ -2494,6 +2494,25 @@ body {
     display: block;
 }
 
+.collection-stats {
+    font-size: 10px;
+    color: #aaa;
+    display: block;
+    margin-top: 5px;
+}
+
+.collection-affix {
+    font-size: 10px;
+    color: #ffcc00;
+    margin-top: 4px;
+}
+
+.collection-special {
+    font-size: 10px;
+    color: #cc66ff;
+    margin-top: 4px;
+}
+
 .collection-item.rarity-common { border-color: #888; }
 .collection-item.rarity-rare { border-color: #4488cc; }
 .collection-item.rarity-epic { border-color: #aa44cc; }

@@ -464,6 +464,11 @@ const Lobby = {
                     name: config.name,
                     desc: config.desc || '普通怪物',
                     icon: config.icon || '👾',
+                    hp: config.hp,
+                    damage: config.damage,
+                    speed: config.speed,
+                    xp: config.xp,
+                    gold: config.gold,
                     unlocked: true,
                     rarity: 'common'
                 });
@@ -479,6 +484,8 @@ const Lobby = {
                     name: config.name,
                     desc: config.desc || 'Boss',
                     icon: config.icon || '👹',
+                    hp: config.hp,
+                    damage: config.damage,
                     unlocked: true,
                     rarity: 'legendary'
                 });
@@ -489,10 +496,18 @@ const Lobby = {
             const div = document.createElement('div');
             div.className = 'collection-item' + (enemy.unlocked ? '' : ' locked');
             if (enemy.rarity) div.classList.add('rarity-' + enemy.rarity);
+            
+            let statsHtml = '';
+            if (enemy.hp) statsHtml += `❤️${enemy.hp} `;
+            if (enemy.damage) statsHtml += `⚔️${enemy.damage} `;
+            if (enemy.xp) statsHtml += `✨${enemy.xp} `;
+            if (enemy.gold) statsHtml += `💰${enemy.gold}`;
+            
             div.innerHTML = `
                 <span class="collection-icon">${enemy.icon}</span>
                 <span class="collection-name">${enemy.name}</span>
                 <span class="collection-desc">${enemy.desc}</span>
+                <span class="collection-stats">${statsHtml}</span>
             `;
             grid.appendChild(div);
         });
@@ -501,12 +516,14 @@ const Lobby = {
     renderSkillCollection(grid) {
         if (typeof MAGIC_SKILLS !== 'undefined') {
             Object.values(MAGIC_SKILLS).forEach(skill => {
+                const cost = typeof SKILL_COSTS !== 'undefined' ? (SKILL_COSTS[skill.id] || 0) : 0;
                 const div = document.createElement('div');
                 div.className = 'collection-item rarity-rare';
                 div.innerHTML = `
                     <span class="collection-icon">${skill.icon}</span>
                     <span class="collection-name">${skill.name}</span>
                     <span class="collection-desc">${skill.desc || '主动技能'}</span>
+                    <span class="collection-stats">⚡${cost}</span>
                 `;
                 grid.appendChild(div);
             });
@@ -532,10 +549,36 @@ const Lobby = {
                 const div = document.createElement('div');
                 div.className = 'collection-item rarity-' + (template.rarity || 'common');
                 const iconStyle = template.iconColor ? `style="color: ${template.iconColor}; text-shadow: 0 0 8px ${template.iconColor};"` : '';
+                
+                const castSec = (template.castInterval / 60).toFixed(2);
+                const regenSec = template.energyRegen.toFixed(1);
+                
+                // 固定词条
+                let affixHtml = '';
+                if (template.fixedAffix && typeof WEAPON_AFFIXES !== 'undefined') {
+                    const affix = WEAPON_AFFIXES[template.fixedAffix];
+                    if (affix) {
+                        affixHtml = `<div class="collection-affix">✦ ${affix.name}</div>`;
+                    }
+                }
+                
+                // 特殊槽
+                let specialHtml = '';
+                if (template.specialSlot && typeof SPECIAL_TRIGGERS !== 'undefined') {
+                    const trigger = SPECIAL_TRIGGERS[template.specialSlot.trigger];
+                    if (trigger) {
+                        const triggerDesc = trigger.desc.replace('{value}', template.specialSlot.value);
+                        specialHtml = `<div class="collection-special">⚡ ${triggerDesc} (${template.specialSlot.slots}槽)</div>`;
+                    }
+                }
+                
                 div.innerHTML = `
                     <span class="collection-icon" ${iconStyle}>${template.icon || '🪄'}</span>
                     <span class="collection-name">${template.name}</span>
                     <span class="collection-desc">${template.desc || '法杖'}</span>
+                    <span class="collection-stats">⚡${template.maxEnergy} 💧${regenSec}/s ⏱️${castSec}s 🔮${template.slotCount}槽</span>
+                    ${affixHtml}
+                    ${specialHtml}
                 `;
                 grid.appendChild(div);
             });
