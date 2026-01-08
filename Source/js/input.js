@@ -12,8 +12,8 @@ const Input = {
     joystick: null, // 虚拟摇杆DOM元素
     
     init() {
-        // 键盘输入
-        window.addEventListener('keydown', e => {
+        // 键盘输入 - 绑定到 document 确保全屏后也能接收
+        document.addEventListener('keydown', e => {
             this.keys[e.code] = true;
             
             // ESC 键处理
@@ -47,7 +47,12 @@ const Input = {
                 if (e.code === 'Digit3') { Game.player.switchWeapon(2); Game.updateUI(); }
             }
         });
-        window.addEventListener('keyup', e => this.keys[e.code] = false);
+        document.addEventListener('keyup', e => this.keys[e.code] = false);
+        
+        // 失去焦点时清空按键状态，防止按键卡住
+        window.addEventListener('blur', () => {
+            this.keys = {};
+        });
         
         // 手机端：创建虚拟摇杆
         if (isMobile) {

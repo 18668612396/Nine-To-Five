@@ -13,23 +13,45 @@ body {
     color: #fff;
 }
 
+/* 全屏状态 */
+:fullscreen #game-container,
+:-webkit-full-screen #game-container {
+    width: 100vw;
+    height: 100vh;
+}
+
+:fullscreen #ui-layer,
+:-webkit-full-screen #ui-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
 #game-container {
     width: 100vw;
     height: 100vh;
+    height: 100dvh; /* 动态视口高度，移动端更准确 */
     position: relative;
 }
 
 #gameCanvas {
     display: block;
+    width: 100%;
+    height: 100%;
 }
 
 #ui-layer {
     position: absolute;
     top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
     height: 100%;
     pointer-events: none;
+    z-index: 10;
 }
 
 #ui-layer > * {
@@ -1728,6 +1750,87 @@ body {
     font-size: 12px;
     color: #888;
     margin-top: 5px;
+}
+
+/* ========== 玩家信息界面 ========== */
+.profile-container {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 2px solid #4488cc;
+    border-radius: 15px;
+    padding: 25px;
+    min-width: 320px;
+}
+
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #4488cc;
+}
+
+.profile-header h2 {
+    margin: 0;
+    color: #4488cc;
+}
+
+.profile-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+}
+
+.stat-label {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffd700;
+}
+
+.profile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.profile-btn {
+    padding: 12px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.profile-btn:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.profile-btn.danger {
+    border-color: #ff6b6b;
+    color: #ff6b6b;
+}
+
+.profile-btn.danger:hover {
+    background: rgba(255,107,107,0.2);
 }
 
 /* ========== 大厅（王者风格） ========== */

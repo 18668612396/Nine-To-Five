@@ -212,10 +212,13 @@ Boss.Manager = {
     update() {
         if (!this.player) return;
         
-        this.bossSpawnTimer++;
-        if (this.bossSpawnTimer >= this.bossSpawnInterval) {
-            this.spawnRandomBoss();
-            this.bossSpawnTimer = 0;
+        // 只有当前没有Boss时才计时
+        if (this.bosses.length === 0) {
+            this.bossSpawnTimer++;
+            if (this.bossSpawnTimer >= this.bossSpawnInterval) {
+                this.spawnRandomBoss();
+                this.bossSpawnTimer = 0;
+            }
         }
         
         this.bosses.forEach(boss => boss.update(this.player));

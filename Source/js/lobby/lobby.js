@@ -620,5 +620,21 @@ const Lobby = {
     hideAllScreens() {
         Screen.Manager.hideAll();
         this.closeModal();
+    },
+    
+    // ========== 玩家信息 ==========
+    
+    showPlayerProfile() {
+        Screen.Manager.openFloat('playerProfile');
+    },
+    
+    confirmResetData() {
+        if (confirm('确定要清理所有数据吗？\n这将重置金币、天赋、预装技能等所有进度！')) {
+            PlayerData.reset();
+            this.preloadedSkills = PlayerData.getPreloadedSkills();
+            Screen.Manager.closeFloat('playerProfile');
+            this.updateGoldDisplay();
+            alert('数据已清理！');
+        }
     }
 };

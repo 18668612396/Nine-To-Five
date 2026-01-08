@@ -28,7 +28,7 @@ class LobbyScreen extends FullScreen {
             <div class="lobby-bg"></div>
             
             <div class="lobby-top-bar">
-                <div class="player-info">
+                <div class="player-info" onclick="Lobby.showPlayerProfile()" style="cursor:pointer;">
                     <div class="player-avatar">
                         <canvas id="lobby-avatar" width="50" height="50"></canvas>
                     </div>

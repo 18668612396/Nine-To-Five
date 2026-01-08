@@ -29,7 +29,7 @@ class TitleScreen extends FullScreen {
                     <canvas id="title-char-1" width="120" height="120"></canvas>
                     <canvas id="title-char-2" width="120" height="120"></canvas>
                 </div>
-                <button class="title-btn" onclick="Lobby.enter()">进入游戏</button>
+                <button class="title-btn" onclick="if(isMobile) requestFullscreen(); Lobby.enter()">进入游戏</button>
                 <div class="title-hint">
                     <p>WASD / 方向键 移动 | 自动攻击</p>
                 </div>

@@ -36,6 +36,11 @@ const PlayerData = {
                 this.preloadedSkills = data.preloadedSkills || [];
                 this.stats = data.stats || this.stats;
             }
+            // 新玩家默认预装火花弹
+            if (this.preloadedSkills.length === 0) {
+                this.preloadedSkills = ['spark_bolt'];
+                this.save();
+            }
         } catch (e) {
             console.warn('加载玩家数据失败:', e);
         }

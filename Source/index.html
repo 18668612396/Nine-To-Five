@@ -10,9 +10,9 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
 </head>
-<body>
+<body tabindex="0">
     <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas" tabindex="1"></canvas>
         <div id="ui-layer"></div>
     </div>
 
@@ -39,6 +39,7 @@
     <script src="js/ui/screens/gameover-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/inventory-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/settings-screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/player-profile-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/levelup-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/pause-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/char-select-screen.js?v=__BUILD_TIME__"></script>
@@ -209,6 +210,7 @@
         Screen.Manager.register('skillPreload', new SkillPreloadScreen());
         Screen.Manager.register('gm', new GMScreen());
         Screen.Manager.register('weaponDrop', new WeaponDropScreen());
+        Screen.Manager.register('playerProfile', new PlayerProfileScreen());
         
         // 初始化游戏
         Game.init();
