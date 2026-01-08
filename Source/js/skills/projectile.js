@@ -65,10 +65,11 @@ class SkillProjectile {
         this.frenzy = mods.frenzy || false;
         this.frenzyReduction = mods.frenzyReduction || 0;
         
-        // 符文战锤 - 环绕效果
+        // 符文战锤 - 螺旋飞出效果
         this.orbital = mods.orbital || false;
-        this.orbitalRadius = 80;
-        this.orbitalSpeed = 0.08;
+        this.orbitalRadius = mods.orbitalRadius || 20;  // 初始半径较小
+        this.orbitalExpandSpeed = mods.orbitalExpandSpeed || 1.5;  // 扩展速度
+        this.orbitalSpeed = 0.12;  // 旋转速度
         this.orbitalAngle = mods.angle || 0;
 
         this.duration = 180;
@@ -99,16 +100,17 @@ class SkillProjectile {
             return;
         }
         
-        // 环绕模式 - 环绕玩家移动，但不阻止其他效果
+        // 螺旋飞出模式 - 跟随玩家，螺旋向外飞出
         if (this.orbital) {
             this.orbitalAngle += this.orbitalSpeed;
+            this.orbitalRadius += this.orbitalExpandSpeed;  // 半径持续增大，无上限
+            
+            // 跟随玩家位置
             this.x = this.caster.x + Math.cos(this.orbitalAngle) * this.orbitalRadius;
             this.y = this.caster.y + Math.sin(this.orbitalAngle) * this.orbitalRadius;
-            this.duration--;
-            if (this.duration <= 0) {
-                if (this.splitOnDeath && this.splitAmount > 0) {
-                    this.spawnSplitProjectiles();
-                }
+            
+            // 飞出屏幕范围后消失 (距离玩家超过1200)
+            if (this.orbitalRadius > 1200) {
                 this.markedForDeletion = true;
             }
             // 不再 return，继续执行后续逻辑（如棱镜核心等）

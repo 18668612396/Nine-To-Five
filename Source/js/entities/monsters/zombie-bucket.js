@@ -1,4 +1,4 @@
-// --- 铁桶僵尸 (银色铁桶) ---
+// --- 铁桶僵尸 (青绿色) ---
 
 class ZombieBucket extends Monster {
     static CONFIG = {
@@ -8,7 +8,7 @@ class ZombieBucket extends Monster {
         damage: 12,
         speed: 0.6,
         radius: 24,
-        color: '#6a9a6a',
+        color: '#6a9aaa',  // 青绿色
         xp: 5,
         gold: 3
     };
@@ -16,6 +16,9 @@ class ZombieBucket extends Monster {
     constructor(x, y, scaleMult = 1) {
         super(x, y, ZombieBucket.CONFIG, scaleMult);
         this.bucketHp = 80 * scaleMult;
+        this.bodyColor = '#6a9aaa';
+        this.darkColor = '#4a7a8a';
+        this.spotColor = '#5a8a9a';
     }
     
     takeDamage(amount, kbX = 0, kbY = 0, source = null) {
@@ -68,8 +71,8 @@ class ZombieBucket extends Monster {
         
         // 小手
         const armWave = Math.sin(this.animationFrame * 0.08) * 0.15;
-        ctx.fillStyle = '#5a8a5a';
-        ctx.strokeStyle = '#4a7a4a';
+        ctx.fillStyle = this.bodyColor;
+        ctx.strokeStyle = this.darkColor;
         ctx.lineWidth = 1.5;
         
         ctx.save();
@@ -89,8 +92,8 @@ class ZombieBucket extends Monster {
         ctx.restore();
         
         // 身体
-        ctx.fillStyle = '#6a9a6a';
-        ctx.strokeStyle = '#4a7a4a';
+        ctx.fillStyle = this.bodyColor;
+        ctx.strokeStyle = this.darkColor;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.ellipse(0, 0, r + wobble, r - wobble * 0.5, 0, 0, Math.PI * 2);

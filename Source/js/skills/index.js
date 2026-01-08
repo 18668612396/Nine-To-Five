@@ -25,7 +25,8 @@ function initSkillRegistry() {
             cooldown: skill.cooldown,
             energyCost: skill.energyCost,
             desc: skill.desc,
-            create: (caster, mods) => skill.createProjectile(caster, mods)
+            create: (caster, mods) => skill.createProjectile(caster, mods),
+            getDesc: skill.getDesc ? (star) => skill.getDesc(star) : null
         };
         ALL_SKILLS[skill.id] = MAGIC_SKILLS[skill.id];
     });
@@ -37,7 +38,8 @@ function initSkillRegistry() {
             type: 'modifier',
             icon: skill.icon,
             desc: skill.desc,
-            modify: (mods, star) => skill.modify(mods, star)
+            modify: (mods, star) => skill.modify(mods, star),
+            getDesc: skill.getDesc ? (star) => skill.getDesc(star) : null
         };
         ALL_SKILLS[skill.id] = MODIFIER_SKILLS[skill.id];
     });

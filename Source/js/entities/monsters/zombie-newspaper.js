@@ -1,4 +1,4 @@
-// --- 读报僵尸 (报纸破后愤怒加速) ---
+// --- 读报僵尸 (紫绿色，报纸破后愤怒变红) ---
 
 class ZombieNewspaper extends Monster {
     static CONFIG = {
@@ -8,7 +8,7 @@ class ZombieNewspaper extends Monster {
         damage: 15,
         speed: 0.6,
         radius: 20,
-        color: '#7ab37a',
+        color: '#8a9ab3',  // 紫绿色
         xp: 4,
         gold: 2
     };
@@ -17,6 +17,10 @@ class ZombieNewspaper extends Monster {
         super(x, y, ZombieNewspaper.CONFIG, scaleMult);
         this.newspaperHp = 15 * scaleMult;
         this.isAngry = false;
+        this.bodyColor = '#8a9ab3';
+        this.darkColor = '#6a7a93';
+        this.angryBodyColor = '#b38a8a';
+        this.angryDarkColor = '#936a6a';
     }
     
     takeDamage(amount, kbX = 0, kbY = 0, source = null) {
@@ -66,8 +70,10 @@ class ZombieNewspaper extends Monster {
         
         // 小手
         const armWave = Math.sin(this.animationFrame * (this.isAngry ? 0.2 : 0.06)) * (this.isAngry ? 0.4 : 0.1);
-        ctx.fillStyle = this.isAngry ? '#8a6a6a' : '#6a9a6a';
-        ctx.strokeStyle = this.isAngry ? '#6a4a4a' : '#4a7a4a';
+        const currentBodyColor = this.isAngry ? this.angryBodyColor : this.bodyColor;
+        const currentDarkColor = this.isAngry ? this.angryDarkColor : this.darkColor;
+        ctx.fillStyle = currentBodyColor;
+        ctx.strokeStyle = currentDarkColor;
         ctx.lineWidth = 1.5;
         
         if (!this.isAngry && this.newspaperHp > 0) {
@@ -122,8 +128,8 @@ class ZombieNewspaper extends Monster {
         }
         
         // 身体
-        ctx.fillStyle = this.isAngry ? '#9a7a7a' : '#7ab37a';
-        ctx.strokeStyle = this.isAngry ? '#7a5a5a' : '#5a935a';
+        ctx.fillStyle = currentBodyColor;
+        ctx.strokeStyle = currentDarkColor;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.ellipse(0, 0, r + wobble, r - wobble * 0.5, 0, 0, Math.PI * 2);

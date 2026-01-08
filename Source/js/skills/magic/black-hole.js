@@ -43,16 +43,26 @@ class BlackHoleProjectile extends SkillProjectile {
         const damageMultipliers = { 1: 1, 2: 1.5, 3: 2.5 };
         this.damage *= damageMultipliers[star] || 1;
         
-        // 环绕时使用更大的半径
-        this.orbitalRadius = 100;
+        // 螺旋飞出时使用的初始半径和扩展速度
+        this.orbitalRadius = 50;
+        this.orbitalExpandSpeed = 1.2;
+        this.orbitalSpeed = 0.1;
+        this.orbitalAngle = mods.angle || 0;
     }
     
     update() {
-        // 处理环绕移动
+        // 处理螺旋飞出移动
         if (this.orbital) {
             this.orbitalAngle += this.orbitalSpeed;
+            this.orbitalRadius += this.orbitalExpandSpeed;  // 半径持续增大
             this.x = this.caster.x + Math.cos(this.orbitalAngle) * this.orbitalRadius;
             this.y = this.caster.y + Math.sin(this.orbitalAngle) * this.orbitalRadius;
+            
+            // 飞出屏幕范围后消失
+            if (this.orbitalRadius > 1200) {
+                this.markedForDeletion = true;
+                return;
+            }
         } else {
             // 普通移动
             this.x += this.dx * this.speed;

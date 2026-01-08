@@ -1,4 +1,4 @@
-// --- 旗帜僵尸 (红旗，速度稍快) ---
+// --- 旗帜僵尸 (浅绿色，速度快) ---
 
 class ZombieFlag extends Monster {
     static CONFIG = {
@@ -8,7 +8,7 @@ class ZombieFlag extends Monster {
         damage: 8,
         speed: 1.1,
         radius: 20,
-        color: '#7ab37a',
+        color: '#9ac39a',  // 浅绿色
         xp: 3,
         gold: 2
     };
@@ -16,6 +16,9 @@ class ZombieFlag extends Monster {
     constructor(x, y, scaleMult = 1) {
         super(x, y, ZombieFlag.CONFIG, scaleMult);
         this.flagWave = 0;
+        this.bodyColor = '#9ac39a';
+        this.darkColor = '#7aa37a';
+        this.spotColor = '#8ab38a';
     }
     
     update(player) {
@@ -80,8 +83,8 @@ class ZombieFlag extends Monster {
         
         // 小手
         const armWave = Math.sin(this.animationFrame * 0.15) * 0.25;
-        ctx.fillStyle = '#6a9a6a';
-        ctx.strokeStyle = '#4a7a4a';
+        ctx.fillStyle = this.bodyColor;
+        ctx.strokeStyle = this.darkColor;
         ctx.lineWidth = 1.5;
         
         // 左手摆动
@@ -104,8 +107,8 @@ class ZombieFlag extends Monster {
         ctx.restore();
         
         // 身体
-        ctx.fillStyle = '#7ab37a';
-        ctx.strokeStyle = '#5a935a';
+        ctx.fillStyle = this.bodyColor;
+        ctx.strokeStyle = this.darkColor;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.ellipse(0, 0, r + wobble, r - wobble * 0.5, 0, 0, Math.PI * 2);
@@ -113,7 +116,7 @@ class ZombieFlag extends Monster {
         ctx.stroke();
         
         // 斑块
-        ctx.fillStyle = '#5a8a5a';
+        ctx.fillStyle = this.spotColor;
         ctx.beginPath();
         ctx.ellipse(-r * 0.35, r * 0.15, r * 0.18, r * 0.14, -0.3, 0, Math.PI * 2);
         ctx.fill();

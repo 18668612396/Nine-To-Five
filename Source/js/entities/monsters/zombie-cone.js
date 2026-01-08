@@ -1,4 +1,4 @@
-// --- 路障僵尸 (橙色路障帽) ---
+// --- 路障僵尸 (黄绿色) ---
 
 class ZombieCone extends Monster {
     static CONFIG = {
@@ -8,7 +8,7 @@ class ZombieCone extends Monster {
         damage: 10,
         speed: 0.7,
         radius: 22,
-        color: '#7ab37a',
+        color: '#8ab87a',  // 黄绿色
         xp: 3,
         gold: 2
     };
@@ -16,6 +16,9 @@ class ZombieCone extends Monster {
     constructor(x, y, scaleMult = 1) {
         super(x, y, ZombieCone.CONFIG, scaleMult);
         this.coneHp = 30 * scaleMult;
+        this.bodyColor = '#8ab87a';
+        this.darkColor = '#6a986a';
+        this.spotColor = '#7aa86a';
     }
     
     takeDamage(amount, kbX = 0, kbY = 0, source = null) {
@@ -63,8 +66,8 @@ class ZombieCone extends Monster {
         
         // 小手
         const armWave = Math.sin(this.animationFrame * 0.1) * 0.2;
-        ctx.fillStyle = '#6a9a6a';
-        ctx.strokeStyle = '#4a7a4a';
+        ctx.fillStyle = this.bodyColor;
+        ctx.strokeStyle = this.darkColor;
         ctx.lineWidth = 1.5;
         
         ctx.save();
@@ -84,8 +87,8 @@ class ZombieCone extends Monster {
         ctx.restore();
         
         // 身体
-        ctx.fillStyle = '#7ab37a';
-        ctx.strokeStyle = '#5a935a';
+        ctx.fillStyle = this.bodyColor;
+        ctx.strokeStyle = this.darkColor;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.ellipse(0, 0, r + wobble, r - wobble * 0.5, 0, 0, Math.PI * 2);
@@ -93,7 +96,7 @@ class ZombieCone extends Monster {
         ctx.stroke();
         
         // 斑块
-        ctx.fillStyle = '#5a8a5a';
+        ctx.fillStyle = this.spotColor;
         ctx.beginPath();
         ctx.ellipse(r * 0.35, r * 0.1, r * 0.2, r * 0.15, 0.3, 0, Math.PI * 2);
         ctx.fill();

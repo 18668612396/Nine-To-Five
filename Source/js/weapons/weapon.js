@@ -352,12 +352,12 @@ class Weapon {
     
     // 一次轮播所有槽位
     castAllSlots(player, slots) {
-        const mods = this.getDefaultMods(player);
         let totalCost = 0;
         let costReductionPercent = 0; // 能量消耗减少百分比
         
-        // 收集所有技能和计算总消耗
+        // 收集所有技能序列，被动只影响紧跟其后的主动
         const skillSequence = [];
+        let pendingMods = this.getDefaultMods(player);  // 当前累积的被动效果
         
         for (let i = 0; i < slots.length; i++) {
             const slot = slots[i];
@@ -369,26 +369,30 @@ class Weapon {
             }
             
             if (slot.type === 'modifier') {
+                // 被动技能：累积效果到 pendingMods
                 const star = slot.star || 1;
                 const starMult = this.getStarMultiplier(star);
                 if (slot.modify) {
-                    slot.modify(mods, star);
-                    Object.keys(mods).forEach(key => {
-                        if (typeof mods[key] === 'number' && mods[key] > 1 && key !== 'penetrate') {
-                            mods[key] = 1 + (mods[key] - 1) * starMult;
+                    slot.modify(pendingMods, star);
+                    Object.keys(pendingMods).forEach(key => {
+                        if (typeof pendingMods[key] === 'number' && pendingMods[key] > 1 && key !== 'penetrate') {
+                            pendingMods[key] = 1 + (pendingMods[key] - 1) * starMult;
                         }
                     });
                 }
                 // 累计能量消耗减少百分比
-                if (mods.costReductionPercent) {
-                    costReductionPercent += mods.costReductionPercent;
-                    mods.costReductionPercent = 0; // 重置，避免重复计算
+                if (pendingMods.costReductionPercent) {
+                    costReductionPercent += pendingMods.costReductionPercent;
+                    pendingMods.costReductionPercent = 0;
                 }
             } else if (slot.type === 'magic') {
+                // 主动技能：使用当前累积的被动效果，然后重置
                 skillSequence.push({
                     skill: slot,
-                    mods: { ...mods }
+                    mods: { ...pendingMods }
                 });
+                // 重置被动效果，下一个主动技能需要新的被动
+                pendingMods = this.getDefaultMods(player);
             }
         }
         

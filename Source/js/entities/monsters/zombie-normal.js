@@ -8,13 +8,16 @@ class ZombieNormal extends Monster {
         damage: 8,
         speed: 0.8,
         radius: 20,
-        color: '#7ab37a',
+        color: '#7ab37a',  // 绿色
         xp: 2,
         gold: 1
     };
     
     constructor(x, y, scaleMult = 1) {
         super(x, y, ZombieNormal.CONFIG, scaleMult);
+        this.bodyColor = '#7ab37a';
+        this.darkColor = '#5a935a';
+        this.spotColor = '#5a8a5a';
     }
     
     draw(ctx, camX, camY) {
@@ -35,8 +38,8 @@ class ZombieNormal extends Monster {
         
         // 伸出的小手 (僵尸特征)
         const armWave = Math.sin(this.animationFrame * 0.12) * 0.2;
-        ctx.fillStyle = '#6a9a6a';
-        ctx.strokeStyle = '#4a7a4a';
+        ctx.fillStyle = this.bodyColor;
+        ctx.strokeStyle = this.darkColor;
         ctx.lineWidth = 1.5;
         
         ctx.save();
@@ -56,8 +59,8 @@ class ZombieNormal extends Monster {
         ctx.restore();
         
         // 身体 (圆润的blob)
-        ctx.fillStyle = '#7ab37a';
-        ctx.strokeStyle = '#5a935a';
+        ctx.fillStyle = this.bodyColor;
+        ctx.strokeStyle = this.darkColor;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.ellipse(0, 0, r + wobble, r - wobble * 0.5, 0, 0, Math.PI * 2);
@@ -65,7 +68,7 @@ class ZombieNormal extends Monster {
         ctx.stroke();
         
         // 深色斑块 (腐烂感)
-        ctx.fillStyle = '#5a8a5a';
+        ctx.fillStyle = this.spotColor;
         ctx.beginPath();
         ctx.ellipse(r * 0.3, -r * 0.2, r * 0.25, r * 0.2, 0.5, 0, Math.PI * 2);
         ctx.fill();

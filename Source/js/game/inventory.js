@@ -120,7 +120,9 @@ const Inventory = {
                     const starText = '⭐'.repeat(star);
                     const costText = cost > 0 ? `<span class="skill-cost">⚡${cost}</span>` : '';
                     slotDiv.innerHTML = `<span class="slot-index">${i + 1}</span>${slot.icon}<span class="star-badge">${starText}</span>${costText}`;
-                    slotDiv.title = `${slot.name} (${star}星)\n${slot.desc || ''}\n能量消耗: ${cost}`;
+                    // 支持动态描述（如拓展技能根据星级显示不同描述）
+                    const desc = (slot.getDesc && typeof slot.getDesc === 'function') ? slot.getDesc(star) : (slot.desc || '');
+                    slotDiv.title = `${slot.name} (${star}星)\n${desc}\n能量消耗: ${cost}`;
                 } else {
                     slotDiv.innerHTML = `<span class="slot-index">${i + 1}</span>`;
                 }
@@ -155,7 +157,14 @@ const Inventory = {
                         const fromWeaponIdx = parseInt(e.dataTransfer.getData('weaponIndex'));
                         const fromSlotIdx = parseInt(e.dataTransfer.getData('slotIndex'));
                         if (fromWeaponIdx === rowIdx && fromSlotIdx !== i && weapon) {
-                            [weapon.slots[fromSlotIdx], weapon.slots[i]] = [weapon.slots[i], weapon.slots[fromSlotIdx]];
+                            // 交换槽位时检查拓展技能
+                            const fromSkill = weapon.slots[fromSlotIdx];
+                            const toSkill = weapon.slots[i];
+                            [weapon.slots[fromSlotIdx], weapon.slots[i]] = [toSkill, fromSkill];
+                            // 如果涉及拓展技能，更新槽位数量
+                            if ((fromSkill && fromSkill.id === 'expand') || (toSkill && toSkill.id === 'expand')) {
+                                weapon.updateSlotCount();
+                            }
                             this.render();
                         }
                     } else if (type === 'inventory') {
@@ -229,10 +238,30 @@ const Inventory = {
         
         const skill = inventory[inventoryIndex];
         if (weapon.slots[slotIndex] !== null) {
-            inventory.push(weapon.slots[slotIndex]);
+            // 如果卸下的是拓展技能，先更新槽位
+            if (weapon.slots[slotIndex].id === 'expand') {
+                inventory.push(weapon.slots[slotIndex]);
+                weapon.slots[slotIndex] = null;
+                weapon.updateSlotCount();
+                // 重新检查槽位是否有效
+                if (slotIndex >= weapon.slotCount) {
+                    // 槽位已被移除，把技能放到最后一个有效槽位
+                    slotIndex = weapon.slotCount - 1;
+                    if (weapon.slots[slotIndex] !== null) {
+                        inventory.push(weapon.slots[slotIndex]);
+                    }
+                }
+            } else {
+                inventory.push(weapon.slots[slotIndex]);
+            }
         }
         weapon.slots[slotIndex] = skill;
         inventory.splice(inventoryIndex, 1);
+        
+        // 如果装备的是拓展技能，更新槽位数量
+        if (skill.id === 'expand') {
+            weapon.updateSlotCount();
+        }
         return true;
     },
     
@@ -241,8 +270,14 @@ const Inventory = {
         if (slotIndex < 0 || slotIndex >= weapon.slotCount) return false;
         if (weapon.slots[slotIndex] === null) return false;
         
-        Game.player.skillInventory.push(weapon.slots[slotIndex]);
+        const skill = weapon.slots[slotIndex];
+        Game.player.skillInventory.push(skill);
         weapon.slots[slotIndex] = null;
+        
+        // 如果卸下的是拓展技能，更新槽位数量
+        if (skill.id === 'expand') {
+            weapon.updateSlotCount();
+        }
         return true;
     },
 
@@ -268,7 +303,9 @@ const Inventory = {
             const starText = '⭐'.repeat(star);
             const costText = cost > 0 ? `<span class="skill-cost">⚡${cost}</span>` : '';
             div.innerHTML = `<span class="item-icon">${skill.icon}</span><span class="star-badge">${starText}</span>${costText}`;
-            div.title = `${skill.name} (${star}星)\n${skill.desc || ''}\n能量消耗: ${cost}`;
+            // 支持动态描述
+            const desc = (skill.getDesc && typeof skill.getDesc === 'function') ? skill.getDesc(star) : (skill.desc || '');
+            div.title = `${skill.name} (${star}星)\n${desc}\n能量消耗: ${cost}`;
             
             div.ondragstart = (e) => {
                 e.dataTransfer.setData('type', 'inventory');
