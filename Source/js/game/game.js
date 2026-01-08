@@ -568,9 +568,6 @@ const Game = {
         Renderer.drawLightPillars();
         Renderer.drawExplosionEffects();
         
-        // 绘制技能槽UI
-        Renderer.drawWandSlots(this.player);
-        
         // 绘制浮动文字
         Renderer.drawFloatingTexts();
     },
@@ -720,8 +717,67 @@ const Game = {
             if (weaponName) weaponName.innerText = weapon.name;
         }
         
+        // 更新法杖列表
+        this.updateWandListUI();
+        
         // 更新Boss血条
         this.updateBossUI();
+    },
+    
+    // 更新法杖列表UI
+    updateWandListUI() {
+        const container = document.getElementById('hud-wand-list');
+        if (!container || !this.player) return;
+        
+        container.innerHTML = '';
+        
+        this.player.weaponSlots.forEach((weapon, idx) => {
+            if (!weapon) return;
+            
+            const isActive = idx === this.player.currentWeaponIndex;
+            
+            const wandRow = document.createElement('div');
+            wandRow.className = 'hud-wand-row' + (isActive ? ' active' : '');
+            
+            // 法杖图标
+            const wandIcon = document.createElement('div');
+            wandIcon.className = 'hud-wand-icon';
+            wandIcon.innerHTML = `<span class="wand-index">${idx + 1}</span>${weapon.icon}`;
+            wandRow.appendChild(wandIcon);
+            
+            // 技能槽
+            const slotsDiv = document.createElement('div');
+            slotsDiv.className = 'hud-wand-slots';
+            
+            // 普通槽
+            for (let i = 0; i < weapon.slotCount; i++) {
+                const slot = weapon.slots[i];
+                const slotDiv = document.createElement('div');
+                slotDiv.className = 'hud-slot';
+                if (slot) {
+                    slotDiv.classList.add(slot.type === 'magic' ? 'magic' : 'modifier');
+                    slotDiv.innerHTML = slot.icon;
+                }
+                slotsDiv.appendChild(slotDiv);
+            }
+            
+            // 特殊槽
+            if (weapon.specialSlots) {
+                for (let i = 0; i < weapon.specialSlots.length; i++) {
+                    const slot = weapon.specialSlots[i];
+                    const slotDiv = document.createElement('div');
+                    slotDiv.className = 'hud-slot special';
+                    if (slot) {
+                        slotDiv.classList.add(slot.type === 'magic' ? 'magic' : 'modifier');
+                        slotDiv.innerHTML = slot.icon;
+                    }
+                    slotsDiv.appendChild(slotDiv);
+                }
+            }
+            
+            wandRow.appendChild(slotsDiv);
+            container.appendChild(wandRow);
+        });
     },
     
     updateBossUI() {

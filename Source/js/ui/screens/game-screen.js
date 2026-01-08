@@ -48,6 +48,7 @@ class GameScreen extends FullScreen {
                             <div id="weapon-energy-text">100/100</div>
                         </div>
                     </div>
+                    <div id="hud-wand-list" class="hud-wand-list"></div>
                 </div>
                 <div class="hud-center">
                     <div id="boss-hp-container" class="hidden">
