@@ -186,13 +186,16 @@ class Boss extends Enemy {
 Boss.Manager = {
     bosses: [],
     bossSpawnTimer: 0,
-    bossSpawnInterval: 60 * 60, // 1分钟
+    bossSpawnInterval: 60 * 120, // 初始2分钟
+    minSpawnInterval: 60 * 10,   // 最低10秒
+    intervalDecay: 60 * 10,      // 每次减少10秒
     bossCount: 0, // 已生成的Boss数量
     player: null, // 由外部设置
     
     init() {
         this.bosses = [];
         this.bossSpawnTimer = 0;
+        this.bossSpawnInterval = 60 * 120; // 重置为2分钟
         this.bossCount = 0;
     },
     
@@ -234,6 +237,9 @@ Boss.Manager = {
         if (types.length === 0) return;
         const randomType = types[Math.floor(Math.random() * types.length)];
         this.spawnBoss(randomType);
+        
+        // 每次生成后减少下次间隔
+        this.bossSpawnInterval = Math.max(this.minSpawnInterval, this.bossSpawnInterval - this.intervalDecay);
     },
     
     spawnBoss(type) {

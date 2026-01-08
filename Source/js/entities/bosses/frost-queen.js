@@ -45,7 +45,6 @@ class FrostQueen extends Boss {
 
     onPhaseChange(phase) {
         if (phase === 2) {
-            this.shield = this.maxHp * 0.2;
             this.frostAuraRadius = 300;
             Events.emit(EVENT.FLOATING_TEXT, {
                 text: '❄️ 寒冰扩散!',
@@ -102,11 +101,6 @@ class FrostQueen extends Boss {
             this.fallingCooldown = this.isEnraged ? 120 : 180; // 2-3秒一个
         }
         this.updateFallingIcicles(player);
-        
-        // 护盾恢复
-        if (this.phase >= 2 && this.shield < this.maxHp * 0.2 && this.animationFrame % 120 === 0) {
-            this.shield = Math.min(this.shield + this.maxHp * 0.05, this.maxHp * 0.2);
-        }
         
         if (this.burstCooldown > 0) this.burstCooldown--;
         if (this.fallingCooldown > 0) this.fallingCooldown--;
