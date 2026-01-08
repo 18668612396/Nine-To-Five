@@ -34,6 +34,11 @@ const Game = {
     // 当前配置
     currentConfig: null,
     
+    // 帧率控制
+    targetFPS: 60,
+    frameInterval: 1000 / 60,
+    lastFrameTime: 0,
+    
     // 初始化
     init() {
         initCanvas();
@@ -44,6 +49,7 @@ const Game = {
         this.setupEventListeners();
         
         // 开始游戏循环
+        this.lastFrameTime = performance.now();
         this.loop = this.loop.bind(this);
         requestAnimationFrame(this.loop);
     },
@@ -284,12 +290,20 @@ const Game = {
     },
     
     // 游戏主循环
-    loop() {
+    loop(currentTime) {
+        requestAnimationFrame(this.loop);
+        
+        // 帧率限制
+        const elapsed = currentTime - this.lastFrameTime;
+        if (elapsed < this.frameInterval) {
+            return;
+        }
+        this.lastFrameTime = currentTime - (elapsed % this.frameInterval);
+        
         if (this.state === 'PLAYING') {
             this.update();
         }
         this.draw();
-        requestAnimationFrame(this.loop);
     },
     
     // 更新
