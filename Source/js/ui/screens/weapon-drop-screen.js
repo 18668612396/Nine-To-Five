@@ -6,6 +6,7 @@ class WeaponDropScreen extends FloatScreen {
             id: 'weaponDrop',
             domId: 'weapon-drop-modal',
             closeOnBackdrop: false,
+            canCloseByEsc: false,
             ...config
         });
         
@@ -64,15 +65,48 @@ class WeaponDropScreen extends FloatScreen {
         
         container.innerHTML = '';
         this.weapons.forEach((weapon, index) => {
-            const div = document.createElement('div');
-            div.className = 'weapon-drop-option';
-            div.innerHTML = `
-                <span class="weapon-icon">${weapon.icon || '🪄'}</span>
-                <span class="weapon-name">${weapon.name}</span>
-                <span class="weapon-desc">${weapon.desc || ''}</span>
+            const card = document.createElement('div');
+            card.className = `weapon-drop-card rarity-${weapon.rarity}`;
+            card.onclick = () => Game.selectWeaponDrop(index);
+            
+            let affixesHtml = '';
+            if (weapon.affixes && typeof WEAPON_AFFIXES !== 'undefined') {
+                weapon.affixes.forEach(affix => {
+                    const def = WEAPON_AFFIXES[affix.id];
+                    if (def) {
+                        const desc = def.desc.replace('{value}', affix.value);
+                        affixesHtml += `<div class="weapon-affix">✦ ${desc}</div>`;
+                    }
+                });
+            }
+            
+            let specialHtml = '';
+            if (weapon.specialSlot && typeof SPECIAL_TRIGGERS !== 'undefined') {
+                const trigger = SPECIAL_TRIGGERS[weapon.specialSlot.trigger];
+                if (trigger) {
+                    const desc = trigger.desc.replace('{value}', weapon.specialSlot.value);
+                    specialHtml = `<div class="weapon-card-special">⚡ 特殊槽(${weapon.specialSlot.slots}): ${desc}</div>`;
+                }
+            }
+            
+            const rarityNames = { common: '普通', uncommon: '优秀', rare: '稀有', epic: '史诗' };
+            
+            card.innerHTML = `
+                <div class="weapon-card-header">
+                    <span class="weapon-card-icon">${weapon.icon}</span>
+                    <div>
+                        <div class="weapon-card-name">${weapon.name}</div>
+                        <span class="weapon-card-rarity">${rarityNames[weapon.rarity]}</span>
+                    </div>
+                </div>
+                <div class="weapon-card-stats">
+                    <div>⚡ 能量: ${weapon.maxEnergy} | 回复: ${weapon.baseEnergyRegen}/s</div>
+                    <div>⏱️ 间隔: ${(weapon.baseCastInterval / 60).toFixed(2)}s | 槽位: ${weapon.slotCount}</div>
+                </div>
+                <div class="weapon-card-affixes">${affixesHtml || '<div class="weapon-affix" style="color:#888">无词条</div>'}</div>
+                ${specialHtml}
             `;
-            div.onclick = () => this.selectWeapon(index);
-            container.appendChild(div);
+            container.appendChild(card);
         });
     }
     

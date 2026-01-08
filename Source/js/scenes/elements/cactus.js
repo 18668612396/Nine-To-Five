@@ -2,16 +2,17 @@
 
 class Cactus extends SceneElement {
     constructor(x, y, config = {}) {
+        const size = config.size || 25;
         super(x, y, {
-            width: config.size || 25,
-            height: (config.size || 25) * 1.5,
-            collisionRadius: (config.size || 25) * 0.3,
-            collisionOffsetY: -5,
+            width: size,
+            height: size * 1.5,
+            collisionRadius: size * 0.35,
+            collisionOffsetY: -size * 0.3,
             zIndex: 1,
             ...config
         });
         
-        this.size = config.size || 25;
+        this.size = size;
         this.type = config.type !== undefined ? config.type : Math.floor(Math.random() * 2);
     }
     

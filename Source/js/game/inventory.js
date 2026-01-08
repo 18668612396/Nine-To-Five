@@ -5,23 +5,19 @@ const Inventory = {
     workbenchSlots: [null, null, null],
     workbenchOpen: false,
     
-    // 打开背包
+    // 打开背包（现在由 Screen.Manager 调用）
     open() {
-        if (Game.state !== 'PLAYING') return;
-        
-        Game.state = 'INVENTORY';
         this.workbenchOpen = false;
         this.workbenchSlots = [null, null, null];
         
         document.getElementById('workbench-panel')?.classList.add('hidden');
         document.getElementById('workbench-toggle-btn')?.classList.remove('active');
         document.querySelector('.inventory-layout')?.classList.remove('with-workbench');
-        document.getElementById('inventory-screen')?.classList.remove('hidden');
         
         this.render();
     },
     
-    // 关闭背包
+    // 关闭背包（现在由 Screen.Manager 调用）
     close() {
         // 把工作台里的技能放回背包
         if (this.workbenchOpen) {
@@ -36,9 +32,6 @@ const Inventory = {
             document.getElementById('workbench-toggle-btn')?.classList.remove('active');
             document.querySelector('.inventory-layout')?.classList.remove('with-workbench');
         }
-        
-        document.getElementById('inventory-screen')?.classList.add('hidden');
-        Game.state = 'PLAYING';
     },
     
     // 渲染背包

@@ -2,16 +2,17 @@
 
 class SnowPile extends SceneElement {
     constructor(x, y, config = {}) {
+        const size = config.size || 25;
         super(x, y, {
-            width: config.size || 25,
-            height: (config.size || 25) * 0.5,
-            collisionRadius: (config.size || 25) * 0.6,
+            width: size,
+            height: size * 0.5,
+            collisionRadius: size * 0.9,
             collisionOffsetY: 0,
             zIndex: 0,
             ...config
         });
         
-        this.size = config.size || 25;
+        this.size = size;
     }
     
     draw(ctx, camX, camY) {

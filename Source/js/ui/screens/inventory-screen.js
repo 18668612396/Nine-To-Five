@@ -85,13 +85,18 @@ class InventoryScreen extends FloatScreen {
     
     onEnter() {
         if (typeof Game !== 'undefined') {
-            Game.state = 'PAUSED';
+            Game.state = 'INVENTORY';
         }
-        this.refresh();
+        if (typeof Inventory !== 'undefined') {
+            Inventory.open();
+        }
     }
     
     onExit() {
-        if (typeof Game !== 'undefined' && Game.state === 'PAUSED') {
+        if (typeof Inventory !== 'undefined') {
+            Inventory.close();
+        }
+        if (typeof Game !== 'undefined' && Game.state === 'INVENTORY') {
             Game.state = 'PLAYING';
         }
     }

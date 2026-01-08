@@ -6,22 +6,17 @@ const GM = {
     },
     
     openPanel() {
-        Game.state = 'GM';
-        document.getElementById('gm-modal').classList.remove('hidden');
-        this.render();
+        Screen.Manager.openFloat('gm');
     },
     
     // 从暂停菜单打开
     openFromPause() {
-        Game.state = 'GM';
-        document.getElementById('gm-modal').classList.remove('hidden');
-        this.render();
+        Screen.Manager.openFloat('gm');
     },
     
     closePanel() {
-        document.getElementById('gm-modal').classList.add('hidden');
-        // 返回背包界面并刷新
-        Game.state = 'INVENTORY';
+        Screen.Manager.closeFloat('gm');
+        // 刷新背包
         Game.renderInventory();
     },
     

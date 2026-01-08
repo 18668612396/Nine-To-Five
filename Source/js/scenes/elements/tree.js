@@ -2,16 +2,17 @@
 
 class Tree extends SceneElement {
     constructor(x, y, config = {}) {
+        const size = config.size || 40;
         super(x, y, {
-            width: config.size || 40,
-            height: (config.size || 40) * 1.5,
-            collisionRadius: (config.size || 40) * 0.25,
-            collisionOffsetY: 10,
+            width: size,
+            height: size * 1.5,
+            collisionRadius: size * 0.8,
+            collisionOffsetY: -size * 0.3,
             zIndex: 1,
             ...config
         });
         
-        this.size = config.size || 40;
+        this.size = size;
         this.trunkColor = config.trunkColor || '#8d6e63';
         this.leafColor = config.leafColor || '#4caf50';
         this.leafHighlight = config.leafHighlight || '#66bb6a';

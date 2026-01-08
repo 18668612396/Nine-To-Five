@@ -48,17 +48,29 @@ class GrassScene extends Scene {
             }
         }
         
-        // 小草装饰
+        // 小草装饰（固定在世界坐标）
         ctx.fillStyle = '#7bc26e';
-        for (let i = 0; i < 50; i++) {
-            const grassX = ((i * 137 + Math.floor(camX * 0.1)) % viewWidth);
-            const grassY = ((i * 89 + Math.floor(camY * 0.1)) % viewHeight);
-            ctx.beginPath();
-            ctx.moveTo(grassX, grassY);
-            ctx.lineTo(grassX - 3, grassY - 8);
-            ctx.lineTo(grassX + 3, grassY - 8);
-            ctx.closePath();
-            ctx.fill();
+        const grassSpacing = 120;
+        const startGrassX = Math.floor(camX / grassSpacing) * grassSpacing;
+        const startGrassY = Math.floor(camY / grassSpacing) * grassSpacing;
+        
+        for (let wx = startGrassX - grassSpacing; wx < camX + viewWidth + grassSpacing; wx += grassSpacing) {
+            for (let wy = startGrassY - grassSpacing; wy < camY + viewHeight + grassSpacing; wy += grassSpacing) {
+                // 用世界坐标生成伪随机偏移
+                const seed = (wx * 137 + wy * 89) % 1000;
+                const offsetX = (seed % 60) - 30;
+                const offsetY = ((seed * 7) % 60) - 30;
+                
+                const screenX = wx + offsetX - camX;
+                const screenY = wy + offsetY - camY;
+                
+                ctx.beginPath();
+                ctx.moveTo(screenX, screenY);
+                ctx.lineTo(screenX - 3, screenY - 8);
+                ctx.lineTo(screenX + 3, screenY - 8);
+                ctx.closePath();
+                ctx.fill();
+            }
         }
     }
 }

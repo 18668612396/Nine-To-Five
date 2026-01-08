@@ -230,9 +230,8 @@ const Game = {
         // 设置场景
         Scene.Manager.setScene(config.map);
         
-        // 显示HUD
-        document.getElementById('hud')?.classList.remove('hidden');
-        document.getElementById('gameover-screen')?.classList.add('hidden');
+        // 显示游戏界面（HUD）
+        Screen.Manager.switchTo('game');
         
         this.state = 'PLAYING';
         this.updateUI();
@@ -304,7 +303,7 @@ const Game = {
         }
         
         // 生成敌人
-        if (Spawner.shouldSpawn(this.frameCount, this.time)) {
+        if (Spawner.shouldSpawn(this.frameCount, this.time, this.difficultyMult.spawn)) {
             const enemy = Spawner.spawnEnemy(this.player.x, this.player.y, this.time, this.difficultyMult);
             this.enemies.push(enemy);
         }
@@ -340,8 +339,14 @@ const Game = {
         // 更新敌人
         this.enemies.forEach(e => e.update(this.player));
         
+        // 敌人与场景元素碰撞
+        Scene.Manager.handleEntitiesCollisions(this.enemies);
+        
         // 更新Boss
         Boss.Manager.update();
+        
+        // Boss与场景元素碰撞
+        Scene.Manager.handleEntitiesCollisions(Boss.Manager.bosses);
         
         // 更新宝石
         this.gems.forEach(g => g.update(this.player));
@@ -538,34 +543,11 @@ const Game = {
     
     // 显示升级菜单
     showUpgradeMenu() {
-        const container = document.getElementById('cards-container');
-        if (!container) return;
-        container.innerHTML = '';
-        
-        const options = [];
-        const pool = typeof UPGRADES !== 'undefined' ? [...UPGRADES] : [];
-        
-        for (let i = 0; i < 3; i++) {
-            if (pool.length === 0) break;
-            const idx = Math.floor(Math.random() * pool.length);
-            const opt = pool[idx];
-            const currentLevel = this.player.perkManager ? this.player.perkManager.getPerkLevel(opt.perkId) : 0;
-            options.push({ ...opt, currentLevel });
-            pool.splice(idx, 1);
+        const levelUpScreen = Screen.Manager.get('levelUp');
+        if (levelUpScreen && levelUpScreen.generateOptions) {
+            levelUpScreen.generateOptions(this.player, this.level);
         }
-        
-        options.forEach(opt => {
-            const div = document.createElement('div');
-            div.className = 'upgrade-card';
-            const levelText = opt.currentLevel > 0 ? ` (Lv.${opt.currentLevel + 1})` : '';
-            div.innerHTML = `<h3>${opt.name}${levelText}</h3><p>${opt.desc}</p>`;
-            div.onclick = () => this.selectUpgrade(opt);
-            container.appendChild(div);
-        });
-        
-        document.getElementById('levelup-screen')?.classList.remove('hidden');
-        const levelEl = document.getElementById('levelup-level');
-        if (levelEl) levelEl.innerText = this.level;
+        Screen.Manager.openFloat('levelUp');
     },
     
     // 选择升级
@@ -577,7 +559,7 @@ const Game = {
             }
         }
         
-        document.getElementById('levelup-screen')?.classList.add('hidden');
+        Screen.Manager.closeFloat('levelUp');
         this.state = 'PLAYING';
         this.updateUI();
     },
@@ -690,11 +672,11 @@ const Game = {
     
     openPauseMenu() {
         if (this.state !== 'PLAYING') return;
-        Inventory.open();
+        Screen.Manager.openFloat('inventory');
     },
     
     closePauseMenu() {
-        Inventory.close();
+        Screen.Manager.closeFloat('inventory');
     },
     
     resumeGame() {
@@ -702,11 +684,11 @@ const Game = {
     },
     
     openInventory() {
-        Inventory.open();
+        Screen.Manager.openFloat('inventory');
     },
     
     closeInventory() {
-        Inventory.close();
+        Screen.Manager.closeFloat('inventory');
     },
     
     renderInventory() {
@@ -714,21 +696,18 @@ const Game = {
     },
     
     openSettings() {
-        this.state = 'SETTINGS';
-        document.getElementById('settings-modal')?.classList.remove('hidden');
+        Screen.Manager.openFloat('settings');
     },
     
     closeSettings() {
-        document.getElementById('settings-modal')?.classList.add('hidden');
-        this.state = 'INVENTORY';
+        Screen.Manager.closeFloat('settings');
     },
     
     closeSettingsOnly() {
-        document.getElementById('settings-modal')?.classList.add('hidden');
+        Screen.Manager.closeFloat('settings');
     },
     
     openSettingsFromPause() {
-        document.getElementById('pause-modal')?.classList.add('hidden');
         this.openSettings();
     },
     
@@ -741,7 +720,6 @@ const Game = {
     },
     
     openGMFromPause() {
-        document.getElementById('pause-modal')?.classList.add('hidden');
         if (typeof GM !== 'undefined') {
             GM.openFromPause();
         }
@@ -767,8 +745,7 @@ const Game = {
     // ========== 游戏结束 ==========
     
     surrenderGame() {
-        document.getElementById('inventory-screen')?.classList.add('hidden');
-        document.getElementById('settings-modal')?.classList.add('hidden');
+        Screen.Manager.closeAllFloats();
         this.endGame();
     },
     
@@ -791,24 +768,20 @@ const Game = {
             bossKills: this.bossKills
         });
         
-        document.getElementById('hud')?.classList.add('hidden');
-        document.getElementById('gameover-screen')?.classList.remove('hidden');
-        
-        const finalTime = document.getElementById('final-time');
-        const finalKills = document.getElementById('final-kills');
-        const finalGold = document.getElementById('final-gold');
-        const finalLevel = document.getElementById('final-level');
-        const finalDamage = document.getElementById('final-damage');
-        const finalTaken = document.getElementById('final-taken');
-        const finalBoss = document.getElementById('final-boss');
-        
-        if (finalTime) finalTime.innerText = this.formatTime(this.time);
-        if (finalKills) finalKills.innerText = this.kills;
-        if (finalGold) finalGold.innerText = earnedGold;
-        if (finalLevel) finalLevel.innerText = this.level;
-        if (finalDamage) finalDamage.innerText = Math.floor(this.damageDealt);
-        if (finalTaken) finalTaken.innerText = Math.floor(this.damageTaken);
-        if (finalBoss) finalBoss.innerText = this.bossKills;
+        // 设置结算数据并显示结算界面
+        const gameoverScreen = Screen.Manager.get('gameover');
+        if (gameoverScreen) {
+            gameoverScreen.setStats({
+                time: this.time,
+                kills: this.kills,
+                gold: earnedGold,
+                level: this.level,
+                damage: this.damageDealt,
+                taken: this.damageTaken,
+                bossKills: this.bossKills
+            });
+        }
+        Screen.Manager.switchTo('gameover');
     },
     
     backToMenu() {
@@ -819,12 +792,6 @@ const Game = {
         this.projectiles = [];
         this.skillDrops = [];
         Renderer.clearEffects();
-        
-        document.getElementById('hud')?.classList.add('hidden');
-        document.getElementById('levelup-screen')?.classList.add('hidden');
-        document.getElementById('gameover-screen')?.classList.add('hidden');
-        document.getElementById('inventory-screen')?.classList.add('hidden');
-        document.getElementById('pause-modal')?.classList.add('hidden');
         
         Lobby.enter();
     },
@@ -837,56 +804,11 @@ const Game = {
         this.pendingWeaponDrops = weapons;
         this.state = 'WEAPON_DROP';
         
-        const container = document.getElementById('weapon-drop-options');
-        if (!container) return;
-        container.innerHTML = '';
-        
-        weapons.forEach((weapon, index) => {
-            const card = document.createElement('div');
-            card.className = `weapon-drop-card rarity-${weapon.rarity}`;
-            card.onclick = () => this.selectWeaponDrop(index);
-            
-            let affixesHtml = '';
-            if (weapon.affixes && typeof WEAPON_AFFIXES !== 'undefined') {
-                weapon.affixes.forEach(affix => {
-                    const def = WEAPON_AFFIXES[affix.id];
-                    if (def) {
-                        const desc = def.desc.replace('{value}', affix.value);
-                        affixesHtml += `<div class="weapon-affix">✦ ${desc}</div>`;
-                    }
-                });
-            }
-            
-            let specialHtml = '';
-            if (weapon.specialSlot && typeof SPECIAL_TRIGGERS !== 'undefined') {
-                const trigger = SPECIAL_TRIGGERS[weapon.specialSlot.trigger];
-                if (trigger) {
-                    const desc = trigger.desc.replace('{value}', weapon.specialSlot.value);
-                    specialHtml = `<div class="weapon-card-special">⚡ 特殊槽(${weapon.specialSlot.slots}): ${desc}</div>`;
-                }
-            }
-            
-            const rarityNames = { common: '普通', uncommon: '优秀', rare: '稀有', epic: '史诗' };
-            
-            card.innerHTML = `
-                <div class="weapon-card-header">
-                    <span class="weapon-card-icon">${weapon.icon}</span>
-                    <div>
-                        <div class="weapon-card-name">${weapon.name}</div>
-                        <span class="weapon-card-rarity">${rarityNames[weapon.rarity]}</span>
-                    </div>
-                </div>
-                <div class="weapon-card-stats">
-                    <div>⚡ 能量: ${weapon.maxEnergy} | 回复: ${weapon.baseEnergyRegen}/s</div>
-                    <div>⏱️ 间隔: ${(weapon.baseCastInterval / 60).toFixed(2)}s | 槽位: ${weapon.slotCount}</div>
-                </div>
-                <div class="weapon-card-affixes">${affixesHtml || '<div class="weapon-affix" style="color:#888">无词条</div>'}</div>
-                ${specialHtml}
-            `;
-            container.appendChild(card);
-        });
-        
-        document.getElementById('weapon-drop-modal')?.classList.remove('hidden');
+        const weaponDropScreen = Screen.Manager.get('weaponDrop');
+        if (weaponDropScreen && weaponDropScreen.setWeapons) {
+            weaponDropScreen.setWeapons(weapons);
+        }
+        Screen.Manager.openFloat('weaponDrop');
     },
     
     selectWeaponDrop(index) {
@@ -911,7 +833,7 @@ const Game = {
     },
     
     closeWeaponDrop() {
-        document.getElementById('weapon-drop-modal')?.classList.add('hidden');
+        Screen.Manager.closeFloat('weaponDrop');
         this.pendingWeaponDrops = null;
         this.state = 'PLAYING';
     }

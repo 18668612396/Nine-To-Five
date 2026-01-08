@@ -2,16 +2,17 @@
 
 class Bush extends SceneElement {
     constructor(x, y, config = {}) {
+        const size = config.size || 25;
         super(x, y, {
-            width: config.size || 25,
-            height: (config.size || 25) * 0.8,
-            collisionRadius: (config.size || 25) * 0.5,
+            width: size,
+            height: size * 0.8,
+            collisionRadius: size * 0.7,
             collisionOffsetY: 0,
             zIndex: 0,
             ...config
         });
         
-        this.size = config.size || 25;
+        this.size = size;
         this.color = config.color || '#388e3c';
         this.highlight = config.highlight || '#4caf50';
     }

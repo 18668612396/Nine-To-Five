@@ -92,8 +92,17 @@ class Scene {
     
     // 处理碰撞
     handleCollisions(entity) {
+        // 只检测实体附近的元素（优化性能）
+        const checkRange = 150;
         for (const element of this.elements) {
-            if (element.collidable && element.checkCollision(entity)) {
+            if (!element.collidable) continue;
+            
+            // 快速距离检测
+            const dx = Math.abs(entity.x - element.x);
+            const dy = Math.abs(entity.y - element.y);
+            if (dx > checkRange || dy > checkRange) continue;
+            
+            if (element.checkCollision(entity)) {
                 element.pushEntity(entity);
             }
         }
@@ -102,7 +111,9 @@ class Scene {
     // 检测任意实体与场景元素的碰撞
     checkEntityCollisions(entities) {
         for (const entity of entities) {
-            this.handleCollisions(entity);
+            if (!entity.markedForDeletion) {
+                this.handleCollisions(entity);
+            }
         }
     }
     

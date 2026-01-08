@@ -2,16 +2,17 @@
 
 class SnowTree extends SceneElement {
     constructor(x, y, config = {}) {
+        const size = config.size || 35;
         super(x, y, {
-            width: config.size || 35,
-            height: (config.size || 35) * 2,
-            collisionRadius: (config.size || 35) * 0.2,
-            collisionOffsetY: 5,
+            width: size,
+            height: size * 2,
+            collisionRadius: size * 0.5,
+            collisionOffsetY: -size * 0.3,
             zIndex: 1,
             ...config
         });
         
-        this.size = config.size || 35;
+        this.size = size;
     }
     
     draw(ctx, camX, camY) {

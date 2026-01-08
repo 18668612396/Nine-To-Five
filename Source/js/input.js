@@ -18,14 +18,19 @@ const Input = {
             
             // ESC 键处理
             if (e.code === 'Escape') {
+                // 优先关闭浮动窗口
+                if (Screen.Manager.floatStack.length > 0) {
+                    const topFloat = Screen.Manager.floatStack[Screen.Manager.floatStack.length - 1];
+                    // 检查是否允许 ESC 关闭
+                    if (topFloat.canCloseByEsc !== false) {
+                        Screen.Manager.closeTopFloat();
+                        return;
+                    }
+                }
+                
+                // 没有浮动窗口时，打开背包
                 if (Game.state === 'PLAYING') {
                     Game.openPauseMenu();
-                } else if (Game.state === 'INVENTORY') {
-                    Game.closePauseMenu();
-                } else if (Game.state === 'GM') {
-                    GM.closePanel();
-                } else if (Game.state === 'SETTINGS') {
-                    Game.closeSettings();
                 }
             }
             

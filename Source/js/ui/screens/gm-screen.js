@@ -69,8 +69,8 @@ class GMScreen extends FloatScreen {
     }
     
     onEnter() {
-        if (typeof GM !== 'undefined' && GM.renderLists) {
-            GM.renderLists();
+        if (typeof GM !== 'undefined' && GM.render) {
+            GM.render();
         }
     }
     

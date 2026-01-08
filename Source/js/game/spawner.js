@@ -38,15 +38,16 @@ const Spawner = {
     },
     
     // 获取生成间隔（帧数）
-    getSpawnRate(time) {
+    getSpawnRate(time, spawnMult = 1) {
         const minRate = 8;
         const baseRate = Math.max(minRate, 40 - Math.floor(time / 10));
-        return baseRate;
+        // spawnMult 越高，间隔越短，敌人越多
+        return Math.max(minRate, Math.floor(baseRate / spawnMult));
     },
     
     // 检查是否应该生成敌人
-    shouldSpawn(frameCount, time) {
-        const rate = this.getSpawnRate(time);
+    shouldSpawn(frameCount, time, spawnMult = 1) {
+        const rate = this.getSpawnRate(time, spawnMult);
         return frameCount % rate === 0;
     }
 };

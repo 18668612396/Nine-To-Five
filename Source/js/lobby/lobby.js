@@ -133,8 +133,7 @@ const Lobby = {
     
     // 进入大厅
     enter() {
-        this.hideAllScreens();
-        document.getElementById('lobby-screen').classList.remove('hidden');
+        Screen.Manager.switchTo('lobby');
         this.updateCharDisplay();
         this.updateGoldDisplay();
         this.startLobbyAnimation();
@@ -142,8 +141,7 @@ const Lobby = {
     
     // 返回标题页
     backToTitle() {
-        this.hideAllScreens();
-        document.getElementById('title-screen').classList.remove('hidden');
+        Screen.Manager.switchTo('title');
     },
     
     // ========== 角色选择 ==========
@@ -173,7 +171,7 @@ const Lobby = {
     
     // 显示角色选择
     showCharSelect() {
-        document.getElementById('char-select-modal').classList.remove('hidden');
+        Screen.Manager.openFloat('charSelect');
         document.querySelectorAll('.char-card').forEach(card => {
             card.classList.toggle('selected', card.dataset.char === this.selectedChar);
         });
@@ -234,7 +232,7 @@ const Lobby = {
     
     showWeaponSelect() {
         this.initWeaponSelect();
-        document.getElementById('weapon-select-modal').classList.remove('hidden');
+        Screen.Manager.openFloat('weaponSelect');
     },
     
     selectWeapon(weaponId, element) {
@@ -253,7 +251,7 @@ const Lobby = {
     showTalentTree() {
         this.updateGoldDisplay();
         this.renderTalentGrid();
-        document.getElementById('talent-modal').classList.remove('hidden');
+        Screen.Manager.openFloat('talent');
     },
     
     // 渲染天赋格子
@@ -306,7 +304,7 @@ const Lobby = {
     
     // 显示技能预装界面
     showSkillPreload() {
-        document.getElementById('skill-preload-modal').classList.remove('hidden');
+        Screen.Manager.openFloat('skillPreload');
         this.renderSkillPreload();
     },
     
@@ -418,7 +416,7 @@ const Lobby = {
     // ========== 图鉴 ==========
     
     showCollection() {
-        document.getElementById('collection-modal').classList.remove('hidden');
+        Screen.Manager.openFloat('collection');
         this.showCollectionTab('characters');
     },
     
@@ -545,14 +543,11 @@ const Lobby = {
             return;
         }
         
-        this.hideAllScreens();
-        document.getElementById('adventure-screen').classList.remove('hidden');
+        Screen.Manager.openFloat('adventure');
     },
     
     closeAdventure() {
-        this.hideAllScreens();
-        document.getElementById('lobby-screen').classList.remove('hidden');
-        this.startLobbyAnimation();
+        Screen.Manager.closeFloat('adventure');
     },
     
     selectDifficulty(diff, element) {
@@ -609,20 +604,11 @@ const Lobby = {
     // ========== 工具方法 ==========
     
     closeModal() {
-        document.getElementById('char-select-modal')?.classList.add('hidden');
-        document.getElementById('weapon-select-modal')?.classList.add('hidden');
-        document.getElementById('talent-modal')?.classList.add('hidden');
-        document.getElementById('collection-modal')?.classList.add('hidden');
-        document.getElementById('skill-preload-modal')?.classList.add('hidden');
+        Screen.Manager.closeAllFloats();
     },
     
     hideAllScreens() {
-        document.getElementById('title-screen')?.classList.add('hidden');
-        document.getElementById('lobby-screen')?.classList.add('hidden');
-        document.getElementById('adventure-screen')?.classList.add('hidden');
-        document.getElementById('gameover-screen')?.classList.add('hidden');
-        document.getElementById('levelup-screen')?.classList.add('hidden');
-        document.getElementById('inventory-screen')?.classList.add('hidden');
+        Screen.Manager.hideAll();
         this.closeModal();
     }
 };

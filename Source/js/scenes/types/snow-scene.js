@@ -10,7 +10,7 @@ class SnowScene extends Scene {
             worldHeight: 4000,
             elementDensity: 0.000012,
             elementTypes: [
-                { type: 'snow_tree', weight: 4, config: { sizeRange: [30, 50] } },
+                { type: 'snow_tree', weight: 4, config: { sizeRange: [60, 100] } },
                 { type: 'snow_pile', weight: 3, config: { sizeRange: [20, 35] } },
                 { type: 'rock', weight: 1, config: { sizeRange: [15, 25], color: '#8899aa' } }
             ]
@@ -53,14 +53,28 @@ class SnowScene extends Scene {
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, viewWidth, viewHeight);
         
-        // 雪地纹理
+        // 雪地纹理（固定在世界坐标）
         ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        for (let i = 0; i < 30; i++) {
-            const patchX = ((i * 173 - camX * 0.5) % (viewWidth + 200)) - 100;
-            const patchY = ((i * 127 - camY * 0.5) % (viewHeight + 200)) - 100;
-            ctx.beginPath();
-            ctx.ellipse(patchX, patchY, 60 + i % 40, 30 + i % 20, 0, 0, Math.PI * 2);
-            ctx.fill();
+        const patchSpacing = 200;
+        const startPatchX = Math.floor(camX / patchSpacing) * patchSpacing;
+        const startPatchY = Math.floor(camY / patchSpacing) * patchSpacing;
+        
+        for (let wx = startPatchX - patchSpacing; wx < camX + viewWidth + patchSpacing; wx += patchSpacing) {
+            for (let wy = startPatchY - patchSpacing; wy < camY + viewHeight + patchSpacing; wy += patchSpacing) {
+                // 用世界坐标生成伪随机偏移和大小
+                const seed = (wx * 173 + wy * 127) % 1000;
+                const offsetX = (seed % 80) - 40;
+                const offsetY = ((seed * 7) % 80) - 40;
+                const radiusX = 50 + (seed % 40);
+                const radiusY = 25 + ((seed * 3) % 20);
+                
+                const screenX = wx + offsetX - camX;
+                const screenY = wy + offsetY - camY;
+                
+                ctx.beginPath();
+                ctx.ellipse(screenX, screenY, radiusX, radiusY, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
     }
     

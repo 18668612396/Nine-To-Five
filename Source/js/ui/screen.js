@@ -166,6 +166,9 @@ class FloatScreen extends Screen {
         
         // 是否显示遮罩
         this.showBackdrop = config.showBackdrop !== false;
+        
+        // 是否可以通过 ESC 关闭（默认可以）
+        this.canCloseByEsc = config.canCloseByEsc !== false;
     }
     
     show() {
