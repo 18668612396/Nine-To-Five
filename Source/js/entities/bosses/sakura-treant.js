@@ -9,7 +9,7 @@ class SakuraTreeant extends Boss {
         hp: 5000,
         damage: 15,
         speed: 0.8,
-        radius: 60,
+        radius: 100,
         color: '#8B4513',
         xp: 500,
         gold: 200
@@ -159,6 +159,8 @@ class SakuraTreeant extends Boss {
     draw(ctx, camX, camY) {
         const x = this.x - camX;
         const y = this.y - camY;
+        const r = this.radius;
+        const sway = Math.sin(this.animationFrame * 0.03) * 3;
         
         // 绘制根须警告
         this.rootWarnings.forEach(warning => {
@@ -198,89 +200,168 @@ class SakuraTreeant extends Boss {
         });
         
         // 阴影
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
         ctx.beginPath();
-        ctx.ellipse(x, y + this.radius * 0.8, this.radius * 1.2, this.radius * 0.4, 0, 0, Math.PI * 2);
+        ctx.ellipse(x, y + r * 0.6, r * 0.8, r * 0.25, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // 树根
+        ctx.save();
+        ctx.translate(x, y);
+        
+        // 树根 - 粗壮的根须
         ctx.fillStyle = '#5D4037';
-        for (let i = 0; i < 5; i++) {
-            const angle = (Math.PI * 2 / 5) * i + Math.sin(this.animationFrame * 0.02) * 0.1;
-            const rootX = x + Math.cos(angle) * this.radius * 0.8;
-            const rootY = y + this.radius * 0.5;
-            ctx.beginPath();
-            ctx.moveTo(x, y + 20);
-            ctx.quadraticCurveTo(rootX, rootY - 10, rootX, rootY + 20);
-            ctx.lineTo(rootX - 8, rootY + 20);
-            ctx.quadraticCurveTo(rootX - 8, rootY - 5, x, y + 20);
-            ctx.fill();
-        }
-        
-        // 树干
-        ctx.fillStyle = '#8B4513';
-        ctx.beginPath();
-        ctx.moveTo(x - 25, y + 30);
-        ctx.lineTo(x - 35, y - 20);
-        ctx.lineTo(x - 20, y - 60);
-        ctx.lineTo(x + 20, y - 60);
-        ctx.lineTo(x + 35, y - 20);
-        ctx.lineTo(x + 25, y + 30);
-        ctx.fill();
-        
-        // 树皮纹理
-        ctx.strokeStyle = '#5D4037';
+        ctx.strokeStyle = '#3E2723';
         ctx.lineWidth = 2;
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 5; i++) {
+            const angle = (Math.PI * 2 / 5) * i + 0.3;
+            const rootLen = r * 0.6;
             ctx.beginPath();
-            ctx.moveTo(x - 15 + i * 10, y + 20);
-            ctx.lineTo(x - 20 + i * 12, y - 40);
+            ctx.moveTo(0, r * 0.3);
+            ctx.quadraticCurveTo(
+                Math.cos(angle) * rootLen * 0.5, r * 0.4,
+                Math.cos(angle) * rootLen, r * 0.5
+            );
+            ctx.quadraticCurveTo(
+                Math.cos(angle) * rootLen * 0.5, r * 0.35,
+                0, r * 0.2
+            );
+            ctx.fill();
             ctx.stroke();
         }
         
-        // 树冠
-        const crownY = y - 60;
-        const layers = [
-            { offset: 0, size: this.radius * 1.3, color: '#ffb7c5' },
-            { offset: -20, size: this.radius * 1.1, color: '#ffc0cb' },
-            { offset: -35, size: this.radius * 0.8, color: '#ffb7c5' }
-        ];
+        // 树干主体 - 粗壮的树干
+        const trunkGrad = ctx.createLinearGradient(-r * 0.3, 0, r * 0.3, 0);
+        trunkGrad.addColorStop(0, '#5D4037');
+        trunkGrad.addColorStop(0.3, '#8B5A2B');
+        trunkGrad.addColorStop(0.7, '#8B5A2B');
+        trunkGrad.addColorStop(1, '#5D4037');
         
-        layers.forEach(layer => {
-            ctx.fillStyle = layer.color;
-            for (let i = 0; i < 5; i++) {
-                const angle = (Math.PI * 2 / 5) * i + this.animationFrame * 0.01;
-                const cx = x + Math.cos(angle) * layer.size * 0.4;
-                const cy = crownY + layer.offset + Math.sin(angle) * layer.size * 0.2;
+        ctx.fillStyle = trunkGrad;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.35, r * 0.3);
+        ctx.quadraticCurveTo(-r * 0.4, 0, -r * 0.3, -r * 0.4);
+        ctx.lineTo(-r * 0.15, -r * 0.6);
+        ctx.lineTo(r * 0.15, -r * 0.6);
+        ctx.lineTo(r * 0.3, -r * 0.4);
+        ctx.quadraticCurveTo(r * 0.4, 0, r * 0.35, r * 0.3);
+        ctx.closePath();
+        ctx.fill();
+        
+        // 树皮纹理
+        ctx.strokeStyle = '#4E342E';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.1, r * 0.2);
+        ctx.quadraticCurveTo(-r * 0.15, -r * 0.1, -r * 0.1, -r * 0.4);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(r * 0.1, r * 0.25);
+        ctx.quadraticCurveTo(r * 0.12, 0, r * 0.08, -r * 0.35);
+        ctx.stroke();
+        
+        // 树枝 - 左右伸展
+        ctx.fillStyle = '#6D4C41';
+        // 左枝
+        ctx.beginPath();
+        ctx.moveTo(-r * 0.25, -r * 0.3);
+        ctx.quadraticCurveTo(-r * 0.6 + sway, -r * 0.5, -r * 0.8 + sway, -r * 0.4);
+        ctx.quadraticCurveTo(-r * 0.6 + sway, -r * 0.4, -r * 0.2, -r * 0.25);
+        ctx.fill();
+        // 右枝
+        ctx.beginPath();
+        ctx.moveTo(r * 0.25, -r * 0.35);
+        ctx.quadraticCurveTo(r * 0.6 - sway, -r * 0.55, r * 0.85 - sway, -r * 0.45);
+        ctx.quadraticCurveTo(r * 0.6 - sway, -r * 0.45, r * 0.2, -r * 0.3);
+        ctx.fill();
+        
+        // 樱花树冠 - 多层花团
+        const drawFlowerCluster = (cx, cy, size, color) => {
+            ctx.fillStyle = color;
+            for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI * 2 / 6) * i + this.animationFrame * 0.01;
+                const fx = cx + Math.cos(angle) * size * 0.4;
+                const fy = cy + Math.sin(angle) * size * 0.3;
                 ctx.beginPath();
-                ctx.arc(cx, cy, layer.size * 0.5, 0, Math.PI * 2);
+                ctx.arc(fx, fy, size * 0.45, 0, Math.PI * 2);
                 ctx.fill();
             }
-        });
-        
-        // 飘落花瓣装饰
-        ctx.fillStyle = '#ffb7c5';
-        for (let i = 0; i < 8; i++) {
-            const petalX = x + Math.sin(this.animationFrame * 0.03 + i) * 50;
-            const petalY = crownY - 30 + Math.cos(this.animationFrame * 0.02 + i * 0.5) * 20 + i * 15;
+            // 中心
             ctx.beginPath();
-            ctx.ellipse(petalX, petalY, 6, 4, this.animationFrame * 0.05 + i, 0, Math.PI * 2);
+            ctx.arc(cx, cy, size * 0.35, 0, Math.PI * 2);
             ctx.fill();
+        };
+        
+        // 后层花团（深色）
+        drawFlowerCluster(-r * 0.5 + sway, -r * 0.7, r * 0.35, '#e091a3');
+        drawFlowerCluster(r * 0.5 - sway, -r * 0.75, r * 0.35, '#e091a3');
+        drawFlowerCluster(0, -r * 0.9, r * 0.4, '#e091a3');
+        
+        // 中层花团
+        drawFlowerCluster(-r * 0.6 + sway, -r * 0.5, r * 0.4, '#ffb7c5');
+        drawFlowerCluster(r * 0.55 - sway, -r * 0.55, r * 0.38, '#ffb7c5');
+        drawFlowerCluster(0, -r * 0.75, r * 0.45, '#ffb7c5');
+        drawFlowerCluster(-r * 0.25, -r * 0.85, r * 0.32, '#ffb7c5');
+        drawFlowerCluster(r * 0.3, -r * 0.88, r * 0.3, '#ffb7c5');
+        
+        // 前层花团（亮色）
+        drawFlowerCluster(-r * 0.35 + sway * 0.5, -r * 0.6, r * 0.3, '#ffd0dc');
+        drawFlowerCluster(r * 0.4 - sway * 0.5, -r * 0.65, r * 0.28, '#ffd0dc');
+        drawFlowerCluster(0, -r * 0.55, r * 0.25, '#ffd0dc');
+        
+        // 飘落的花瓣点缀
+        ctx.fillStyle = '#ffb7c5';
+        for (let i = 0; i < 6; i++) {
+            const petalX = Math.sin(this.animationFrame * 0.04 + i * 1.2) * r * 0.7;
+            const petalY = -r * 0.3 + Math.cos(this.animationFrame * 0.03 + i) * r * 0.2 - i * 8;
+            ctx.save();
+            ctx.translate(petalX, petalY);
+            ctx.rotate(this.animationFrame * 0.05 + i);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 5, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
         }
         
-        // 眼睛
-        const eyeGlow = this.isEnraged ? 1 : 0.7 + Math.sin(this.animationFrame * 0.1) * 0.3;
-        ctx.fillStyle = `rgba(255, 0, 0, ${eyeGlow})`;
+        // 脸部区域 - 树干上的凹陷
+        ctx.fillStyle = '#4E342E';
         ctx.beginPath();
-        ctx.arc(x - 12, y - 30, 8, 0, Math.PI * 2);
-        ctx.arc(x + 12, y - 30, 8, 0, Math.PI * 2);
+        ctx.ellipse(0, -r * 0.15, r * 0.22, r * 0.18, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        ctx.fillStyle = `rgba(255, 100, 100, ${eyeGlow * 0.5})`;
+        // 眼睛 - 发光的树灵之眼
+        const eyeGlow = this.isEnraged ? 1 : 0.6 + Math.sin(this.animationFrame * 0.08) * 0.4;
+        
+        // 眼睛光晕
+        ctx.fillStyle = `rgba(255, 180, 200, ${eyeGlow * 0.4})`;
         ctx.beginPath();
-        ctx.arc(x - 12, y - 30, 12, 0, Math.PI * 2);
-        ctx.arc(x + 12, y - 30, 12, 0, Math.PI * 2);
+        ctx.arc(-r * 0.1, -r * 0.18, 12, 0, Math.PI * 2);
+        ctx.arc(r * 0.1, -r * 0.18, 12, 0, Math.PI * 2);
         ctx.fill();
+        
+        // 眼睛主体
+        ctx.fillStyle = this.isEnraged ? '#ff4466' : '#ff8fa3';
+        ctx.shadowColor = this.isEnraged ? '#ff0044' : '#ff6b8a';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(-r * 0.1, -r * 0.18, 7, 0, Math.PI * 2);
+        ctx.arc(r * 0.1, -r * 0.18, 7, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 眼睛高光
+        ctx.fillStyle = '#fff';
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(-r * 0.12, -r * 0.2, 2, 0, Math.PI * 2);
+        ctx.arc(r * 0.08, -r * 0.2, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 嘴巴 - 树洞形状
+        ctx.fillStyle = '#3E2723';
+        ctx.beginPath();
+        ctx.ellipse(0, -r * 0.02, r * 0.08, r * 0.05, 0, 0, Math.PI);
+        ctx.fill();
+        
+        ctx.restore();
         
         this.drawHealthBar(ctx, camX, camY);
     }
