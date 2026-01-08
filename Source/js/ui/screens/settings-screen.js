@@ -31,7 +31,9 @@ class SettingsScreen extends FloatScreen {
                     <button class="settings-item" onclick="GM.openPanel(); Game.closeSettingsOnly();">
                         <span>🛠️ GM指令</span>
                     </button>
-                    <p class="coming-soon">🚧 更多设置开发中...</p>
+                    <button class="settings-item danger" onclick="Game.surrenderGame()">
+                        <span>🏳️ 放弃战斗</span>
+                    </button>
                 </div>
             </div>
         `;
