@@ -8,6 +8,38 @@ class TalentScreen extends FloatScreen {
             closeOnBackdrop: true,
             ...config
         });
+        
+        this.domCreated = false;
+    }
+    
+    createDOM() {
+        if (this.domCreated) return;
+        
+        const container = document.getElementById('ui-layer');
+        if (!container) return;
+        
+        const el = document.createElement('div');
+        el.id = 'talent-modal';
+        el.className = 'screen hidden';
+        el.innerHTML = `
+            <div class="modal-container wide">
+                <div class="modal-header">
+                    <h2>🌟 天赋树</h2>
+                    <div class="talent-gold">💰 <span id="talent-gold">0</span></div>
+                    <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
+                </div>
+                <div class="talent-grid" id="talent-grid"></div>
+                <p class="talent-hint">消耗金币永久强化角色属性</p>
+            </div>
+        `;
+        
+        container.appendChild(el);
+        this.domCreated = true;
+    }
+    
+    show() {
+        this.createDOM();
+        super.show();
     }
     
     onEnter() {
@@ -15,7 +47,6 @@ class TalentScreen extends FloatScreen {
         this.renderGrid();
     }
     
-    // 更新金币显示
     updateGoldDisplay() {
         const talentGold = document.getElementById('talent-gold');
         if (talentGold && typeof Lobby !== 'undefined') {
@@ -23,14 +54,12 @@ class TalentScreen extends FloatScreen {
         }
     }
     
-    // 渲染天赋格子
     renderGrid() {
         if (typeof Lobby !== 'undefined') {
             Lobby.renderTalentGrid();
         }
     }
     
-    // 升级天赋
     upgradeTalent(talentId) {
         if (typeof Lobby !== 'undefined') {
             Lobby.upgradeTalent(talentId);

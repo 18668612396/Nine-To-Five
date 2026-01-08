@@ -11,10 +11,35 @@ class LoadingScreen extends FullScreen {
         this.targetProgress = 0;
         this.loadingComplete = false;
         this.fadeOutStarted = false;
+        this.domCreated = false;
         
-        // DOM 元素
         this.barEl = null;
         this.textEl = null;
+    }
+    
+    createDOM() {
+        if (this.domCreated) return;
+        
+        const el = document.createElement('div');
+        el.id = 'loading-screen';
+        el.innerHTML = `
+            <div class="loading-content">
+                <div class="loading-icon">🌻</div>
+                <h1 class="loading-title">葵瓜幸存者</h1>
+                <div class="loading-bar-container">
+                    <div class="loading-bar"></div>
+                </div>
+                <p class="loading-text">正在加载...</p>
+            </div>
+        `;
+        
+        document.body.insertBefore(el, document.body.firstChild);
+        this.domCreated = true;
+    }
+    
+    show() {
+        this.createDOM();
+        super.show();
     }
     
     onEnter() {
@@ -25,15 +50,9 @@ class LoadingScreen extends FullScreen {
         this.loadingComplete = false;
         this.fadeOutStarted = false;
         
-        // 开始模拟加载
         this.simulateLoading();
     }
     
-    onExit() {
-        // 清理
-    }
-    
-    // 模拟加载进度
     simulateLoading() {
         const interval = setInterval(() => {
             this.targetProgress += Math.random() * 15 + 5;
@@ -46,7 +65,6 @@ class LoadingScreen extends FullScreen {
         }, 100);
     }
     
-    // 设置真实加载进度
     setProgress(value) {
         this.targetProgress = Math.min(100, value);
         if (this.targetProgress >= 100) {
@@ -57,7 +75,6 @@ class LoadingScreen extends FullScreen {
     update(deltaTime) {
         if (!this.active) return;
         
-        // 平滑进度条
         if (this.progress < this.targetProgress) {
             this.progress += (this.targetProgress - this.progress) * 0.1;
             if (this.targetProgress - this.progress < 0.5) {
@@ -65,7 +82,6 @@ class LoadingScreen extends FullScreen {
             }
         }
         
-        // 更新 DOM
         if (this.barEl) {
             this.barEl.style.width = this.progress + '%';
         }
@@ -78,7 +94,6 @@ class LoadingScreen extends FullScreen {
             }
         }
         
-        // 加载完成后淡出
         if (this.loadingComplete && this.progress >= 100 && !this.fadeOutStarted) {
             this.fadeOutStarted = true;
             this.fadeOut();
@@ -94,7 +109,6 @@ class LoadingScreen extends FullScreen {
                 this.hide();
                 el.style.display = 'none';
                 
-                // 切换到标题界面
                 if (typeof Screen !== 'undefined' && Screen.Manager) {
                     Screen.Manager.switchTo('title');
                 }
@@ -103,5 +117,4 @@ class LoadingScreen extends FullScreen {
     }
 }
 
-// 注册界面
 Screen.register('loading', LoadingScreen);

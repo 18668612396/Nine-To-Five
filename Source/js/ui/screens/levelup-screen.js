@@ -11,42 +11,60 @@ class LevelUpScreen extends FloatScreen {
         
         this.level = 1;
         this.pauseParent = true;
+        this.domCreated = false;
     }
     
-    // 设置等级
+    createDOM() {
+        if (this.domCreated) return;
+        
+        const container = document.getElementById('ui-layer');
+        if (!container) return;
+        
+        const el = document.createElement('div');
+        el.id = 'levelup-screen';
+        el.className = 'screen hidden';
+        el.innerHTML = `
+            <h2>升级! Lv.<span id="levelup-level"></span></h2>
+            <p>选择一个强化</p>
+            <div id="cards-container"></div>
+        `;
+        
+        container.appendChild(el);
+        this.domCreated = true;
+    }
+    
+    show() {
+        this.createDOM();
+        super.show();
+    }
+    
     setLevel(level) {
         this.level = level;
     }
     
     onEnter() {
-        // 暂停游戏
         if (typeof Game !== 'undefined') {
             Game.state = 'LEVELUP';
         }
         
-        // 更新等级显示
         const levelEl = document.getElementById('levelup-level');
         if (levelEl) levelEl.textContent = this.level;
         
-        // 生成选项卡片
         this.generateCards();
     }
     
     onExit() {
-        // 恢复游戏
         if (typeof Game !== 'undefined' && Game.state === 'LEVELUP') {
             Game.state = 'PLAYING';
         }
     }
     
-    // 生成选项卡片
     generateCards() {
         if (typeof Game !== 'undefined' && Game.showLevelUpCards) {
             Game.showLevelUpCards();
         }
     }
     
-    // 选择卡片
     selectCard(index) {
         if (typeof Game !== 'undefined' && Game.selectLevelUpCard) {
             Game.selectLevelUpCard(index);

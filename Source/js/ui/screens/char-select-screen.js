@@ -11,6 +11,53 @@ class CharSelectScreen extends FloatScreen {
         
         this.selectedChar = 'guagua';
         this.animationFrame = 0;
+        this.domCreated = false;
+    }
+    
+    createDOM() {
+        if (this.domCreated) return;
+        
+        const container = document.getElementById('ui-layer');
+        if (!container) return;
+        
+        const el = document.createElement('div');
+        el.id = 'char-select-modal';
+        el.className = 'screen hidden';
+        el.innerHTML = `
+            <div class="modal-container">
+                <div class="modal-header">
+                    <h2>👤 选择英雄</h2>
+                    <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
+                </div>
+                <div class="char-select-grid">
+                    <div class="char-card selected" data-char="guagua" onclick="Lobby.selectChar('guagua', this)">
+                        <canvas class="char-card-canvas" width="80" height="80" data-char="guagua"></canvas>
+                        <div class="char-card-info">
+                            <h3>瓜瓜</h3>
+                            <p>速度+10%</p>
+                        </div>
+                        <div class="char-card-check">✓</div>
+                    </div>
+                    <div class="char-card" data-char="kuikui" onclick="Lobby.selectChar('kuikui', this)">
+                        <canvas class="char-card-canvas" width="80" height="80" data-char="kuikui"></canvas>
+                        <div class="char-card-info">
+                            <h3>葵葵</h3>
+                            <p>血量+20%</p>
+                        </div>
+                        <div class="char-card-check">✓</div>
+                    </div>
+                </div>
+                <button class="modal-confirm" onclick="Lobby.confirmChar()">确认</button>
+            </div>
+        `;
+        
+        container.appendChild(el);
+        this.domCreated = true;
+    }
+    
+    show() {
+        this.createDOM();
+        super.show();
     }
     
     onEnter() {
@@ -23,14 +70,12 @@ class CharSelectScreen extends FloatScreen {
         this.stopAnimation();
     }
     
-    // 更新选中状态
     updateSelection() {
         document.querySelectorAll('.char-card').forEach(card => {
             card.classList.toggle('selected', card.dataset.char === this.selectedChar);
         });
     }
     
-    // 角色卡片动画
     startCardAnimation() {
         const canvases = document.querySelectorAll('.char-card-canvas');
         
@@ -50,18 +95,15 @@ class CharSelectScreen extends FloatScreen {
         });
     }
     
-    // 选择角色
     selectChar(charType, element) {
         document.querySelectorAll('.char-card').forEach(card => card.classList.remove('selected'));
         if (element) element.classList.add('selected');
         this.selectedChar = charType;
     }
     
-    // 确认选择
     confirm() {
         Lobby.selectedChar = this.selectedChar;
         
-        // 更新大厅显示
         const lobbyScreen = Screen.Manager.get('lobby');
         if (lobbyScreen) {
             lobbyScreen.selectChar(this.selectedChar);

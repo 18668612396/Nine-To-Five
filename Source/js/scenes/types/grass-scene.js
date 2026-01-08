@@ -8,7 +8,7 @@ class GrassScene extends Scene {
             backgroundColor: '#8ccf7e',
             worldWidth: 4000,
             worldHeight: 4000,
-            elementDensity: 0.00015,
+            elementDensity: 0.000015,
             elementTypes: [
                 { type: 'tree', weight: 3, config: { sizeRange: [30, 50] } },
                 { type: 'rock', weight: 2, config: { sizeRange: [20, 35] } },

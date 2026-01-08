@@ -8,7 +8,7 @@ class SnowScene extends Scene {
             backgroundColor: '#a8c8d8',
             worldWidth: 4000,
             worldHeight: 4000,
-            elementDensity: 0.00012,
+            elementDensity: 0.000012,
             elementTypes: [
                 { type: 'snow_tree', weight: 4, config: { sizeRange: [30, 50] } },
                 { type: 'snow_pile', weight: 3, config: { sizeRange: [20, 35] } },

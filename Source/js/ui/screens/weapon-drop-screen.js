@@ -11,15 +11,41 @@ class WeaponDropScreen extends FloatScreen {
         
         this.weapons = [];
         this.pauseParent = true;
+        this.domCreated = false;
     }
     
-    // 设置可选武器
+    createDOM() {
+        if (this.domCreated) return;
+        
+        const container = document.getElementById('ui-layer');
+        if (!container) return;
+        
+        const el = document.createElement('div');
+        el.id = 'weapon-drop-modal';
+        el.className = 'screen hidden';
+        el.innerHTML = `
+            <div class="weapon-drop-container">
+                <h2>🎁 选择武器</h2>
+                <p class="weapon-drop-hint">击败Boss获得武器奖励！选择一把或跳过随机获得</p>
+                <div id="weapon-drop-options" class="weapon-drop-grid"></div>
+                <button class="weapon-skip-btn" onclick="Game.skipWeaponDrop()">🎲 跳过，随机获得</button>
+            </div>
+        `;
+        
+        container.appendChild(el);
+        this.domCreated = true;
+    }
+    
+    show() {
+        this.createDOM();
+        super.show();
+    }
+    
     setWeapons(weapons) {
         this.weapons = weapons;
     }
     
     onEnter() {
-        // 暂停游戏
         if (typeof Game !== 'undefined') {
             Game.state = 'PAUSED';
         }
@@ -27,13 +53,11 @@ class WeaponDropScreen extends FloatScreen {
     }
     
     onExit() {
-        // 恢复游戏
         if (typeof Game !== 'undefined' && Game.state === 'PAUSED') {
             Game.state = 'PLAYING';
         }
     }
     
-    // 渲染选项
     renderOptions() {
         const container = document.getElementById('weapon-drop-options');
         if (!container) return;
@@ -52,7 +76,6 @@ class WeaponDropScreen extends FloatScreen {
         });
     }
     
-    // 选择武器
     selectWeapon(index) {
         if (typeof Game !== 'undefined' && Game.selectWeaponDrop) {
             Game.selectWeaponDrop(index);
@@ -60,7 +83,6 @@ class WeaponDropScreen extends FloatScreen {
         this.close();
     }
     
-    // 跳过（随机获得）
     skip() {
         if (typeof Game !== 'undefined' && Game.skipWeaponDrop) {
             Game.skipWeaponDrop();

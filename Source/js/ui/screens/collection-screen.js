@@ -10,17 +10,51 @@ class CollectionScreen extends FloatScreen {
         });
         
         this.currentTab = 'characters';
+        this.domCreated = false;
+    }
+    
+    createDOM() {
+        if (this.domCreated) return;
+        
+        const container = document.getElementById('ui-layer');
+        if (!container) return;
+        
+        const el = document.createElement('div');
+        el.id = 'collection-modal';
+        el.className = 'screen hidden';
+        el.innerHTML = `
+            <div class="modal-container wide">
+                <div class="modal-header">
+                    <h2>📖 图鉴</h2>
+                    <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
+                </div>
+                <div class="collection-content">
+                    <div class="collection-tabs">
+                        <button class="collection-tab active" onclick="Lobby.showCollectionTab('characters', this)">👤 角色</button>
+                        <button class="collection-tab" onclick="Lobby.showCollectionTab('enemies', this)">👹 敌人</button>
+                        <button class="collection-tab" onclick="Lobby.showCollectionTab('skills', this)">🔮 技能</button>
+                    </div>
+                    <div id="collection-grid" class="collection-grid"></div>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(el);
+        this.domCreated = true;
+    }
+    
+    show() {
+        this.createDOM();
+        super.show();
     }
     
     onEnter() {
         this.showTab('characters');
     }
     
-    // 显示标签页
     showTab(tab, element) {
         this.currentTab = tab;
         
-        // 更新标签状态
         document.querySelectorAll('.collection-tab').forEach(t => t.classList.remove('active'));
         if (element) {
             element.classList.add('active');
@@ -28,7 +62,6 @@ class CollectionScreen extends FloatScreen {
             document.querySelector(`.collection-tab[onclick*="${tab}"]`)?.classList.add('active');
         }
         
-        // 渲染内容
         if (typeof Lobby !== 'undefined') {
             Lobby.showCollectionTab(tab, element);
         }

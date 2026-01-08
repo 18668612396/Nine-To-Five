@@ -11,497 +11,11 @@
     <meta http-equiv="Expires" content="0">
 </head>
 <body>
-    <!-- 加载界面 -->
-    <div id="loading-screen">
-        <div class="loading-content">
-            <div class="loading-icon">🌻</div>
-            <h1 class="loading-title">葵瓜幸存者</h1>
-            <div class="loading-bar-container">
-                <div class="loading-bar"></div>
-            </div>
-            <p class="loading-text">正在加载...</p>
-        </div>
-    </div>
-
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
-        
-        <!-- UI层 -->
-        <div id="ui-layer">
-            <!-- HUD -->
-            <div id="hud" class="hidden">
-                <div class="hud-top">
-                    <div class="hud-left">
-                        <button class="settings-btn" onclick="Game.openSettings()">⚙️</button>
-                        <div id="hp-bar-container">
-                            <div id="hp-bar-bg">
-                                <div id="hp-bar-fill"></div>
-                            </div>
-                            <div id="hp-text">100/100</div>
-                        </div>
-                        <div id="xp-bar-container">
-                            <div id="xp-bar-bg">
-                                <div id="xp-bar-fill"></div>
-                            </div>
-                            <div id="level-text">Lv.1</div>
-                        </div>
-                        <div class="weapon-info-row">
-                            <div class="weapon-info-display">
-                                <span class="weapon-info-icon" id="weapon-icon">🪄</span>
-                                <span class="weapon-info-name" id="weapon-name">学徒法杖</span>
-                            </div>
-                            <div id="weapon-energy-bar-container">
-                                <div id="weapon-energy-bar-bg">
-                                    <div id="weapon-energy-bar-fill"></div>
-                                </div>
-                                <div id="weapon-energy-text">100/100</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="hud-right">
-                        <div id="timer">00:00</div>
-                        <div id="kill-count">击杀: 0</div>
-                        <div id="gold-count">💰 0</div>
-                        <button class="inventory-btn" onclick="Game.openInventory()">📦 背包</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 暂停菜单 -->
-            <div id="pause-modal" class="screen hidden">
-                <div class="pause-container">
-                    <h2>⏸️ 暂停</h2>
-                    <div class="pause-content">
-                        <button class="pause-item" onclick="Game.resumeGame()">
-                            <span>▶️ 继续游戏</span>
-                        </button>
-                        <button class="pause-item" onclick="Game.openInventoryFromPause()">
-                            <span>📦 背包</span>
-                        </button>
-                        <button class="pause-item" onclick="Game.openGMFromPause()">
-                            <span>�️ GM指令</s>pan>
-                        </button>
-                        <button class="pause-item" onclick="Game.openSettingsFromPause()">
-                            <span>⚙️ 设置</span>
-                        </button>
-                        <button class="pause-item danger" onclick="Game.surrenderGame()">
-                            <span>🏳️ 放弃战斗</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 标题页 -->
-            <div id="title-screen" class="screen">
-                <div class="title-content">
-                    <h1 class="game-title">葵瓜幸存者</h1>
-                    <p class="game-subtitle">KuiGua Survivors</p>
-                    <div class="title-char-display">
-                        <canvas id="title-char-1" width="120" height="120"></canvas>
-                        <canvas id="title-char-2" width="120" height="120"></canvas>
-                    </div>
-                    <button class="title-btn" onclick="Lobby.enter()">进入游戏</button>
-                    <div class="title-hint">
-                        <p>WASD / 方向键 移动 | 自动攻击</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 大厅（王者荣耀风格） -->
-            <div id="lobby-screen" class="screen hidden">
-                <div class="lobby-bg"></div>
-                
-                <!-- 顶部栏 -->
-                <div class="lobby-top-bar">
-                    <div class="player-info">
-                        <div class="player-avatar">
-                            <canvas id="lobby-avatar" width="50" height="50"></canvas>
-                        </div>
-                        <div class="player-details">
-                            <span class="player-name">玩家</span>
-                            <span class="player-level">Lv.1</span>
-                        </div>
-                    </div>
-                    <div class="currency-display">
-                        <div class="currency-item">
-                            <span class="currency-icon">💰</span>
-                            <span class="currency-value" id="lobby-gold">0</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 中央角色展示 -->
-                <div class="lobby-center">
-                    <canvas id="lobby-char-canvas" width="300" height="350"></canvas>
-                    <div class="char-info-panel">
-                        <h2 id="lobby-char-name">瓜瓜</h2>
-                        <p id="lobby-char-stats">速度+10%</p>
-                    </div>
-                </div>
-                
-                <!-- 底部菜单栏 -->
-                <div class="lobby-bottom-bar">
-                    <div class="lobby-nav">
-                        <button class="nav-btn" onclick="Lobby.showCharSelect()">
-                            <span class="nav-icon">👤</span>
-                            <span class="nav-text">英雄</span>
-                        </button>
-                        <button class="nav-btn" onclick="Lobby.showSkillPreload()">
-                            <span class="nav-icon">🔮</span>
-                            <span class="nav-text">装备</span>
-                        </button>
-                        <button class="nav-btn primary" onclick="Lobby.showAdventure()">
-                            <span class="nav-icon">⚔️</span>
-                            <span class="nav-text">开始</span>
-                        </button>
-                        <button class="nav-btn" onclick="Lobby.showTalentTree()">
-                            <span class="nav-icon">🌟</span>
-                            <span class="nav-text">天赋</span>
-                        </button>
-                        <button class="nav-btn" onclick="Lobby.showCollection()">
-                            <span class="nav-icon">📖</span>
-                            <span class="nav-text">图鉴</span>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- 返回按钮 -->
-                <button class="lobby-back-btn" onclick="Lobby.backToTitle()">🚪 退出</button>
-            </div>
-
-            <!-- 角色选择弹窗 -->
-            <div id="char-select-modal" class="screen hidden">
-                <div class="modal-container">
-                    <div class="modal-header">
-                        <h2>👤 选择英雄</h2>
-                        <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
-                    </div>
-                    <div class="char-select-grid">
-                        <div class="char-card selected" data-char="guagua" onclick="Lobby.selectChar('guagua', this)">
-                            <canvas class="char-card-canvas" width="80" height="80" data-char="guagua"></canvas>
-                            <div class="char-card-info">
-                                <h3>瓜瓜</h3>
-                                <p>速度+10%</p>
-                            </div>
-                            <div class="char-card-check">✓</div>
-                        </div>
-                        <div class="char-card" data-char="kuikui" onclick="Lobby.selectChar('kuikui', this)">
-                            <canvas class="char-card-canvas" width="80" height="80" data-char="kuikui"></canvas>
-                            <div class="char-card-info">
-                                <h3>葵葵</h3>
-                                <p>血量+20%</p>
-                            </div>
-                            <div class="char-card-check">✓</div>
-                        </div>
-                    </div>
-                    <button class="modal-confirm" onclick="Lobby.confirmChar()">确认</button>
-                </div>
-            </div>
-
-            <!-- 初始武器选择弹窗 -->
-            <div id="weapon-select-modal" class="screen hidden">
-                <div class="modal-container">
-                    <div class="modal-header">
-                        <h2>🔮 选择初始魔法</h2>
-                        <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
-                    </div>
-                    <div class="weapon-select-grid" id="weapon-select-grid"></div>
-                    <button class="modal-confirm" onclick="Lobby.confirmWeapon()">确认</button>
-                </div>
-            </div>
-
-            <!-- 技能预装弹窗 -->
-            <div id="skill-preload-modal" class="screen hidden">
-                <div class="modal-container wide">
-                    <div class="modal-header">
-                        <h2>🔮 预装技能</h2>
-                        <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
-                    </div>
-                    <div class="preload-content">
-                        <p class="preload-hint">选择开局携带的技能（1星）</p>
-                        <div class="preload-slots-container">
-                            <h4>技能槽位</h4>
-                            <div id="preload-slots" class="preload-slots"></div>
-                        </div>
-                        <div class="preload-skills-container">
-                            <h4>可选技能</h4>
-                            <div id="preload-skills-grid" class="preload-skills-grid"></div>
-                        </div>
-                    </div>
-                    <button class="modal-confirm" onclick="Lobby.confirmSkillPreload()">确认</button>
-                </div>
-            </div>
-
-            <!-- 天赋树弹窗 -->
-            <div id="talent-modal" class="screen hidden">
-                <div class="modal-container wide">
-                    <div class="modal-header">
-                        <h2>🌟 天赋树</h2>
-                        <div class="talent-gold">💰 <span id="talent-gold">0</span></div>
-                        <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
-                    </div>
-                    <div class="talent-grid" id="talent-grid"></div>
-                    <p class="talent-hint">消耗金币永久强化角色属性</p>
-                </div>
-            </div>
-
-            <!-- 图鉴弹窗 -->
-            <div id="collection-modal" class="screen hidden">
-                <div class="modal-container wide">
-                    <div class="modal-header">
-                        <h2>📖 图鉴</h2>
-                        <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
-                    </div>
-                    <div class="collection-content">
-                        <div class="collection-tabs">
-                            <button class="collection-tab active" onclick="Lobby.showCollectionTab('characters', this)">👤 角色</button>
-                            <button class="collection-tab" onclick="Lobby.showCollectionTab('enemies', this)">👹 敌人</button>
-                            <button class="collection-tab" onclick="Lobby.showCollectionTab('skills', this)">🔮 技能</button>
-                        </div>
-                        <div id="collection-grid" class="collection-grid"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 冒险选择界面 -->
-            <div id="adventure-screen" class="screen hidden">
-                <div class="adventure-container">
-                    <div class="adventure-header">
-                        <h2>⚔️ 冒险</h2>
-                        <button class="adventure-back" onclick="Lobby.closeAdventure()">← 返回</button>
-                    </div>
-                    <div class="adventure-content">
-                        <div class="adventure-section">
-                            <h3>难度</h3>
-                            <div class="difficulty-options">
-                                <div class="difficulty-option selected" data-diff="easy" onclick="Lobby.selectDifficulty('easy', this)">
-                                    <span class="diff-icon">🌱</span>
-                                    <span class="diff-name">简单</span>
-                                </div>
-                                <div class="difficulty-option" data-diff="normal" onclick="Lobby.selectDifficulty('normal', this)">
-                                    <span class="diff-icon">⚔️</span>
-                                    <span class="diff-name">普通</span>
-                                </div>
-                                <div class="difficulty-option" data-diff="hard" onclick="Lobby.selectDifficulty('hard', this)">
-                                    <span class="diff-icon">💀</span>
-                                    <span class="diff-name">困难</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="adventure-section">
-                            <h3>地图</h3>
-                            <div class="map-options">
-                                <div class="map-option selected" data-map="random" onclick="Lobby.selectMap('random', this)">
-                                    <span class="map-icon">🎲</span>
-                                    <span class="map-name">随机</span>
-                                </div>
-                                <div class="map-option" data-map="forest" onclick="Lobby.selectMap('forest', this)">
-                                    <span class="map-icon">🌲</span>
-                                    <span class="map-name">森林</span>
-                                </div>
-                                <div class="map-option" data-map="desert" onclick="Lobby.selectMap('desert', this)">
-                                    <span class="map-icon">🏜️</span>
-                                    <span class="map-name">沙漠</span>
-                                </div>
-                                <div class="map-option" data-map="snow" onclick="Lobby.selectMap('snow', this)">
-                                    <span class="map-icon">❄️</span>
-                                    <span class="map-name">雪地</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="adventure-start-btn" onclick="Lobby.startAdventure()">🚀 出发！</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 升级界面 -->
-            <div id="levelup-screen" class="screen hidden">
-                <h2>升级! Lv.<span id="levelup-level"></span></h2>
-                <p>选择一个强化</p>
-                <div id="cards-container"></div>
-            </div>
-
-            <!-- 游戏结束界面 -->
-            <div id="gameover-screen" class="screen hidden">
-                <h1>游戏结束</h1>
-                <div class="gameover-stats">
-                    <div class="stats-main">
-                        <p>⏱️ 存活时间: <span id="final-time"></span></p>
-                        <p>💀 击杀数量: <span id="final-kills"></span></p>
-                        <p class="gold-earned">💰 获得金币: <span id="final-gold">0</span></p>
-                    </div>
-                    <div class="stats-detail">
-                        <div class="stat-item">
-                            <span class="stat-label">⬆️ 最终等级</span>
-                            <span class="stat-value" id="final-level">1</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">⚔️ 造成伤害</span>
-                            <span class="stat-value" id="final-damage">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">💔 承受伤害</span>
-                            <span class="stat-value" id="final-taken">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">👹 Boss击杀</span>
-                            <span class="stat-value" id="final-boss">0</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="gameover-btns">
-                    <button onclick="Lobby.enter()">返回大厅</button>
-                    <button onclick="Lobby.restartGame()">再来一局</button>
-                </div>
-            </div>
-            
-            <!-- 背包界面 -->
-            <div id="inventory-screen" class="screen hidden">
-                <!-- 左上角返回按钮 -->
-                <button class="inv-back-btn" onclick="Game.closeInventory()">← 返回</button>
-                <!-- 右上角设置按钮 -->
-                <button class="inv-settings-btn" onclick="Game.openSettingsFromInventory()">⚙️ 设置</button>
-                <!-- 右下角放弃按钮 -->
-                <button class="inv-surrender-btn" onclick="Game.surrenderGame()">🏳️ 放弃战斗</button>
-                
-                <div class="inventory-layout">
-                    <div class="inventory-container">
-                        <div class="inventory-header">
-                            <h2>⚔️ 技能编辑</h2>
-                            <div class="inventory-header-btns">
-                                <button class="merge-btn" id="workbench-toggle-btn" onclick="Game.toggleWorkbench()">🔧 工作台</button>
-                            </div>
-                        </div>
-                        
-                        <!-- 武器+技能槽区域（三行） -->
-                        <div class="inventory-section weapon-wand-section">
-                            <h3>🗡️ 武器与技能槽 <span class="weapon-switch-hint">(按Q切换武器)</span></h3>
-                            <div id="weapon-wand-rows" class="weapon-wand-container"></div>
-                        </div>
-                        
-                        <div class="inventory-section">
-                            <h3>📦 技能背包</h3>
-                            <div id="inventory-items" class="inventory-grid"></div>
-                        </div>
-                        <div class="inventory-section">
-                            <h3>🎁 祝福</h3>
-                            <div id="perks-display" class="perks-grid"></div>
-                        </div>
-                        
-                        <!-- 武器背包区域 -->
-                        <div class="inventory-section weapon-inventory-section">
-                            <h3>🎒 武器背包</h3>
-                            <div id="weapon-inventory" class="weapon-inventory-grid"></div>
-                        </div>
-                    </div>
-                    <div class="workbench-panel hidden" id="workbench-panel">
-                        <div class="workbench-header"><h3>🔧 工作台</h3></div>
-                        <div class="workbench-slots">
-                            <div class="workbench-slot" id="workbench-slot-0" onclick="Game.removeFromWorkbench(0)"></div>
-                            <div class="workbench-slot" id="workbench-slot-1" onclick="Game.removeFromWorkbench(1)"></div>
-                            <div class="workbench-slot" id="workbench-slot-2" onclick="Game.removeFromWorkbench(2)"></div>
-                        </div>
-                        <div class="workbench-arrow-down">⬇</div>
-                        <div class="workbench-result" id="workbench-result"></div>
-                        <div class="workbench-tip" id="workbench-tip">• 3个相同 → 升星<br>• 2个不同 → 随机</div>
-                        <button class="workbench-craft-btn" id="workbench-craft-btn" onclick="Game.doCraft()" disabled>合成</button>
-                        <button class="workbench-auto-btn" onclick="Game.autoMergeAll()">⚡ 一键合成</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 设置菜单 -->
-            <div id="settings-modal" class="screen hidden">
-                <div class="settings-container">
-                    <div class="settings-header">
-                        <h2>⚙️ 设置</h2>
-                        <button class="modal-close" onclick="Game.closeSettings()">✕</button>
-                    </div>
-                    <div class="settings-content">
-                        <button class="settings-item" onclick="GM.openPanel(); Game.closeSettingsOnly();">
-                            <span>🛠️ GM指令</span>
-                        </button>
-                        <p class="coming-soon">🚧 更多设置开发中...</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- GM面板 -->
-            <div id="gm-modal" class="screen hidden">
-
-            <!-- 武器选择弹窗（Boss掉落） -->
-            <div id="weapon-drop-modal" class="screen hidden">
-                <div class="weapon-drop-container">
-                    <h2>🎁 选择武器</h2>
-                    <p class="weapon-drop-hint">击败Boss获得武器奖励！选择一把或跳过随机获得</p>
-                    <div id="weapon-drop-options" class="weapon-drop-grid"></div>
-                    <button class="weapon-skip-btn" onclick="Game.skipWeaponDrop()">🎲 跳过，随机获得</button>
-                </div>
-            </div>
-                <div class="gm-modal-container">
-                    <div class="gm-header">
-                        <h2>🛠️ GM</h2>
-                        <button class="gm-close-btn" onclick="GM.closePanel()">✕</button>
-                    </div>
-                    <div class="gm-section">
-                        <h4>� 金币</hh4>
-                        <div class="gm-gold-btns">
-                            <button class="gm-btn gold-type" onclick="GM.addGold(100)">+100</button>
-                            <button class="gm-btn gold-type" onclick="GM.addGold(1000)">+1000</button>
-                            <button class="gm-btn gold-type" onclick="GM.addGold(10000)">+10000</button>
-                        </div>
-                    </div>
-                    <div class="gm-section">
-                        <h4>👹 召唤Boss</h4>
-                        <div class="gm-boss-btns">
-                            <button class="gm-btn boss-type" onclick="GM.spawnBoss('sakura_treant')">🌸 樱花树妖</button>
-                            <button class="gm-btn boss-type" onclick="GM.spawnBoss('lava_golem')">🔥 熔岩巨人</button>
-                            <button class="gm-btn boss-type" onclick="GM.spawnBoss('abyssal_eye')">👁️ 深渊之眼</button>
-                            <button class="gm-btn boss-type" onclick="GM.spawnBoss('frost_queen')">❄️ 冰霜女王</button>
-                        </div>
-                    </div>
-                    <div class="gm-section">
-                        <h4>🔥 魔法</h4>
-                        <div id="gm-magic-list" class="gm-list"></div>
-                    </div>
-                    <div class="gm-section">
-                        <h4>💠 被动</h4>
-                        <div id="gm-modifier-list" class="gm-list"></div>
-                    </div>
-                    <div class="gm-section">
-                        <h4>🎁 祝福</h4>
-                        <div id="gm-perk-list" class="gm-list"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div id="ui-layer"></div>
     </div>
 
-    <script>
-        // 加载进度动画
-        (function() {
-            const bar = document.querySelector('.loading-bar');
-            const text = document.querySelector('.loading-text');
-            let progress = 0;
-            
-            const tick = setInterval(() => {
-                progress = Math.min(100, progress + Math.random() * 15 + 5);
-                bar.style.width = progress + '%';
-                text.textContent = progress >= 100 ? '加载完成!' : '正在加载... ' + Math.floor(progress) + '%';
-                
-                if (progress >= 100) {
-                    clearInterval(tick);
-                    setTimeout(() => {
-                        const screen = document.getElementById('loading-screen');
-                        screen.classList.add('fade-out');
-                        setTimeout(() => screen.style.display = 'none', 500);
-                    }, 300);
-                }
-            }, 100);
-        })();
-    </script>
-    
-    <!-- 加载所有游戏脚本 -->
     <!-- 核心 -->
     <script src="js/config.js?v=__BUILD_TIME__"></script>
     <script src="js/utils.js?v=__BUILD_TIME__"></script>
@@ -518,6 +32,7 @@
     
     <!-- 界面系统 -->
     <script src="js/ui/screen.js?v=__BUILD_TIME__"></script>
+    <script src="js/ui/screens/loading-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/title-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/lobby-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/game-screen.js?v=__BUILD_TIME__"></script>
@@ -533,7 +48,6 @@
     <script src="js/ui/screens/skill-preload-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/gm-screen.js?v=__BUILD_TIME__"></script>
     <script src="js/ui/screens/weapon-drop-screen.js?v=__BUILD_TIME__"></script>
-    <script src="js/ui/screens/loading-screen.js?v=__BUILD_TIME__"></script>
     
     <!-- 场景系统 -->
     <script src="js/scenes/scene-element.js?v=__BUILD_TIME__"></script>
@@ -613,7 +127,7 @@
     <script src="js/skills/perks/arcane-barrier.js?v=__BUILD_TIME__"></script>
     <script src="js/skills/perks/energy-siphon.js?v=__BUILD_TIME__"></script>
     
-    <!-- 技能系统入口（兼容层） -->
+    <!-- 技能系统入口 -->
     <script src="js/skills/index.js?v=__BUILD_TIME__"></script>
     
     <!-- 武器系统 -->
@@ -655,7 +169,7 @@
     <script src="js/lobby/talent.js?v=__BUILD_TIME__"></script>
     <script src="js/lobby/lobby.js?v=__BUILD_TIME__"></script>
     
-    <!-- 初始化游戏 -->
+    <!-- 初始化 -->
     <script>
         // 初始化技能系统
         initSkillRegistry();
@@ -666,6 +180,7 @@
         Screen.Manager.init();
         
         // 注册界面实例
+        Screen.Manager.register('loading', new LoadingScreen());
         Screen.Manager.register('title', new TitleScreen());
         Screen.Manager.register('lobby', new LobbyScreen());
         Screen.Manager.register('game', new GameScreen());
@@ -687,6 +202,18 @@
         GM.init();
         Lobby.init();
         Audio.init();
+        
+        // 启动加载界面
+        const loadingScreen = Screen.Manager.get('loading');
+        loadingScreen.show();
+        
+        function updateLoading() {
+            if (loadingScreen.active) {
+                loadingScreen.update(16);
+                requestAnimationFrame(updateLoading);
+            }
+        }
+        updateLoading();
     </script>
 </body>
 </html>

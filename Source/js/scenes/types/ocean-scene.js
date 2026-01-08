@@ -8,7 +8,7 @@ class OceanScene extends Scene {
             backgroundColor: '#1a5276',
             worldWidth: 4000,
             worldHeight: 4000,
-            elementDensity: 0.0001,
+            elementDensity: 0.00001,
             elementTypes: [
                 { type: 'seaweed', weight: 4, config: { height: 80 } },
                 { type: 'coral', weight: 3, config: { sizeRange: [25, 40] } },

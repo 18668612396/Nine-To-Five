@@ -12,6 +12,82 @@ class LobbyScreen extends FullScreen {
         this.selectedChar = 'guagua';
         this.selectedDifficulty = 'easy';
         this.selectedMap = 'random';
+        this.domCreated = false;
+    }
+    
+    createDOM() {
+        if (this.domCreated) return;
+        
+        const container = document.getElementById('ui-layer');
+        if (!container) return;
+        
+        const el = document.createElement('div');
+        el.id = 'lobby-screen';
+        el.className = 'screen hidden';
+        el.innerHTML = `
+            <div class="lobby-bg"></div>
+            
+            <div class="lobby-top-bar">
+                <div class="player-info">
+                    <div class="player-avatar">
+                        <canvas id="lobby-avatar" width="50" height="50"></canvas>
+                    </div>
+                    <div class="player-details">
+                        <span class="player-name">玩家</span>
+                        <span class="player-level">Lv.1</span>
+                    </div>
+                </div>
+                <div class="currency-display">
+                    <div class="currency-item">
+                        <span class="currency-icon">💰</span>
+                        <span class="currency-value" id="lobby-gold">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lobby-center">
+                <canvas id="lobby-char-canvas" width="300" height="350"></canvas>
+                <div class="char-info-panel">
+                    <h2 id="lobby-char-name">瓜瓜</h2>
+                    <p id="lobby-char-stats">速度+10%</p>
+                </div>
+            </div>
+            
+            <div class="lobby-bottom-bar">
+                <div class="lobby-nav">
+                    <button class="nav-btn" onclick="Lobby.showCharSelect()">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">英雄</span>
+                    </button>
+                    <button class="nav-btn" onclick="Lobby.showSkillPreload()">
+                        <span class="nav-icon">🔮</span>
+                        <span class="nav-text">装备</span>
+                    </button>
+                    <button class="nav-btn primary" onclick="Lobby.showAdventure()">
+                        <span class="nav-icon">⚔️</span>
+                        <span class="nav-text">开始</span>
+                    </button>
+                    <button class="nav-btn" onclick="Lobby.showTalentTree()">
+                        <span class="nav-icon">🌟</span>
+                        <span class="nav-text">天赋</span>
+                    </button>
+                    <button class="nav-btn" onclick="Lobby.showCollection()">
+                        <span class="nav-icon">📖</span>
+                        <span class="nav-text">图鉴</span>
+                    </button>
+                </div>
+            </div>
+            
+            <button class="lobby-back-btn" onclick="Lobby.backToTitle()">🚪 退出</button>
+        `;
+        
+        container.appendChild(el);
+        this.domCreated = true;
+    }
+    
+    show() {
+        this.createDOM();
+        super.show();
     }
     
     onEnter() {
@@ -24,7 +100,6 @@ class LobbyScreen extends FullScreen {
         this.stopAnimation();
     }
     
-    // 角色动画
     startCharacterAnimation() {
         const canvas = document.getElementById('lobby-char-canvas');
         const avatarCanvas = document.getElementById('lobby-avatar');
@@ -36,7 +111,6 @@ class LobbyScreen extends FullScreen {
         this.startAnimation(() => {
             this.animationFrame++;
             
-            // 主角色
             ctx.clearRect(0, 0, 300, 350);
             if (this.selectedChar === 'guagua') {
                 GuaguaPlayer.drawCharacter(ctx, 150, 200, 80, this.animationFrame);
@@ -44,7 +118,6 @@ class LobbyScreen extends FullScreen {
                 KuikuiPlayer.drawCharacter(ctx, 150, 200, 80, this.animationFrame);
             }
             
-            // 头像
             if (avatarCtx) {
                 avatarCtx.clearRect(0, 0, 50, 50);
                 if (this.selectedChar === 'guagua') {
@@ -56,7 +129,6 @@ class LobbyScreen extends FullScreen {
         });
     }
     
-    // 更新角色展示
     updateCharDisplay() {
         const name = document.getElementById('lobby-char-name');
         const stats = document.getElementById('lobby-char-stats');
@@ -70,7 +142,6 @@ class LobbyScreen extends FullScreen {
         }
     }
     
-    // 更新金币显示
     updateGoldDisplay() {
         const lobbyGold = document.getElementById('lobby-gold');
         const talentGold = document.getElementById('talent-gold');
@@ -79,51 +150,42 @@ class LobbyScreen extends FullScreen {
         if (talentGold) talentGold.textContent = gold;
     }
     
-    // 选择角色
     selectChar(charType) {
         this.selectedChar = charType;
         Lobby.selectedChar = charType;
         this.updateCharDisplay();
     }
     
-    // 选择难度
     selectDifficulty(diff) {
         this.selectedDifficulty = diff;
         Lobby.selectedDifficulty = diff;
     }
     
-    // 选择地图
     selectMap(map) {
         this.selectedMap = map;
         Lobby.selectedMap = map;
     }
     
-    // 返回标题
     backToTitle() {
         Screen.Manager.switchTo('title');
     }
     
-    // 打开角色选择
     showCharSelect() {
         Screen.Manager.openFloat('charSelect');
     }
     
-    // 打开技能预装
     showSkillPreload() {
         Screen.Manager.openFloat('skillPreload');
     }
     
-    // 打开天赋树
     showTalentTree() {
         Screen.Manager.openFloat('talent');
     }
     
-    // 打开图鉴
     showCollection() {
         Screen.Manager.openFloat('collection');
     }
     
-    // 打开冒险选择
     showAdventure() {
         Screen.Manager.openFloat('adventure');
     }

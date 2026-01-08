@@ -8,17 +8,47 @@ class SettingsScreen extends FloatScreen {
             closeOnBackdrop: true,
             ...config
         });
+        
+        this.domCreated = false;
     }
     
-    onEnter() {
-        // 设置界面进入
+    createDOM() {
+        if (this.domCreated) return;
+        
+        const container = document.getElementById('ui-layer');
+        if (!container) return;
+        
+        const el = document.createElement('div');
+        el.id = 'settings-modal';
+        el.className = 'screen hidden';
+        el.innerHTML = `
+            <div class="settings-container">
+                <div class="settings-header">
+                    <h2>⚙️ 设置</h2>
+                    <button class="modal-close" onclick="Game.closeSettings()">✕</button>
+                </div>
+                <div class="settings-content">
+                    <button class="settings-item" onclick="GM.openPanel(); Game.closeSettingsOnly();">
+                        <span>🛠️ GM指令</span>
+                    </button>
+                    <p class="coming-soon">🚧 更多设置开发中...</p>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(el);
+        this.domCreated = true;
     }
     
-    onExit() {
-        // 设置界面退出
+    show() {
+        this.createDOM();
+        super.show();
     }
     
-    // 打开GM面板
+    onEnter() {}
+    
+    onExit() {}
+    
     openGM() {
         Screen.Manager.openFloat('gm');
     }
