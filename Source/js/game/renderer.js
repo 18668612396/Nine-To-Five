@@ -5,7 +5,7 @@ let CTX = null;
 const dpr = window.devicePixelRatio || 1;
 
 // 移动端视野缩放（值越小看到越多）
-const mobileZoom = isMobile ? 0.7 : 1.0;
+const mobileZoom = isMobile ? 0.35 : 1.0;
 
 function initCanvas() {
     CANVAS = document.getElementById('gameCanvas');
