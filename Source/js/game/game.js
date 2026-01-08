@@ -223,6 +223,12 @@ const Game = {
         // 重置游戏状态
         this.resetGameState();
         
+        // 初始化祝福管理器
+        if (typeof Perk !== 'undefined' && Perk.Manager) {
+            Perk.Manager.init();
+            Perk.Manager.setPlayer(this.player);
+        }
+        
         // 初始化Boss管理器
         Boss.Manager.init();
         Boss.Manager.setPlayer(this.player);

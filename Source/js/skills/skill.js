@@ -71,7 +71,102 @@ class Perk extends Skill {
     }
 }
 
-// 技能注册表
+// 祝福管理器 (静态)
+Perk.Manager = {
+    player: null,
+    perks: {}, // { perkId: level }
+    
+    // 初始化
+    init() {
+        this.player = null;
+        this.perks = {};
+    },
+    
+    // 设置玩家
+    setPlayer(player) {
+        this.player = player;
+    },
+    
+    // 添加祝福
+    addPerk(perkId) {
+        if (!this.player) return null;
+        
+        const perk = SkillRegistry.perks[perkId] || PERKS[perkId];
+        if (!perk) {
+            console.warn('未知祝福:', perkId);
+            return null;
+        }
+        
+        const currentLevel = this.perks[perkId] || 0;
+        
+        // 检查是否可叠加
+        if (!perk.stackable && currentLevel > 0) {
+            return null;
+        }
+        
+        // 检查最大等级
+        if (currentLevel >= perk.maxLevel) {
+            return null;
+        }
+        
+        // 增加等级
+        this.perks[perkId] = currentLevel + 1;
+        
+        // 应用效果
+        if (perk.apply) {
+            perk.apply(this.player, 1);
+        }
+        
+        return { perk, level: this.perks[perkId] };
+    },
+    
+    // 获取祝福等级
+    getPerkLevel(perkId) {
+        return this.perks[perkId] || 0;
+    },
+    
+    // 获取所有已获得的祝福
+    getAllPerks() {
+        const result = [];
+        for (const [perkId, level] of Object.entries(this.perks)) {
+            const perk = SkillRegistry.perks[perkId] || PERKS[perkId];
+            if (perk) {
+                result.push({ perk, level });
+            }
+        }
+        return result;
+    },
+    
+    // 检查是否拥有祝福
+    hasPerk(perkId) {
+        return this.perks[perkId] > 0;
+    }
+};
+
+// 兼容旧代码
+class PerkManager {
+    constructor(player) {
+        Perk.Manager.setPlayer(player);
+    }
+    
+    addPerk(perkId) {
+        return Perk.Manager.addPerk(perkId);
+    }
+    
+    getPerkLevel(perkId) {
+        return Perk.Manager.getPerkLevel(perkId);
+    }
+    
+    getAllPerks() {
+        return Perk.Manager.getAllPerks();
+    }
+    
+    hasPerk(perkId) {
+        return Perk.Manager.hasPerk(perkId);
+    }
+}
+
+// --- 技能注册表 ---
 const SkillRegistry = {
     magic: {},
     modifiers: {},
@@ -92,23 +187,36 @@ const SkillRegistry = {
         this.perks[perk.id] = perk;
     },
     
-    // 获取所有主动技能
+    // 获取技能
+    getMagic(id) {
+        return this.magic[id];
+    },
+    
+    getModifier(id) {
+        return this.modifiers[id];
+    },
+    
+    getPerk(id) {
+        return this.perks[id];
+    },
+    
+    // 获取所有技能
     getAllMagic() {
         return Object.values(this.magic);
     },
     
-    // 获取所有被动技能
     getAllModifiers() {
         return Object.values(this.modifiers);
     },
     
-    // 获取所有祝福
     getAllPerks() {
         return Object.values(this.perks);
     },
     
-    // 获取技能
-    getSkill(id) {
-        return this.magic[id] || this.modifiers[id] || this.perks[id];
+    // 清空注册表
+    clear() {
+        this.magic = {};
+        this.modifiers = {};
+        this.perks = {};
     }
 };

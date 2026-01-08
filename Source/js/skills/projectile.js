@@ -182,6 +182,14 @@ class SkillProjectile {
     }
 
     onHit(enemy) {
+        // 能量虹吸
+        if (this.caster && this.caster.energyOnHit > 0 && this.caster.weapon) {
+            this.caster.weapon.energy = Math.min(
+                this.caster.weapon.maxEnergy,
+                this.caster.weapon.energy + this.caster.energyOnHit
+            );
+        }
+        
         // 连锁攻击
         if (this.chainCount > 0) this.chainToNext(enemy);
         

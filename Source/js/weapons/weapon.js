@@ -243,8 +243,13 @@ class Weapon {
     }
     
     // 获取实际攻击间隔
-    getCastInterval() {
-        return Math.max(3, Math.floor(this.baseCastInterval * this.castIntervalMult));
+    getCastInterval(player = null) {
+        let mult = this.castIntervalMult;
+        // 应用玩家的冷却减少
+        if (player && player.cooldownMult) {
+            mult *= player.cooldownMult;
+        }
+        return Math.max(3, Math.floor(this.baseCastInterval * mult));
     }
     
     // 获取技能消耗
@@ -336,7 +341,7 @@ class Weapon {
     castMainSlots(player) {
         const result = this.castAllSlots(player, this.slots);
         if (result.fired) {
-            this.castTimer = this.getCastInterval();
+            this.castTimer = this.getCastInterval(player);
         }
     }
     
@@ -455,7 +460,8 @@ class Weapon {
             bounceCount: 0,
             bounceRange: 200,
             knockback: player.knockback || 1,
-            sizeScale: 1
+            sizeScale: 1,
+            critChance: player.critChance || 0
         };
     }
     
