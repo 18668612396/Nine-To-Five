@@ -10,9 +10,12 @@ const Inventory = {
         this.workbenchOpen = false;
         this.workbenchSlots = [null, null, null];
         
-        document.getElementById('workbench-panel')?.classList.add('hidden');
-        document.getElementById('workbench-toggle-btn')?.classList.remove('active');
-        document.querySelector('.inventory-layout')?.classList.remove('with-workbench');
+        // 重置为武器槽视图
+        document.getElementById('weapon-wand-area')?.classList.remove('hidden');
+        document.getElementById('workbench-area')?.classList.add('hidden');
+        const btn = document.getElementById('workbench-toggle-btn');
+        btn?.classList.remove('active');
+        if (btn) btn.textContent = '🔧 工作台';
         
         this.render();
     },
@@ -28,9 +31,6 @@ const Inventory = {
             });
             this.workbenchSlots = [null, null, null];
             this.workbenchOpen = false;
-            document.getElementById('workbench-panel')?.classList.add('hidden');
-            document.getElementById('workbench-toggle-btn')?.classList.remove('active');
-            document.querySelector('.inventory-layout')?.classList.remove('with-workbench');
         }
     },
     
@@ -39,7 +39,6 @@ const Inventory = {
         this.renderWeaponWandRows();
         this.renderWeaponInventory();
         this.renderSkillInventory();
-        this.renderPerks();
     },
     
     // 渲染武器+技能槽行
@@ -574,14 +573,15 @@ const Inventory = {
     
     toggleWorkbench() {
         this.workbenchOpen = !this.workbenchOpen;
-        const panel = document.getElementById('workbench-panel');
+        const weaponArea = document.getElementById('weapon-wand-area');
+        const workbenchArea = document.getElementById('workbench-area');
         const btn = document.getElementById('workbench-toggle-btn');
-        const layout = document.querySelector('.inventory-layout');
         
         if (this.workbenchOpen) {
-            panel?.classList.remove('hidden');
+            weaponArea?.classList.add('hidden');
+            workbenchArea?.classList.remove('hidden');
             btn?.classList.add('active');
-            layout?.classList.add('with-workbench');
+            if (btn) btn.textContent = '🗡️ 武器槽';
             this.renderWorkbench();
         } else {
             this.workbenchSlots.forEach((item) => {
@@ -590,9 +590,10 @@ const Inventory = {
                 }
             });
             this.workbenchSlots = [null, null, null];
-            panel?.classList.add('hidden');
+            weaponArea?.classList.remove('hidden');
+            workbenchArea?.classList.add('hidden');
             btn?.classList.remove('active');
-            layout?.classList.remove('with-workbench');
+            if (btn) btn.textContent = '🔧 工作台';
             this.render();
         }
     },

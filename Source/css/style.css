@@ -117,6 +117,41 @@ body {
 
 .hud-right {
     text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+/* HUD祝福列表 */
+.hud-perks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.hud-perk-item {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 8px;
+    background: rgba(255, 100, 255, 0.2);
+    border: 1px solid rgba(255, 100, 255, 0.4);
+    border-radius: 6px;
+    cursor: default;
+}
+
+.hud-perk-icon {
+    font-size: 16px;
+}
+
+.hud-perk-level {
+    font-size: 10px;
+    color: #ff99ff;
+    font-weight: bold;
 }
 
 #hp-bar-container, #xp-bar-container {
@@ -869,7 +904,7 @@ body {
     transform: translateX(-80px);
 }
 
-/* 工作台面板（右侧） */
+/* 工作台面板（右侧） - 旧版保留兼容 */
 .workbench-panel {
     background: linear-gradient(135deg, #1a2a3a, #1a3a4a);
     border: 2px solid #4488cc;
@@ -884,6 +919,49 @@ body {
 
 .workbench-panel.hidden {
     display: none;
+}
+
+/* 新版工作台区域（内联显示） */
+#workbench-area {
+    padding: 10px;
+    background: rgba(68, 136, 204, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(68, 136, 204, 0.3);
+}
+
+#workbench-area.hidden {
+    display: none;
+}
+
+#workbench-area h3 {
+    margin: 0 0 10px 0;
+    color: #4488cc;
+    font-size: 14px;
+}
+
+.workbench-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.workbench-arrow {
+    font-size: 20px;
+    color: #4488cc;
+}
+
+#workbench-area .workbench-tip {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+}
+
+#workbench-area .workbench-auto-btn {
+    margin-top: 8px;
+    width: 100%;
 }
 
 .workbench-header h3 {

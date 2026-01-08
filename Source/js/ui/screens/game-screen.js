@@ -63,6 +63,7 @@ class GameScreen extends FullScreen {
                     <div id="kill-count">击杀: 0</div>
                     <div id="gold-count">💰 0</div>
                     <button class="inventory-btn" onclick="Game.openInventory()">📦 背包</button>
+                    <div id="hud-perks-list" class="hud-perks-list"></div>
                 </div>
             </div>
         `;

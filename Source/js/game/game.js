@@ -735,8 +735,32 @@ const Game = {
         // 更新法杖列表
         this.updateWandListUI();
         
+        // 更新祝福列表
+        this.updatePerksUI();
+        
         // 更新Boss血条
         this.updateBossUI();
+    },
+    
+    // 更新祝福列表UI
+    updatePerksUI() {
+        const container = document.getElementById('hud-perks-list');
+        if (!container || !this.player) return;
+        
+        const perks = this.player.perkManager ? this.player.perkManager.getAllPerks() : [];
+        
+        container.innerHTML = '';
+        
+        perks.forEach(item => {
+            const perk = item.perk;
+            const level = item.level;
+            
+            const perkDiv = document.createElement('div');
+            perkDiv.className = 'hud-perk-item';
+            perkDiv.innerHTML = `<span class="hud-perk-icon">${perk.icon}</span><span class="hud-perk-level">${level}</span>`;
+            perkDiv.title = `${perk.name} Lv.${level}\n${perk.desc}`;
+            container.appendChild(perkDiv);
+        });
     },
     
     // 更新法杖列表UI
