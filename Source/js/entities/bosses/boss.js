@@ -218,11 +218,10 @@ Boss.Manager = {
     
     // 根据Boss数量计算难度倍率
     getDifficultyMult() {
-        // 第1个Boss: 0.5x, 第2个: 0.7x, 第3个: 0.9x, 第4个: 1.0x, 之后每个+0.15x
+        // 第1个Boss: 0.5x, 之后每个+0.2x，无上限
         const baseMult = 0.5;
         const increment = 0.2;
-        const mult = Math.min(baseMult + this.bossCount * increment, 2.0); // 最高2倍
-        return mult;
+        return baseMult + this.bossCount * increment;
     },
     
     update() {

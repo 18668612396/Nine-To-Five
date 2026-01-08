@@ -13,17 +13,24 @@ class Entity {
         
         // 受伤闪烁
         this.damageFlash = 0;
+        this.damageFlashCooldown = 0; // 闪烁冷却
     }
     
-    // 触发受伤闪烁
+    // 触发受伤闪烁（带冷却）
     triggerDamageFlash() {
-        this.damageFlash = 8; // 闪烁8帧
+        if (this.damageFlashCooldown <= 0) {
+            this.damageFlash = 8; // 闪烁8帧
+            this.damageFlashCooldown = 15; // 冷却15帧，避免高频触发
+        }
     }
     
     // 更新闪烁状态
     updateDamageFlash() {
         if (this.damageFlash > 0) {
             this.damageFlash--;
+        }
+        if (this.damageFlashCooldown > 0) {
+            this.damageFlashCooldown--;
         }
     }
     

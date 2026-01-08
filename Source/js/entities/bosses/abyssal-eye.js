@@ -6,7 +6,7 @@ class AbyssalEye extends Boss {
         name: '深渊之眼',
         desc: 'Boss - 激光扫射',
         icon: '👁️',
-        hp: 4500,
+        hp: 1600,
         damage: 12,
         speed: 1.0,
         radius: 55,

@@ -12,7 +12,8 @@ class ThunderModifier extends ModifierSkill {
     
     modify(mods, star) {
         mods.lightning = true;
-        mods.lightningChance = (mods.lightningChance || 0) + 0.2;
+        // 必定触发，星级影响伤害倍率
+        mods.lightningDamageMult = (mods.lightningDamageMult || 0) + 0.3 + star * 0.2;
     }
 }
 

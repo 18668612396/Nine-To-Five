@@ -6,7 +6,7 @@ class SakuraTreeant extends Boss {
         name: '樱花树妖',
         desc: 'Boss - 召唤花瓣攻击',
         icon: '🌸',
-        hp: 5000,
+        hp: 1800,
         damage: 15,
         speed: 0.8,
         radius: 100,

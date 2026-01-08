@@ -6,7 +6,7 @@ class FrostQueen extends Boss {
         name: '冰霜女王',
         desc: 'Boss - 冰冻领域',
         icon: '❄️',
-        hp: 4000,
+        hp: 1500,
         damage: 10,
         speed: 1.2,
         radius: 50,

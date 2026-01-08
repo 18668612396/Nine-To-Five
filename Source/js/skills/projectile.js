@@ -36,7 +36,7 @@ class SkillProjectile {
         this.burnDamage = mods.burnDamage || 0;
         this.critChance = mods.critChance || 0;
         this.lightning = mods.lightning || false;
-        this.lightningChance = mods.lightningChance || 0;
+        this.lightningDamageMult = mods.lightningDamageMult || 0.5;
         this.poison = mods.poison || false;
         this.poisonStacks = mods.poisonStacks || 0;
         this.shieldOnHit = mods.shieldOnHit || false;
@@ -220,8 +220,8 @@ class SkillProjectile {
             Events.emit(EVENT.PARTICLES, { x: enemy.x, y: enemy.y, color: '#ff6600', count: 3 });
         }
         
-        // 雷霆效果
-        if (this.lightning && Math.random() < this.lightningChance) {
+        // 雷霆效果 - 必定触发
+        if (this.lightning) {
             this.spawnLightning(enemy);
         }
         
@@ -295,6 +295,7 @@ class SkillProjectile {
 
     spawnLightning(enemy) {
         const enemies = SkillProjectile.enemies;
+        const lightningDamage = this.damage * (this.lightningDamageMult || 0.5);
         
         Events.emit(EVENT.SKILL_CAST, {
             type: 'lightning',
@@ -307,7 +308,7 @@ class SkillProjectile {
             if (!e.markedForDeletion) {
                 const dist = Math.sqrt((e.x - enemy.x) ** 2 + (e.y - enemy.y) ** 2);
                 if (dist < 60) {
-                    e.takeDamage(this.damage * 0.5, 0, 0);
+                    e.takeDamage(lightningDamage, 0, 0);
                 }
             }
         });

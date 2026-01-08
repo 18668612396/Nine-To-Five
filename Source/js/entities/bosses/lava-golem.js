@@ -6,7 +6,7 @@ class LavaGolem extends Boss {
         name: '熔岩巨人',
         desc: 'Boss - 喷射火焰',
         icon: '🔥',
-        hp: 6000,
+        hp: 2000,
         damage: 20,
         speed: 0.6,
         radius: 70,
