@@ -1,8 +1,8 @@
 // --- 天赋树系统 ---
 
-// 天赋节点定义 - 树状结构
+// 天赋节点定义 - 从上到下的树状结构
 const TALENT_TREE = {
-    // ========== 中心节点 ==========
+    // ========== 顶部核心节点 ==========
     core: {
         id: 'core',
         name: '核心',
@@ -16,255 +16,257 @@ const TALENT_TREE = {
         branch: 'center'
     },
     
-    // ========== 攻击分支（右上） ==========
+    // ========== 第一层（4个分支起点） ==========
     atk_1: {
         id: 'atk_1',
         name: '攻击强化I',
         icon: '⚔️',
         desc: '伤害+5%',
-        cost: 100,
+        cost: 20,
         maxLevel: 5,
         bonus: { stat: 'damage', value: 0.05 },
         requires: 'core',
-        position: { x: 1, y: -1 },
+        position: { x: -3, y: 1 },
         branch: 'attack'
     },
-    atk_2: {
-        id: 'atk_2',
-        name: '攻击强化II',
-        icon: '⚔️',
-        desc: '伤害+5%',
-        cost: 150,
-        maxLevel: 5,
-        bonus: { stat: 'damage', value: 0.05 },
-        requires: 'atk_1',
-        position: { x: 2, y: -2 },
-        branch: 'attack'
-    },
-    crit_1: {
-        id: 'crit_1',
-        name: '暴击强化I',
-        icon: '💢',
-        desc: '暴击+2%',
-        cost: 200,
-        maxLevel: 5,
-        bonus: { stat: 'crit', value: 0.02 },
-        requires: 'atk_2',
-        position: { x: 3, y: -3 },
-        branch: 'attack'
-    },
-    skill_slot_1: {
-        id: 'skill_slot_1',
-        name: '技能槽位I',
-        icon: '📦',
-        desc: '预装技能槽+1',
-        cost: 500,
-        maxLevel: 1,
-        bonus: { stat: 'skillSlot', value: 1 },
-        requires: 'crit_1',
-        position: { x: 4, y: -4 },
-        branch: 'attack',
-        rarity: 'rare'
-    },
-    atk_3: {
-        id: 'atk_3',
-        name: '攻击强化III',
-        icon: '⚔️',
-        desc: '伤害+8%',
-        cost: 250,
-        maxLevel: 5,
-        bonus: { stat: 'damage', value: 0.08 },
-        requires: 'skill_slot_1',
-        position: { x: 5, y: -5 },
-        branch: 'attack'
-    },
-    
-    // ========== 生命分支（右下） ==========
     hp_1: {
         id: 'hp_1',
         name: '生命强化I',
         icon: '❤️',
         desc: '最大生命+5%',
-        cost: 100,
+        cost: 20,
         maxLevel: 5,
         bonus: { stat: 'hp', value: 0.05 },
         requires: 'core',
-        position: { x: 1, y: 1 },
+        position: { x: -1, y: 1 },
         branch: 'defense'
+    },
+    speed_1: {
+        id: 'speed_1',
+        name: '速度强化I',
+        icon: '🏃',
+        desc: '移速+3%',
+        cost: 20,
+        maxLevel: 5,
+        bonus: { stat: 'speed', value: 0.03 },
+        requires: 'core',
+        position: { x: 1, y: 1 },
+        branch: 'utility'
+    },
+    xp_1: {
+        id: 'xp_1',
+        name: '经验强化I',
+        icon: '📚',
+        desc: '经验+10%',
+        cost: 20,
+        maxLevel: 5,
+        bonus: { stat: 'xp', value: 0.1 },
+        requires: 'core',
+        position: { x: 3, y: 1 },
+        branch: 'fortune'
+    },
+    
+    // ========== 第二层 ==========
+    atk_2: {
+        id: 'atk_2',
+        name: '攻击强化II',
+        icon: '⚔️',
+        desc: '伤害+5%',
+        cost: 20,
+        maxLevel: 5,
+        bonus: { stat: 'damage', value: 0.05 },
+        requires: 'atk_1',
+        position: { x: -3, y: 2 },
+        branch: 'attack'
     },
     hp_2: {
         id: 'hp_2',
         name: '生命强化II',
         icon: '❤️',
         desc: '最大生命+5%',
-        cost: 150,
+        cost: 20,
         maxLevel: 5,
         bonus: { stat: 'hp', value: 0.05 },
         requires: 'hp_1',
-        position: { x: 2, y: 2 },
+        position: { x: -1, y: 2 },
         branch: 'defense'
-    },
-    regen_1: {
-        id: 'regen_1',
-        name: '生命恢复I',
-        icon: '💚',
-        desc: '每秒恢复0.5生命',
-        cost: 180,
-        maxLevel: 5,
-        bonus: { stat: 'regen', value: 0.5 },
-        requires: 'hp_2',
-        position: { x: 3, y: 3 },
-        branch: 'defense'
-    },
-    skill_slot_2: {
-        id: 'skill_slot_2',
-        name: '技能槽位II',
-        icon: '📦',
-        desc: '预装技能槽+1',
-        cost: 600,
-        maxLevel: 1,
-        bonus: { stat: 'skillSlot', value: 1 },
-        requires: 'regen_1',
-        position: { x: 4, y: 4 },
-        branch: 'defense',
-        rarity: 'rare'
-    },
-    hp_3: {
-        id: 'hp_3',
-        name: '生命强化III',
-        icon: '❤️',
-        desc: '最大生命+8%',
-        cost: 250,
-        maxLevel: 5,
-        bonus: { stat: 'hp', value: 0.08 },
-        requires: 'skill_slot_2',
-        position: { x: 5, y: 5 },
-        branch: 'defense'
-    },
-    
-    // ========== 速度分支（左上） ==========
-    speed_1: {
-        id: 'speed_1',
-        name: '速度强化I',
-        icon: '🏃',
-        desc: '移速+3%',
-        cost: 100,
-        maxLevel: 5,
-        bonus: { stat: 'speed', value: 0.03 },
-        requires: 'core',
-        position: { x: -1, y: -1 },
-        branch: 'utility'
     },
     speed_2: {
         id: 'speed_2',
         name: '速度强化II',
         icon: '🏃',
         desc: '移速+3%',
-        cost: 150,
+        cost: 20,
         maxLevel: 5,
         bonus: { stat: 'speed', value: 0.03 },
         requires: 'speed_1',
-        position: { x: -2, y: -2 },
+        position: { x: 1, y: 2 },
         branch: 'utility'
-    },
-    cooldown_1: {
-        id: 'cooldown_1',
-        name: '冷却缩减I',
-        icon: '⏱️',
-        desc: '技能冷却-3%',
-        cost: 200,
-        maxLevel: 5,
-        bonus: { stat: 'cooldown', value: 0.03 },
-        requires: 'speed_2',
-        position: { x: -3, y: -3 },
-        branch: 'utility'
-    },
-    skill_slot_3: {
-        id: 'skill_slot_3',
-        name: '技能槽位III',
-        icon: '📦',
-        desc: '预装技能槽+1',
-        cost: 700,
-        maxLevel: 1,
-        bonus: { stat: 'skillSlot', value: 1 },
-        requires: 'cooldown_1',
-        position: { x: -4, y: -4 },
-        branch: 'utility',
-        rarity: 'rare'
-    },
-    speed_3: {
-        id: 'speed_3',
-        name: '速度强化III',
-        icon: '🏃',
-        desc: '移速+5%',
-        cost: 250,
-        maxLevel: 5,
-        bonus: { stat: 'speed', value: 0.05 },
-        requires: 'skill_slot_3',
-        position: { x: -5, y: -5 },
-        branch: 'utility'
-    },
-    
-    // ========== 财富分支（左下） ==========
-    xp_1: {
-        id: 'xp_1',
-        name: '经验强化I',
-        icon: '📚',
-        desc: '经验+10%',
-        cost: 120,
-        maxLevel: 5,
-        bonus: { stat: 'xp', value: 0.1 },
-        requires: 'core',
-        position: { x: -1, y: 1 },
-        branch: 'fortune'
     },
     gold_1: {
         id: 'gold_1',
         name: '财富强化I',
         icon: '💰',
         desc: '金币+15%',
-        cost: 150,
+        cost: 20,
         maxLevel: 5,
         bonus: { stat: 'gold', value: 0.15 },
         requires: 'xp_1',
-        position: { x: -2, y: 2 },
+        position: { x: 3, y: 2 },
         branch: 'fortune'
+    },
+    
+    // ========== 第三层 ==========
+    crit_1: {
+        id: 'crit_1',
+        name: '暴击强化I',
+        icon: '💢',
+        desc: '暴击+2%',
+        cost: 20,
+        maxLevel: 5,
+        bonus: { stat: 'crit', value: 0.02 },
+        requires: 'atk_2',
+        position: { x: -3, y: 3 },
+        branch: 'attack'
+    },
+    regen_1: {
+        id: 'regen_1',
+        name: '生命恢复I',
+        icon: '💚',
+        desc: '每秒恢复0.5生命',
+        cost: 20,
+        maxLevel: 5,
+        bonus: { stat: 'regen', value: 0.5 },
+        requires: 'hp_2',
+        position: { x: -1, y: 3 },
+        branch: 'defense'
+    },
+    cooldown_1: {
+        id: 'cooldown_1',
+        name: '冷却缩减I',
+        icon: '⏱️',
+        desc: '技能冷却-3%',
+        cost: 20,
+        maxLevel: 5,
+        bonus: { stat: 'cooldown', value: 0.03 },
+        requires: 'speed_2',
+        position: { x: 1, y: 3 },
+        branch: 'utility'
     },
     luck_1: {
         id: 'luck_1',
         name: '幸运强化I',
         icon: '🍀',
         desc: '掉落率+5%',
-        cost: 200,
+        cost: 20,
         maxLevel: 5,
         bonus: { stat: 'luck', value: 0.05 },
         requires: 'gold_1',
-        position: { x: -3, y: 3 },
+        position: { x: 3, y: 3 },
         branch: 'fortune'
+    },
+    
+    // ========== 第四层（技能槽位） ==========
+    skill_slot_1: {
+        id: 'skill_slot_1',
+        name: '技能槽位I',
+        icon: '📦',
+        desc: '预装技能槽+1',
+        cost: 100,
+        maxLevel: 1,
+        bonus: { stat: 'skillSlot', value: 1 },
+        requires: 'crit_1',
+        position: { x: -3, y: 4 },
+        branch: 'attack',
+        rarity: 'rare'
+    },
+    skill_slot_2: {
+        id: 'skill_slot_2',
+        name: '技能槽位II',
+        icon: '📦',
+        desc: '预装技能槽+1',
+        cost: 100,
+        maxLevel: 1,
+        bonus: { stat: 'skillSlot', value: 1 },
+        requires: 'regen_1',
+        position: { x: -1, y: 4 },
+        branch: 'defense',
+        rarity: 'rare'
+    },
+    skill_slot_3: {
+        id: 'skill_slot_3',
+        name: '技能槽位III',
+        icon: '📦',
+        desc: '预装技能槽+1',
+        cost: 100,
+        maxLevel: 1,
+        bonus: { stat: 'skillSlot', value: 1 },
+        requires: 'cooldown_1',
+        position: { x: 1, y: 4 },
+        branch: 'utility',
+        rarity: 'rare'
     },
     skill_slot_4: {
         id: 'skill_slot_4',
         name: '技能槽位IV',
         icon: '📦',
         desc: '预装技能槽+1',
-        cost: 800,
+        cost: 100,
         maxLevel: 1,
         bonus: { stat: 'skillSlot', value: 1 },
         requires: 'luck_1',
-        position: { x: -4, y: 4 },
+        position: { x: 3, y: 4 },
         branch: 'fortune',
         rarity: 'rare'
+    },
+    
+    // ========== 第五层 ==========
+    atk_3: {
+        id: 'atk_3',
+        name: '攻击强化III',
+        icon: '⚔️',
+        desc: '伤害+8%',
+        cost: 20,
+        maxLevel: 5,
+        bonus: { stat: 'damage', value: 0.08 },
+        requires: 'skill_slot_1',
+        position: { x: -3, y: 5 },
+        branch: 'attack'
+    },
+    hp_3: {
+        id: 'hp_3',
+        name: '生命强化III',
+        icon: '❤️',
+        desc: '最大生命+8%',
+        cost: 20,
+        maxLevel: 5,
+        bonus: { stat: 'hp', value: 0.08 },
+        requires: 'skill_slot_2',
+        position: { x: -1, y: 5 },
+        branch: 'defense'
+    },
+    speed_3: {
+        id: 'speed_3',
+        name: '速度强化III',
+        icon: '🏃',
+        desc: '移速+5%',
+        cost: 20,
+        maxLevel: 5,
+        bonus: { stat: 'speed', value: 0.05 },
+        requires: 'skill_slot_3',
+        position: { x: 1, y: 5 },
+        branch: 'utility'
     },
     gold_2: {
         id: 'gold_2',
         name: '财富强化II',
         icon: '💰',
         desc: '金币+20%',
-        cost: 300,
+        cost: 20,
         maxLevel: 5,
         bonus: { stat: 'gold', value: 0.2 },
         requires: 'skill_slot_4',
-        position: { x: -5, y: 5 },
+        position: { x: 3, y: 5 },
         branch: 'fortune'
     }
 };

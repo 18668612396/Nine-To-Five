@@ -125,19 +125,24 @@ class TalentScreen extends FloatScreen {
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
+        // 核心节点在顶部中央
         const centerX = canvas.width / 2 + this.offsetX;
-        const centerY = canvas.height / 2 + this.offsetY;
+        const startY = 60 + this.offsetY;
         
         const connections = TalentTree.getConnections();
         
         connections.forEach(conn => {
             const fromX = centerX + conn.from.x * this.gridSize;
-            const fromY = centerY + conn.from.y * this.gridSize;
+            const fromY = startY + conn.from.y * this.gridSize;
             const toX = centerX + conn.to.x * this.gridSize;
-            const toY = centerY + conn.to.y * this.gridSize;
+            const toY = startY + conn.to.y * this.gridSize;
             
             ctx.beginPath();
             ctx.moveTo(fromX, fromY);
+            // 折线：先垂直到中点，再水平到目标x，最后垂直到目标
+            const midY = (fromY + toY) / 2;
+            ctx.lineTo(fromX, midY);
+            ctx.lineTo(toX, midY);
             ctx.lineTo(toX, toY);
             ctx.strokeStyle = conn.active ? TalentTree.getBranchColor(conn.branch) : '#333';
             ctx.lineWidth = conn.active ? 3 : 2;
@@ -153,8 +158,9 @@ class TalentScreen extends FloatScreen {
         
         const talents = TalentTree.getAll();
         const containerRect = nodesContainer.parentElement.getBoundingClientRect();
+        // 核心节点在顶部中央
         const centerX = containerRect.width / 2 + this.offsetX;
-        const centerY = containerRect.height / 2 + this.offsetY;
+        const startY = 60 + this.offsetY;
         
         Object.values(talents).forEach(talent => {
             const state = TalentTree.getNodeState(talent.id);
@@ -165,7 +171,7 @@ class TalentScreen extends FloatScreen {
             if (talent.rarity === 'rare') node.classList.add('rare');
             
             const x = centerX + talent.position.x * this.gridSize;
-            const y = centerY + talent.position.y * this.gridSize;
+            const y = startY + talent.position.y * this.gridSize;
             
             node.style.left = `${x}px`;
             node.style.top = `${y}px`;
