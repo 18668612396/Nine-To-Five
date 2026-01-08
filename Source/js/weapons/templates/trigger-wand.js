@@ -2,7 +2,8 @@
 
 Weapon.register('trigger_wand', {
     name: '触发法杖',
-    icon: '✨',
+    icon: '🪄',
+    iconColor: '#ffcc00',
     rarity: 'uncommon',
     desc: '带有特殊触发槽',
     maxEnergy: 80,

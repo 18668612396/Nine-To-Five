@@ -342,7 +342,9 @@ const Game = {
         Entity.frameCount = this.frameCount;
         Player.frameCount = this.frameCount;
         Enemy.frameCount = this.frameCount;
-        this.player.update(input, this.enemies);
+        // 合并敌人和Boss作为攻击目标
+        const allTargets = [...this.enemies, ...Boss.Manager.bosses];
+        this.player.update(input, allTargets);
         if (this.player.hp <= 0) {
             this.gameOver();
             return;
@@ -375,7 +377,13 @@ const Game = {
         this.skillDrops.forEach(s => s.update(this.player));
         
         // 更新投射物
-        this.projectiles.forEach(p => p.update());
+        this.projectiles.forEach(p => {
+            if (p.isBossProjectile) {
+                p.update(this.player);
+            } else {
+                p.update();
+            }
+        });
         
         // 碰撞检测
         this.handleCollisions();
@@ -679,6 +687,33 @@ const Game = {
             if (energyText) energyText.innerText = `${Math.floor(weapon.energy)}/${weapon.maxEnergy}`;
             if (weaponIcon) weaponIcon.innerText = weapon.icon;
             if (weaponName) weaponName.innerText = weapon.name;
+        }
+        
+        // 更新Boss血条
+        this.updateBossUI();
+    },
+    
+    updateBossUI() {
+        const bossContainer = document.getElementById('boss-hp-container');
+        if (!bossContainer) return;
+        
+        const bosses = Boss.Manager.bosses;
+        if (bosses.length === 0) {
+            bossContainer.classList.add('hidden');
+            return;
+        }
+        
+        // 显示第一个Boss的血条
+        const boss = bosses[0];
+        bossContainer.classList.remove('hidden');
+        
+        const bossName = document.getElementById('boss-name');
+        const bossHpFill = document.getElementById('boss-hp-bar-fill');
+        
+        if (bossName) bossName.innerText = '👹 ' + boss.name;
+        if (bossHpFill) {
+            const hpPct = Math.max(0, (boss.hp / boss.maxHp) * 100);
+            bossHpFill.style.width = hpPct + '%';
         }
     },
     

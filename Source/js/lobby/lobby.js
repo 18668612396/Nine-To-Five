@@ -16,7 +16,7 @@ const Lobby = {
     
     // 天赋定义（兼容旧代码）
     get talents() {
-        return TalentSystem.getAll();
+        return TalentTree.getAll();
     },
     
     // 玩家数据（兼容旧代码）
@@ -250,54 +250,24 @@ const Lobby = {
     // 显示天赋树
     showTalentTree() {
         this.updateGoldDisplay();
-        this.renderTalentGrid();
         Screen.Manager.openFloat('talent');
-    },
-    
-    // 渲染天赋格子
-    renderTalentGrid() {
-        const grid = document.getElementById('talent-grid');
-        if (!grid) return;
-        
-        grid.innerHTML = '';
-        Object.entries(TalentSystem.getAll()).forEach(([id, talent]) => {
-            const level = TalentSystem.getLevel(id);
-            const cost = TalentSystem.getCost(id);
-            const maxed = TalentSystem.isMaxed(id);
-            const canAfford = TalentSystem.canUpgrade(id);
-            
-            const div = document.createElement('div');
-            div.className = 'talent-node' + (maxed ? ' maxed' : '') + (!canAfford && !maxed ? ' locked' : '');
-            div.innerHTML = `
-                <span class="talent-icon">${talent.icon}</span>
-                <span class="talent-name">${talent.name}</span>
-                <span class="talent-level">Lv.${level}/${talent.maxLevel}</span>
-                <span class="talent-desc">${talent.desc}</span>
-                ${maxed ? '<span class="talent-cost">已满级</span>' : `<span class="talent-cost">💰 ${cost}</span>`}
-            `;
-            if (!maxed) {
-                div.onclick = () => this.upgradeTalent(id);
-            }
-            grid.appendChild(div);
-        });
     },
     
     // 升级天赋
     upgradeTalent(talentId) {
-        if (TalentSystem.upgrade(talentId)) {
+        if (TalentTree.upgrade(talentId)) {
             this.updateGoldDisplay();
-            this.renderTalentGrid();
         }
     },
     
     // 获取天赋加成
     getTalentBonus() {
-        return TalentSystem.getBonus();
+        return TalentTree.getBonus();
     },
     
     // 获取预装技能槽位数量
     getPreloadSlotCount() {
-        return TalentSystem.getPreloadSlotCount();
+        return TalentTree.getPreloadSlotCount();
     },
 
     // ========== 技能预装 ==========
@@ -437,6 +407,8 @@ const Lobby = {
             this.renderEnemyCollection(grid);
         } else if (tab === 'skills') {
             this.renderSkillCollection(grid);
+        } else if (tab === 'weapons') {
+            this.renderWeaponCollection(grid);
         }
     },
     
@@ -481,15 +453,37 @@ const Lobby = {
     },
     
     renderEnemyCollection(grid) {
-        const enemies = [
-            { id: 'slime', name: '史莱姆', desc: '普通敌人，缓慢但坚韧', icon: '🟣', unlocked: true },
-            { id: 'bat', name: '蝙蝠', desc: '快速但脆弱的飞行敌人', icon: '🦇', unlocked: true },
-            { id: 'golem', name: '石巨人', desc: '高血量的精英敌人', icon: '🗿', unlocked: true },
-            { id: 'boss_sakura', name: '樱花树妖', desc: 'Boss - 召唤花瓣攻击', icon: '🌸', unlocked: true, rarity: 'epic' },
-            { id: 'boss_lava', name: '熔岩巨人', desc: 'Boss - 喷射火焰', icon: '🔥', unlocked: true, rarity: 'epic' },
-            { id: 'boss_eye', name: '深渊之眼', desc: 'Boss - 激光扫射', icon: '👁️', unlocked: true, rarity: 'legendary' },
-            { id: 'boss_frost', name: '冰霜女王', desc: 'Boss - 冰冻领域', icon: '❄️', unlocked: true, rarity: 'legendary' }
-        ];
+        const enemies = [];
+        
+        // 从Monster注册表获取怪物
+        if (typeof MONSTER_TYPES !== 'undefined') {
+            Object.entries(MONSTER_TYPES).forEach(([id, entry]) => {
+                const config = entry.config;
+                enemies.push({
+                    id: id,
+                    name: config.name,
+                    desc: config.desc || '普通怪物',
+                    icon: config.icon || '👾',
+                    unlocked: true,
+                    rarity: 'common'
+                });
+            });
+        }
+        
+        // 从Boss注册表获取Boss
+        if (typeof BOSS_TYPES !== 'undefined') {
+            Object.entries(BOSS_TYPES).forEach(([id, entry]) => {
+                const config = entry.config;
+                enemies.push({
+                    id: id,
+                    name: config.name,
+                    desc: config.desc || 'Boss',
+                    icon: config.icon || '👹',
+                    unlocked: true,
+                    rarity: 'legendary'
+                });
+            });
+        }
         
         enemies.forEach(enemy => {
             const div = document.createElement('div');
@@ -526,6 +520,22 @@ const Lobby = {
                     <span class="collection-icon">${skill.icon}</span>
                     <span class="collection-name">${skill.name}</span>
                     <span class="collection-desc">${skill.desc || '被动效果'}</span>
+                `;
+                grid.appendChild(div);
+            });
+        }
+    },
+    
+    renderWeaponCollection(grid) {
+        if (typeof WEAPON_TEMPLATES !== 'undefined') {
+            Object.values(WEAPON_TEMPLATES).forEach(template => {
+                const div = document.createElement('div');
+                div.className = 'collection-item rarity-' + (template.rarity || 'common');
+                const iconStyle = template.iconColor ? `style="color: ${template.iconColor}; text-shadow: 0 0 8px ${template.iconColor};"` : '';
+                div.innerHTML = `
+                    <span class="collection-icon" ${iconStyle}>${template.icon || '🪄'}</span>
+                    <span class="collection-name">${template.name}</span>
+                    <span class="collection-desc">${template.desc || '法杖'}</span>
                 `;
                 grid.appendChild(div);
             });

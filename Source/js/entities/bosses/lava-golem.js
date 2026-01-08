@@ -4,6 +4,8 @@ class LavaGolem extends Boss {
     static CONFIG = {
         id: 'lava_golem',
         name: '熔岩巨人',
+        desc: 'Boss - 喷射火焰',
+        icon: '🔥',
         hp: 6000,
         damage: 20,
         speed: 0.6,

@@ -4,6 +4,8 @@ class ZombieFlag extends Monster {
     static CONFIG = {
         id: 'zombie_flag',
         name: '旗帜僵尸',
+        desc: '举着旗帜的僵尸，移动更快',
+        icon: '🚩',
         hp: 25,
         damage: 8,
         speed: 1.1,

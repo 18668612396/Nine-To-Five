@@ -4,6 +4,8 @@ class SakuraTreeant extends Boss {
     static CONFIG = {
         id: 'sakura_treant',
         name: '樱花树妖',
+        desc: 'Boss - 召唤花瓣攻击',
+        icon: '🌸',
         hp: 5000,
         damage: 15,
         speed: 0.8,

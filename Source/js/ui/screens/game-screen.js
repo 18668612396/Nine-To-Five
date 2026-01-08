@@ -49,6 +49,14 @@ class GameScreen extends FullScreen {
                         </div>
                     </div>
                 </div>
+                <div class="hud-center">
+                    <div id="boss-hp-container" class="hidden">
+                        <div id="boss-name">Boss</div>
+                        <div id="boss-hp-bar-bg">
+                            <div id="boss-hp-bar-fill"></div>
+                        </div>
+                    </div>
+                </div>
                 <div class="hud-right">
                     <div id="timer">00:00</div>
                     <div id="kill-count">击杀: 0</div>

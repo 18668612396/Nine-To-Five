@@ -4,6 +4,8 @@ class ZombieNewspaper extends Monster {
     static CONFIG = {
         id: 'zombie_newspaper',
         name: '读报僵尸',
+        desc: '报纸被毁后会愤怒加速',
+        icon: '📰',
         hp: 35,
         damage: 15,
         speed: 0.6,

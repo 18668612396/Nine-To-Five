@@ -4,6 +4,8 @@ class FrostQueen extends Boss {
     static CONFIG = {
         id: 'frost_queen',
         name: '冰霜女王',
+        desc: 'Boss - 冰冻领域',
+        icon: '❄️',
         hp: 4000,
         damage: 10,
         speed: 1.2,

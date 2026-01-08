@@ -4,6 +4,8 @@ class AbyssalEye extends Boss {
     static CONFIG = {
         id: 'abyssal_eye',
         name: '深渊之眼',
+        desc: 'Boss - 激光扫射',
+        icon: '👁️',
         hp: 4500,
         damage: 12,
         speed: 1.0,

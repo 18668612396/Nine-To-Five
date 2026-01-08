@@ -2,7 +2,8 @@
 
 Weapon.register('vampiric_scepter', {
     name: '吸血权杖',
-    icon: '🦇',
+    icon: '🪄',
+    iconColor: '#cc00cc',
     rarity: 'epic',
     desc: '击杀回能，持久作战',
     maxEnergy: 150,

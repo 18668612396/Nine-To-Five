@@ -33,6 +33,7 @@ class CollectionScreen extends FloatScreen {
                         <button class="collection-tab active" onclick="Lobby.showCollectionTab('characters', this)">👤 角色</button>
                         <button class="collection-tab" onclick="Lobby.showCollectionTab('enemies', this)">👹 敌人</button>
                         <button class="collection-tab" onclick="Lobby.showCollectionTab('skills', this)">🔮 技能</button>
+                        <button class="collection-tab" onclick="Lobby.showCollectionTab('weapons', this)">🪄 法杖</button>
                     </div>
                     <div id="collection-grid" class="collection-grid"></div>
                 </div>

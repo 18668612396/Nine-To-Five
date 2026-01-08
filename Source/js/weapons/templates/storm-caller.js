@@ -2,7 +2,8 @@
 
 Weapon.register('storm_caller', {
     name: '唤雷者',
-    icon: '⛈️',
+    icon: '🪄',
+    iconColor: '#66ccff',
     rarity: 'rare',
     desc: '雷电专精，连锁攻击',
     maxEnergy: 90,

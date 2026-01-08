@@ -2,7 +2,8 @@
 
 Weapon.register('power_staff', {
     name: '蓄能长杖',
-    icon: '🔮',
+    icon: '🪄',
+    iconColor: '#aa66ff',
     rarity: 'uncommon',
     desc: '缓慢但强力，大量槽位',
     maxEnergy: 200,

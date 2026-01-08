@@ -2,7 +2,8 @@
 
 Weapon.register('inferno_rod', {
     name: '炎魔之杖',
-    icon: '🔥',
+    icon: '🪄',
+    iconColor: '#ff6600',
     rarity: 'rare',
     desc: '火焰专精，高伤害',
     maxEnergy: 120,

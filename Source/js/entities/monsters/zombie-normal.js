@@ -4,6 +4,8 @@ class ZombieNormal extends Monster {
     static CONFIG = {
         id: 'zombie_normal',
         name: '普通僵尸',
+        desc: '行动迟缓的绿色僵尸',
+        icon: '🧟',
         hp: 30,
         damage: 8,
         speed: 0.8,

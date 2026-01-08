@@ -4,6 +4,8 @@ class ZombieCone extends Monster {
     static CONFIG = {
         id: 'zombie_cone',
         name: '路障僵尸',
+        desc: '头戴路障的僵尸，更耐打',
+        icon: '🚧',
         hp: 60,
         damage: 10,
         speed: 0.7,

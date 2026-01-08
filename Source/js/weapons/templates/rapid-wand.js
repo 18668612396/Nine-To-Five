@@ -2,7 +2,8 @@
 
 Weapon.register('rapid_wand', {
     name: '速射短杖',
-    icon: '⚡',
+    icon: '🪄',
+    iconColor: '#00ccff',
     rarity: 'common',
     desc: '快速施法，但槽位较少',
     maxEnergy: 60,

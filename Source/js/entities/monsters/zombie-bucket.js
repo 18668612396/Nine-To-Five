@@ -4,6 +4,8 @@ class ZombieBucket extends Monster {
     static CONFIG = {
         id: 'zombie_bucket',
         name: '铁桶僵尸',
+        desc: '头戴铁桶的僵尸，非常耐打',
+        icon: '🪣',
         hp: 50,
         damage: 12,
         speed: 0.6,

@@ -58,6 +58,47 @@ body {
     align-items: flex-start;
 }
 
+.hud-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 15px;
+}
+
+/* Boss血条 */
+#boss-hp-container {
+    text-align: center;
+    min-width: 300px;
+}
+
+#boss-hp-container.hidden {
+    display: none;
+}
+
+#boss-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ff6666;
+    text-shadow: 2px 2px 4px #000;
+    margin-bottom: 5px;
+}
+
+#boss-hp-bar-bg {
+    width: 300px;
+    height: 16px;
+    background: rgba(0,0,0,0.7);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #ff4444;
+}
+
+#boss-hp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff4444, #ff6666);
+    transition: width 0.2s;
+    width: 100%;
+}
+
 .settings-btn {
     width: 40px;
     height: 40px;
@@ -3124,4 +3165,203 @@ body {
 
 .preload-skill-item .skill-name {
     display: none;
+}
+
+
+/* ========== 新天赋树系统 ========== */
+.talent-tree-container {
+    position: relative;
+    width: 600px;
+    height: 500px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 15px;
+    overflow: hidden;
+    cursor: grab;
+}
+
+.talent-tree-container:active {
+    cursor: grabbing;
+}
+
+.talent-tree-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.talent-tree-nodes {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.talent-tree-node {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: rgba(30, 30, 50, 0.9);
+    border: 2px solid #444;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+}
+
+.talent-tree-node:hover:not(.locked) {
+    transform: translate(-50%, -50%) scale(1.1);
+    z-index: 10;
+}
+
+.talent-tree-node.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: #333;
+}
+
+.talent-tree-node.unlocked {
+    border-color: #666;
+}
+
+.talent-tree-node.available {
+    border-color: #ffd700;
+    animation: pulse-gold 1.5s infinite;
+}
+
+.talent-tree-node.active {
+    border-color: #66aaff;
+    background: rgba(68, 136, 204, 0.3);
+}
+
+.talent-tree-node.maxed {
+    border-color: #44ff44;
+    background: rgba(68, 255, 68, 0.2);
+}
+
+.talent-tree-node.rare {
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+@keyframes pulse-gold {
+    0%, 100% { box-shadow: 0 0 5px rgba(255, 215, 0, 0.3); }
+    50% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+}
+
+.talent-tree-node .node-icon {
+    font-size: 18px;
+    margin-bottom: 1px;
+}
+
+.talent-tree-node .node-level {
+    font-size: 9px;
+    color: #ffd700;
+}
+
+/* 天赋详情面板 */
+.talent-detail-panel {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    border: 2px solid #4488cc;
+    border-radius: 10px;
+    padding: 12px 20px;
+    min-width: 250px;
+    text-align: center;
+    z-index: 20;
+}
+
+.talent-detail-panel.hidden {
+    display: none;
+}
+
+.talent-detail-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ffd700;
+    margin-bottom: 5px;
+}
+
+.talent-detail-desc {
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 8px;
+}
+
+.talent-detail-level {
+    font-size: 14px;
+    color: #66aaff;
+    margin-bottom: 5px;
+}
+
+.talent-detail-cost {
+    font-size: 12px;
+    color: #ffd700;
+}
+
+.talent-detail-cost.cant-afford {
+    color: #ff6666;
+}
+
+.talent-detail-req {
+    font-size: 11px;
+    color: #ff6666;
+    margin-top: 5px;
+}
+
+/* 分支颜色 */
+.talent-tree-node.branch-attack { border-color: #ff6b6b; }
+.talent-tree-node.branch-attack.active { background: rgba(255, 107, 107, 0.2); }
+.talent-tree-node.branch-attack.maxed { background: rgba(255, 107, 107, 0.3); border-color: #ff8888; }
+
+.talent-tree-node.branch-defense { border-color: #66ff66; }
+.talent-tree-node.branch-defense.active { background: rgba(102, 255, 102, 0.2); }
+.talent-tree-node.branch-defense.maxed { background: rgba(102, 255, 102, 0.3); border-color: #88ff88; }
+
+.talent-tree-node.branch-utility { border-color: #66b3ff; }
+.talent-tree-node.branch-utility.active { background: rgba(102, 179, 255, 0.2); }
+.talent-tree-node.branch-utility.maxed { background: rgba(102, 179, 255, 0.3); border-color: #88ccff; }
+
+.talent-tree-node.branch-fortune { border-color: #ffcc00; }
+.talent-tree-node.branch-fortune.active { background: rgba(255, 204, 0, 0.2); }
+.talent-tree-node.branch-fortune.maxed { background: rgba(255, 204, 0, 0.3); border-color: #ffdd44; }
+
+.talent-tree-node.branch-center { border-color: #ffd700; }
+.talent-tree-node.branch-center.maxed { background: rgba(255, 215, 0, 0.3); }
+
+@media (max-width: 768px) {
+    .talent-tree-container {
+        width: 95vw;
+        height: 400px;
+    }
+    
+    .talent-tree-node {
+        width: 45px;
+        height: 45px;
+    }
+    
+    .talent-tree-node .node-icon {
+        font-size: 16px;
+    }
+    
+    .talent-tree-node .node-level {
+        font-size: 8px;
+    }
+    
+    .talent-detail-panel {
+        min-width: 200px;
+        padding: 10px 15px;
+    }
 }
