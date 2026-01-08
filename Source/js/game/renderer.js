@@ -4,6 +4,9 @@ let CANVAS = null;
 let CTX = null;
 const dpr = window.devicePixelRatio || 1;
 
+// 移动端视野缩放（值越小看到越多）
+const mobileZoom = isMobile ? 0.7 : 1.0;
+
 function initCanvas() {
     CANVAS = document.getElementById('gameCanvas');
     if (!CANVAS) return;
@@ -21,10 +24,14 @@ function resizeCanvas() {
     CANVAS.height = height * dpr;
     CANVAS.style.width = width + 'px';
     CANVAS.style.height = height + 'px';
-    CTX.setTransform(dpr, 0, 0, dpr, 0, 0);
     
-    CONFIG.GAME_WIDTH = width;
-    CONFIG.GAME_HEIGHT = height;
+    // 移动端应用缩放，让视野更广
+    const scale = dpr * mobileZoom;
+    CTX.setTransform(scale, 0, 0, scale, 0, 0);
+    
+    // 逻辑尺寸 = 实际尺寸 / 缩放
+    CONFIG.GAME_WIDTH = width / mobileZoom;
+    CONFIG.GAME_HEIGHT = height / mobileZoom;
 }
 
 const Renderer = {
