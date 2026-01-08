@@ -190,6 +190,20 @@ const Game = {
                 Renderer.addExplosion(data.x, data.y, data.radius);
             }
         });
+        
+        // 爆炸伤害（敌人死亡爆炸等）
+        Events.on(EVENT.EXPLOSION_DAMAGE, (data) => {
+            if (!this.player) return;
+            const dx = this.player.x - data.x;
+            const dy = this.player.y - data.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < data.radius + this.player.radius) {
+                // 距离越近伤害越高
+                const damageMult = 1 - (dist / data.radius) * 0.5;
+                this.player.takeDamage(Math.floor(data.damage * damageMult));
+            }
+        });
     },
     
     // 开始游戏

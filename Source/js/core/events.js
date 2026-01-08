@@ -58,6 +58,7 @@ const EVENT = {
     PROJECTILE_FIRE: 'projectile:fire',
     PROJECTILE_HIT: 'projectile:hit',
     SKILL_CAST: 'skill:cast',
+    EXPLOSION_DAMAGE: 'explosion:damage',
     
     // 拾取相关
     XP_GAIN: 'xp:gain',

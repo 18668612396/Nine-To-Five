@@ -4,7 +4,7 @@ class ZombieBucket extends Monster {
     static CONFIG = {
         id: 'zombie_bucket',
         name: '铁桶僵尸',
-        desc: '头戴铁桶的僵尸，非常耐打',
+        desc: '头戴铁桶的僵尸，非常耐打，死亡时会爆炸',
         icon: '🪣',
         hp: 50,
         damage: 12,
@@ -21,6 +21,59 @@ class ZombieBucket extends Monster {
         this.bodyColor = '#6a9aaa';
         this.darkColor = '#4a7a8a';
         this.spotColor = '#5a8a9a';
+        
+        // 爆炸属性
+        this.explosionRadius = 80;
+        this.explosionDamage = 20 * scaleMult;
+    }
+    
+    // 重写死亡方法，添加爆炸效果
+    die(source = null) {
+        if (this.markedForDeletion) return;
+        
+        // 爆炸伤害玩家
+        this.explode();
+        
+        // 调用父类死亡逻辑
+        super.die(source);
+    }
+    
+    explode() {
+        // 爆炸特效
+        Events.emit(EVENT.PARTICLES, {
+            x: this.x, y: this.y,
+            count: 25,
+            color: '#ff6600',
+            altColor: '#ffaa00',
+            spread: 6,
+            size: 8
+        });
+        
+        Events.emit(EVENT.PARTICLES, {
+            x: this.x, y: this.y,
+            count: 15,
+            color: '#888',
+            spread: 4,
+            size: 6
+        });
+        
+        // 爆炸范围指示
+        Events.emit(EVENT.SKILL_CAST, {
+            type: 'explosion',
+            x: this.x,
+            y: this.y,
+            radius: this.explosionRadius,
+            life: 20,
+            maxLife: 20
+        });
+        
+        // 检测玩家是否在爆炸范围内
+        Events.emit(EVENT.EXPLOSION_DAMAGE, {
+            x: this.x,
+            y: this.y,
+            radius: this.explosionRadius,
+            damage: this.explosionDamage
+        });
     }
     
     takeDamage(amount, kbX = 0, kbY = 0, source = null) {
