@@ -75,6 +75,11 @@ class Player extends Entity {
         
         if (input.x > 0) this.facingRight = true;
         if (input.x < 0) this.facingRight = false;
+        
+        // 应用武器拾取范围加成
+        if (this.weapon && this.weapon.pickupBonus > 0) {
+            this.pickupRange = 100 * (1 + this.weapon.pickupBonus);
+        }
 
         // 生命恢复
         if (this.regen > 0 && this.hp < this.maxHp) {

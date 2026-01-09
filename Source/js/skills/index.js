@@ -166,8 +166,9 @@ class SkillDrop {
     }
 }
 
-function trySpawnSkillDrop(x, y, player) {
-    const dropChance = 0.06 * (player.dropRate || 1);
+function trySpawnSkillDrop(x, y, player, bonusChance = 0) {
+    const baseChance = 0.06 * (player.dropRate || 1);
+    const dropChance = baseChance + bonusChance;
     if (Math.random() > dropChance) return;
     
     const skillIds = Object.keys(ALL_SKILLS);

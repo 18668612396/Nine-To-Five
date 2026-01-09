@@ -181,8 +181,7 @@ const Inventory = {
                     slotDiv.classList.add('has-skill');
                     slotDiv.classList.add(slot.type === 'magic' ? 'magic-type' : 'modifier-type');
                     const starText = '⭐'.repeat(star);
-                    const costText = cost > 0 ? `<span class="skill-cost">⚡${cost}</span>` : '';
-                    slotDiv.innerHTML = `<span class="slot-index">${i + 1}</span>${slot.icon}<span class="star-badge">${starText}</span>${costText}`;
+                    slotDiv.innerHTML = `<span class="slot-index">${i + 1}</span>${slot.icon}<span class="star-badge">${starText}</span>`;
                     // 支持动态描述（如拓展技能根据星级显示不同描述）
                     const desc = (slot.getDesc && typeof slot.getDesc === 'function') ? slot.getDesc(star) : (slot.desc || '');
                     slotDiv.title = `${slot.name} (${star}星)\n${desc}\n能量消耗: ${cost}`;
@@ -277,8 +276,7 @@ const Inventory = {
                         slotDiv.classList.add('has-skill');
                         slotDiv.classList.add(slot.type === 'magic' ? 'magic-type' : 'modifier-type');
                         const starText = '⭐'.repeat(star);
-                        const costText = cost > 0 ? `<span class="skill-cost">⚡${cost}</span>` : '';
-                        slotDiv.innerHTML = `<span class="slot-index">S${i + 1}</span>${slot.icon}<span class="star-badge">${starText}</span>${costText}`;
+                        slotDiv.innerHTML = `<span class="slot-index">S${i + 1}</span>${slot.icon}<span class="star-badge">${starText}</span>`;
                         const desc = (slot.getDesc && typeof slot.getDesc === 'function') ? slot.getDesc(star) : (slot.desc || '');
                         slotDiv.title = `[特殊槽] ${slot.name} (${star}星)\n${desc}\n能量消耗: ${cost}`;
                     } else {
@@ -499,8 +497,7 @@ const Inventory = {
             div.draggable = true;
             div.dataset.inventoryIndex = idx;
             const starText = '⭐'.repeat(star);
-            const costText = cost > 0 ? `<span class="skill-cost">⚡${cost}</span>` : '';
-            div.innerHTML = `<span class="item-icon">${skill.icon}</span><span class="star-badge">${starText}</span>${costText}`;
+            div.innerHTML = `<span class="item-icon">${skill.icon}</span><span class="star-badge">${starText}</span>`;
             // 支持动态描述
             const desc = (skill.getDesc && typeof skill.getDesc === 'function') ? skill.getDesc(star) : (skill.desc || '');
             div.title = `${skill.name} (${star}星)\n${desc}\n能量消耗: ${cost}`;

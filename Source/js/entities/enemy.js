@@ -28,9 +28,18 @@ class Enemy extends Entity {
         this.poisonDuration = 0;
         this.slowAmount = 0;
         this.slowDuration = 0;
+        this.freezeDuration = 0;
+        this.weakenAmount = 0;
+        this.weakenDuration = 0;
     }
     
     update(player) {
+        // 冰冻状态下不能移动
+        if (this.freezeDuration > 0) {
+            this.freezeDuration--;
+            return;
+        }
+        
         // 更新状态效果
         this.updateStatusEffects();
         
@@ -93,17 +102,22 @@ class Enemy extends Entity {
         if (this.slowDuration > 0) {
             this.slowDuration--;
         }
+        
+        // 虚弱
+        if (this.weakenDuration > 0) {
+            this.weakenDuration--;
+        }
     }
     
     // 添加灼烧效果
-    addBurn(damage, duration) {
-        this.burnDamage = Math.max(this.burnDamage, damage);
-        this.burnDuration = Math.max(this.burnDuration, duration);
+    addBurn(duration, damagePerSecond) {
+        this.burnDamage = Math.max(this.burnDamage, damagePerSecond);
+        this.burnDuration = Math.max(this.burnDuration, duration * 60);
     }
     
     // 添加中毒效果
-    addPoison(stacks) {
-        this.poisonStacks += stacks;
+    addPoison(damagePerStack) {
+        this.poisonStacks = Math.min(10, this.poisonStacks + 1);
         this.poisonDuration = 300;
     }
     
@@ -113,19 +127,38 @@ class Enemy extends Entity {
         this.slowDuration = Math.max(this.slowDuration, duration);
     }
     
+    // 添加冰冻效果
+    freeze(duration) {
+        this.freezeDuration = Math.max(this.freezeDuration, duration);
+    }
+    
+    // 添加虚弱效果
+    addWeaken(amount, duration) {
+        this.weakenAmount = Math.max(this.weakenAmount, amount);
+        this.weakenDuration = Math.max(this.weakenDuration, duration);
+    }
+    
+    // 获取受到的伤害倍率（虚弱效果）
+    getDamageTakenMult() {
+        return this.weakenDuration > 0 ? (1 + this.weakenAmount) : 1;
+    }
+    
     takeDamage(amount, kbX = 0, kbY = 0, source = null) {
-        this.hp -= amount;
+        // 应用虚弱效果
+        const finalAmount = Math.floor(amount * this.getDamageTakenMult());
+        
+        this.hp -= finalAmount;
         this.knockbackX += kbX;
         this.knockbackY += kbY;
         
         Events.emit(EVENT.ENEMY_DAMAGE, {
             enemy: this,
-            amount,
+            amount: finalAmount,
             source
         });
         
         Events.emit(EVENT.FLOATING_TEXT, {
-            text: '-' + Math.floor(amount),
+            text: '-' + Math.floor(finalAmount),
             x: this.x, y: this.y - this.radius - 10,
             color: '#ff4444'
         });

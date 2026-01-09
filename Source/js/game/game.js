@@ -66,13 +66,21 @@ const Game = {
                 this.maxCombo = this.currentCombo;
             }
             
-            // 掉落经验宝石
+            // 获取武器加成
+            const weapon = this.player?.weapon;
+            const goldBonus = weapon?.goldBonus || 0;
+            const xpBonus = weapon?.xpBonus || 0;
+            const skillDropBonus = weapon?.skillDropBonus || 0;
+            
+            // 掉落经验宝石（应用经验加成）
             if (data.xpValue) {
-                this.spawnGem(data.x, data.y, data.xpValue);
+                const xpAmount = Math.floor(data.xpValue * (1 + xpBonus));
+                this.spawnGem(data.x, data.y, xpAmount);
             }
             
-            // 掉落金币
-            const goldAmount = Math.floor((1 + Math.random() * 2) * this.goldMult * (this.difficultyMult.reward || 1));
+            // 掉落金币（应用金币加成）
+            const baseGold = (1 + Math.random() * 2) * this.goldMult * (this.difficultyMult.reward || 1);
+            const goldAmount = Math.floor(baseGold * (1 + goldBonus));
             this.gold += goldAmount;
             
             // 吸血效果
@@ -87,14 +95,14 @@ const Game = {
                 Renderer.addFloatingText('+🛡️' + this.player.shieldOnKill, this.player.x, this.player.y - 40, '#66ccff');
             }
             
-            // 通知武器击杀（回能、生命汲取等）
+            // 通知武器击杀（回能、生命汲取、连锁闪电、爆炸等）
             if (this.player && this.player.weapon) {
-                this.player.weapon.onKill(this.player);
+                this.player.weapon.onKill(this.player, data.enemy);
             }
             
-            // 掉落技能
+            // 掉落技能（应用技能掉落加成）
             if (typeof trySpawnSkillDrop !== 'undefined') {
-                trySpawnSkillDrop(data.x, data.y, this.player);
+                trySpawnSkillDrop(data.x, data.y, this.player, skillDropBonus);
             }
             
             this.updateUI();
@@ -493,9 +501,9 @@ const Game = {
                             
                             if (p.onHit) p.onHit(e);
                             
-                            // 通知武器命中（用于命中计数触发）
+                            // 通知武器命中（用于状态效果触发）
                             if (this.player && this.player.weapon) {
-                                this.player.weapon.onHit(e);
+                                this.player.weapon.onHit(e, dmg);
                             }
                             
                             if (p.hitList.length >= p.penetrate && !p.isHovering) {
@@ -518,9 +526,9 @@ const Game = {
                             
                             if (p.onHit) p.onHit(boss);
                             
-                            // 通知武器命中（用于命中计数触发）
+                            // 通知武器命中（用于状态效果触发）
                             if (this.player && this.player.weapon) {
-                                this.player.weapon.onHit(boss);
+                                this.player.weapon.onHit(boss, dmg);
                             }
                             
                             if (p.hitList.length >= p.penetrate && !p.isHovering) {
@@ -536,7 +544,7 @@ const Game = {
         this.enemies.forEach(e => {
             if (Collision.checkCircle(e, this.player)) {
                 if (this.frameCount % 30 === 0) {
-                    this.damagePlayer(e.damage);
+                    this.damagePlayer(e.damage, false, e);
                 }
             }
         });
@@ -545,7 +553,7 @@ const Game = {
         Boss.Manager.bosses.forEach(boss => {
             if (Collision.checkCircle(boss, this.player)) {
                 if (this.frameCount % 30 === 0) {
-                    this.damagePlayer(boss.damage, true);
+                    this.damagePlayer(boss.damage, true, boss);
                 }
             }
         });
@@ -687,8 +695,17 @@ const Game = {
     },
     
     // 玩家受伤
-    damagePlayer(damage, isBoss = false) {
+    damagePlayer(damage, isBoss = false, attacker = null) {
         let actualDamage = Math.round(damage);
+        
+        // 检查闪避（致命伤害时）
+        if (this.player.weapon && actualDamage >= this.player.hp) {
+            if (this.player.weapon.checkDodge()) {
+                this.addFloatingText('闪避!', this.player.x, this.player.y - 30, '#ffff00');
+                Renderer.spawnParticles(this.player.x, this.player.y, '#ffff00', 5);
+                return;
+            }
+        }
         
         // 护盾吸收
         if (this.player.shield && this.player.shield > 0) {
@@ -704,6 +721,11 @@ const Game = {
             this.player.hp -= actualDamage;
             this.damageTaken += actualDamage;
             this.addFloatingText("-" + actualDamage, this.player.x, this.player.y - 30, isBoss ? '#ff0000' : '#ff4444');
+            
+            // 通知武器受伤（荆棘反伤等）
+            if (this.player.weapon) {
+                this.player.weapon.onHurt(this.player, actualDamage, attacker);
+            }
         }
         
         Renderer.spawnParticles(this.player.x, this.player.y, '#ff0000', isBoss ? 8 : 5);

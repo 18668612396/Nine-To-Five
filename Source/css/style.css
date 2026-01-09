@@ -2812,6 +2812,10 @@ body {
         font-size: 12px;
     }
     
+    .inv-surrender-btn {
+        display: none;
+    }
+    
     /* 天赋树 */
     .talent-grid {
         grid-template-columns: repeat(2, 1fr);
