@@ -185,7 +185,7 @@ class LevelUpScreen extends FloatScreen {
     
     onEnter() {
         if (typeof Game !== 'undefined') {
-            Game.state = 'LEVEL_UP';
+            Game.pauseGame();
         }
         
         const levelEl = document.getElementById('levelup-level');
@@ -193,8 +193,8 @@ class LevelUpScreen extends FloatScreen {
     }
     
     onExit() {
-        if (typeof Game !== 'undefined' && Game.state === 'LEVEL_UP') {
-            Game.state = 'PLAYING';
+        if (typeof Game !== 'undefined') {
+            Game.unpauseGame();
         }
         this.hidePerkTooltip();
     }

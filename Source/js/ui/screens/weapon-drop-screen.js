@@ -48,14 +48,14 @@ class WeaponDropScreen extends FloatScreen {
     
     onEnter() {
         if (typeof Game !== 'undefined') {
-            Game.state = 'PAUSED';
+            Game.pauseGame();
         }
         this.renderOptions();
     }
     
     onExit() {
-        if (typeof Game !== 'undefined' && Game.state === 'PAUSED') {
-            Game.state = 'PLAYING';
+        if (typeof Game !== 'undefined') {
+            Game.unpauseGame();
         }
     }
     

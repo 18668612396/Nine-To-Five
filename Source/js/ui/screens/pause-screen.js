@@ -56,13 +56,13 @@ class PauseScreen extends FloatScreen {
     
     onEnter() {
         if (typeof Game !== 'undefined') {
-            Game.state = 'PAUSED';
+            Game.pauseGame();
         }
     }
     
     onExit() {
-        if (typeof Game !== 'undefined' && Game.state === 'PAUSED') {
-            Game.state = 'PLAYING';
+        if (typeof Game !== 'undefined') {
+            Game.unpauseGame();
         }
     }
     

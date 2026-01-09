@@ -2193,6 +2193,173 @@ body {
     margin-top: 10px;
 }
 
+/* 新天赋树布局 */
+#talent-modal {
+    justify-content: center;
+    align-items: center;
+}
+
+#talent-modal .modal-container.wide.talent-modal-container {
+    max-height: calc(100vh - 80px);
+    height: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    max-width: 600px;
+}
+
+.talent-branches-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 12px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.talent-branch {
+    display: flex;
+    flex-direction: column;
+    background: rgba(30, 30, 50, 0.5);
+    border: 2px solid #444;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.talent-branch-title {
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 8px;
+    white-space: nowrap;
+}
+
+.talent-branch-nodes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.talent-node-new {
+    width: 66px;
+    height: 66px;
+    background: rgba(30, 30, 50, 0.9);
+    border: 2px solid #444;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.talent-node-new:hover:not(.locked) {
+    transform: scale(1.1);
+    z-index: 10;
+}
+
+.talent-node-new.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.talent-node-new.available {
+    animation: pulse-gold 1.5s infinite;
+    box-shadow: 0 0 8px currentColor;
+}
+
+.talent-node-new.active {
+    background: rgba(100, 100, 150, 0.4);
+}
+
+.talent-node-new.maxed {
+    background: rgba(68, 255, 68, 0.2);
+    border-color: #44ff44 !important;
+}
+
+.talent-node-new.infinite-active {
+    background: rgba(170, 136, 255, 0.2);
+    border-color: #aa88ff !important;
+}
+
+.talent-node-new.infinite-available {
+    background: rgba(170, 136, 255, 0.3);
+    border-color: #aa88ff !important;
+    animation: pulse-purple 1.5s infinite;
+}
+
+.talent-node-new.rare {
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.talent-node-new .node-icon {
+    font-size: 24px;
+}
+
+.talent-node-new .node-level {
+    font-size: 12px;
+    color: #aaa;
+}
+
+.talent-node-new.active .node-level,
+.talent-node-new.maxed .node-level {
+    color: #ffd700;
+}
+
+@keyframes pulse-purple {
+    0%, 100% { box-shadow: 0 0 5px rgba(170, 136, 255, 0.5); }
+    50% { box-shadow: 0 0 15px rgba(170, 136, 255, 0.8); }
+}
+
+@media (max-width: 768px) {
+    #talent-modal .modal-container.wide.talent-modal-container {
+        padding: 15px;
+        width: 95%;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+    
+    .talent-branches-container {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        padding: 6px;
+    }
+    
+    .talent-branch {
+        padding: 6px;
+        border-radius: 6px;
+    }
+    
+    .talent-branch-title {
+        font-size: 11px;
+        padding: 3px 0;
+        margin-bottom: 5px;
+    }
+    
+    .talent-branch-nodes {
+        gap: 5px;
+    }
+    
+    .talent-node-new {
+        width: 72px;
+        height: 72px;
+        border-radius: 6px;
+    }
+    
+    .talent-node-new .node-icon {
+        font-size: 26px;
+    }
+    
+    .talent-node-new .node-level {
+        font-size: 12px;
+    }
+}
+
 /* ========== 游戏结束 ========== */
 .gameover-stats {
     margin: 20px 0;
@@ -3770,11 +3937,11 @@ body {
 
 .talent-tree-node {
     position: absolute;
-    width: 50px;
-    height: 50px;
+    width: 42px;
+    height: 42px;
     background: rgba(30, 30, 50, 0.9);
     border: 2px solid #444;
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
     display: flex;

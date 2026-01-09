@@ -2,6 +2,7 @@
 
 const Game = {
     state: 'MENU',  // MENU, PLAYING, PAUSED, LEVEL_UP, INVENTORY, GAME_OVER, WEAPON_DROP
+    pauseCount: 0,  // 暂停计数器，用于处理多个暂停界面同时打开的情况
     
     // 游戏对象
     player: null,
@@ -316,6 +317,7 @@ const Game = {
         this.bossKills = 0;
         this.maxCombo = 0;
         this.currentCombo = 0;
+        this.pauseCount = 0;  // 重置暂停计数器
         
         // 清除法师僵尸的激光陷阱
         if (typeof ZombieMage !== 'undefined') {
@@ -655,7 +657,6 @@ const Game = {
     levelUp() {
         this.level++;
         this.xpToNext = Math.floor(this.xpToNext * 1.25);
-        this.state = 'LEVEL_UP';
         Audio.play('levelup');
         this.showUpgradeMenu();
         this.updateUI();
@@ -680,7 +681,6 @@ const Game = {
         }
         
         Screen.Manager.closeFloat('levelUp');
-        this.state = 'PLAYING';
         this.updateUI();
     },
     
@@ -915,6 +915,22 @@ const Game = {
     
     // ========== 界面控制 ==========
     
+    // 暂停游戏（增加暂停计数）
+    pauseGame() {
+        this.pauseCount++;
+        if (this.state === 'PLAYING') {
+            this.state = 'PAUSED';
+        }
+    },
+    
+    // 恢复游戏（减少暂停计数，只有计数为0时才真正恢复）
+    unpauseGame() {
+        this.pauseCount = Math.max(0, this.pauseCount - 1);
+        if (this.pauseCount === 0 && this.state !== 'GAME_OVER' && this.state !== 'MENU') {
+            this.state = 'PLAYING';
+        }
+    },
+    
     openPauseMenu() {
         if (this.state !== 'PLAYING') return;
         Screen.Manager.openFloat('inventory');
@@ -1047,7 +1063,6 @@ const Game = {
     
     showWeaponDrop(weapons) {
         this.pendingWeaponDrops = weapons;
-        this.state = 'WEAPON_DROP';
         
         const weaponDropScreen = Screen.Manager.get('weaponDrop');
         if (weaponDropScreen && weaponDropScreen.setWeapons) {
@@ -1080,7 +1095,6 @@ const Game = {
     closeWeaponDrop() {
         Screen.Manager.closeFloat('weaponDrop');
         this.pendingWeaponDrops = null;
-        this.state = 'PLAYING';
     }
 };
 
