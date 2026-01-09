@@ -123,18 +123,30 @@ class TalentScreen extends FloatScreen {
                 // 移动端长按显示信息
                 node.addEventListener('touchstart', (e) => {
                     this.isLongPress = false;
+                    const self = this;
                     this.longPressTimer = setTimeout(() => {
-                        this.isLongPress = true;
-                        this.showTooltip(talentId);
+                        self.isLongPress = true;
+                        self.longPressTimer = null;
+                        self.showTooltip(talentId);
                     }, this.longPressDelay);
                 }, { passive: true });
                 
-                node.addEventListener('touchend', () => {
-                    clearTimeout(this.longPressTimer);
+                node.addEventListener('touchend', (e) => {
+                    if (this.longPressTimer) {
+                        clearTimeout(this.longPressTimer);
+                        this.longPressTimer = null;
+                    }
+                    // 如果是长按，阻止后续点击
+                    if (this.isLongPress) {
+                        e.preventDefault();
+                    }
                 });
                 
                 node.addEventListener('touchmove', () => {
-                    clearTimeout(this.longPressTimer);
+                    if (this.longPressTimer) {
+                        clearTimeout(this.longPressTimer);
+                        this.longPressTimer = null;
+                    }
                 });
                 
                 node.title = `${talent.name}\n${talent.desc}\n费用: ${TalentTree.getCost(talentId)} 金币`;
@@ -171,11 +183,17 @@ class TalentScreen extends FloatScreen {
         
         document.body.appendChild(tooltip);
         
-        // 点击任意处关闭
+        // 延迟添加关闭监听，避免立即触发
+        const self = this;
         setTimeout(() => {
-            document.addEventListener('touchstart', () => this.hideTooltip(), { once: true });
-            document.addEventListener('click', () => this.hideTooltip(), { once: true });
-        }, 100);
+            const closeHandler = () => {
+                self.hideTooltip();
+                document.removeEventListener('touchstart', closeHandler);
+                document.removeEventListener('click', closeHandler);
+            };
+            document.addEventListener('touchstart', closeHandler);
+            document.addEventListener('click', closeHandler);
+        }, 300);
     }
     
     hideTooltip() {
