@@ -246,17 +246,18 @@ const Game = {
         // 应用难度
         this.applyDifficulty(config.difficulty);
         
-        // 设置初始技能
-        if (config.weapon && typeof MAGIC_SKILLS !== 'undefined' && MAGIC_SKILLS[config.weapon]) {
-            this.player.weapon.slots[0] = { ...MAGIC_SKILLS[config.weapon], star: 1 };
-        }
-        
-        // 添加预装技能
+        // 添加预装技能到武器槽位
         if (config.preloadedSkills && config.preloadedSkills.length > 0) {
+            const weapon = this.player.weapon;
+            let slotIndex = 0;
             config.preloadedSkills.forEach(skillId => {
                 const skill = typeof ALL_SKILLS !== 'undefined' ? ALL_SKILLS[skillId] : null;
-                if (skill) {
-                    this.player.weapon.inventory.push({ ...skill, star: 1 });
+                if (skill && slotIndex < weapon.slotCount) {
+                    weapon.slots[slotIndex] = { ...skill, star: 1 };
+                    slotIndex++;
+                } else if (skill) {
+                    // 槽位满了，放入背包
+                    this.player.skillInventory.push({ ...skill, star: 1 });
                 }
             });
         }
