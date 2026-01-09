@@ -121,6 +121,15 @@ const Inventory = {
             const rowDiv = document.createElement('div');
             rowDiv.className = 'weapon-wand-row' + (isActive ? ' active' : '');
             
+            // 点击行背景切换武器
+            rowDiv.onclick = (e) => {
+                // 如果点击的是技能槽或武器槽内部，不切换
+                if (e.target.closest('.row-skill-slot') || e.target.closest('.row-weapon-slot')) return;
+                player.switchWeapon(rowIdx);
+                this.render();
+            };
+            rowDiv.style.cursor = 'pointer';
+            
             // 武器槽
             const weaponSlot = document.createElement('div');
             weaponSlot.className = 'row-weapon-slot';

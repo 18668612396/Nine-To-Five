@@ -3410,9 +3410,18 @@ body {
     transition: all 0.2s;
 }
 
+.hud-wand-row:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
 .hud-wand-row.active {
     background: rgba(255, 200, 0, 0.2);
     border-color: rgba(255, 200, 0, 0.5);
+}
+
+.hud-wand-row.active:hover {
+    background: rgba(255, 200, 0, 0.3);
 }
 
 .hud-wand-icon {

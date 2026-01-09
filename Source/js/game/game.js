@@ -841,6 +841,14 @@ const Game = {
             
             const wandRow = document.createElement('div');
             wandRow.className = 'hud-wand-row' + (isActive ? ' active' : '');
+            wandRow.style.cursor = 'pointer';
+            
+            // 点击切换武器
+            wandRow.onclick = () => {
+                this.player.switchWeapon(idx);
+                this.updateWandListUI();
+                this.updateWeaponUI();
+            };
             
             // 法杖图标
             const wandIcon = document.createElement('div');
