@@ -2268,7 +2268,7 @@ body {
 
 .talent-node-new.locked {
     opacity: 0.4;
-    cursor: not-allowed;
+    cursor: default;
 }
 
 .talent-node-new.available {
