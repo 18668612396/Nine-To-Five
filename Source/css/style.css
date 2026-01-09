@@ -3815,6 +3815,26 @@ body {
     background: rgba(68, 255, 68, 0.2);
 }
 
+.talent-tree-node.infinite {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.talent-tree-node.infinite-active {
+    border-color: #aa88ff;
+    background: rgba(170, 136, 255, 0.2);
+}
+
+.talent-tree-node.infinite-available {
+    border-color: #aa88ff;
+    background: rgba(170, 136, 255, 0.3);
+    animation: pulse-purple 1.5s infinite;
+}
+
+@keyframes pulse-purple {
+    0%, 100% { box-shadow: 0 0 5px rgba(170, 136, 255, 0.5); }
+    50% { box-shadow: 0 0 15px rgba(170, 136, 255, 0.8); }
+}
+
 .talent-tree-node.rare {
     box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
 }

@@ -169,6 +169,7 @@ class TalentScreen extends FloatScreen {
             const node = document.createElement('div');
             node.className = `talent-tree-node ${state} branch-${talent.branch}`;
             if (talent.rarity === 'rare') node.classList.add('rare');
+            if (talent.infinite) node.classList.add('infinite');
             
             const x = centerX + talent.position.x * this.gridSize;
             const y = startY + talent.position.y * this.gridSize;
@@ -176,9 +177,12 @@ class TalentScreen extends FloatScreen {
             node.style.left = `${x}px`;
             node.style.top = `${y}px`;
             
+            // 无限升级天赋显示 "Lv.X" 而不是 "X/∞"
+            const levelText = talent.infinite ? `Lv.${level}` : `${level}/${talent.maxLevel}`;
+            
             node.innerHTML = `
                 <span class="node-icon">${talent.icon}</span>
-                <span class="node-level">${level}/${talent.maxLevel}</span>
+                <span class="node-level">${levelText}</span>
             `;
             
             node.addEventListener('click', (e) => {

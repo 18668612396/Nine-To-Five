@@ -220,54 +220,58 @@ const TALENT_TREE = {
         rarity: 'rare'
     },
     
-    // ========== 第五层 ==========
+    // ========== 第五层（无限升级） ==========
     atk_3: {
         id: 'atk_3',
-        name: '攻击强化III',
+        name: '攻击精通',
         icon: '⚔️',
-        desc: '伤害+8%',
-        cost: 20,
-        maxLevel: 5,
-        bonus: { stat: 'damage', value: 0.08 },
+        desc: '伤害+2%',
+        cost: 100,
+        maxLevel: Infinity,
+        bonus: { stat: 'damage', value: 0.02 },
         requires: 'skill_slot_1',
         position: { x: -3, y: 5 },
-        branch: 'attack'
+        branch: 'attack',
+        infinite: true
     },
     hp_3: {
         id: 'hp_3',
-        name: '生命强化III',
+        name: '生命精通',
         icon: '❤️',
-        desc: '最大生命+8%',
-        cost: 20,
-        maxLevel: 5,
-        bonus: { stat: 'hp', value: 0.08 },
+        desc: '最大生命+2%',
+        cost: 100,
+        maxLevel: Infinity,
+        bonus: { stat: 'hp', value: 0.02 },
         requires: 'skill_slot_2',
         position: { x: -1, y: 5 },
-        branch: 'defense'
+        branch: 'defense',
+        infinite: true
     },
     speed_3: {
         id: 'speed_3',
-        name: '速度强化III',
+        name: '速度精通',
         icon: '🏃',
-        desc: '移速+5%',
-        cost: 20,
-        maxLevel: 5,
-        bonus: { stat: 'speed', value: 0.05 },
+        desc: '移速+1%',
+        cost: 100,
+        maxLevel: Infinity,
+        bonus: { stat: 'speed', value: 0.01 },
         requires: 'skill_slot_3',
         position: { x: 1, y: 5 },
-        branch: 'utility'
+        branch: 'utility',
+        infinite: true
     },
     gold_2: {
         id: 'gold_2',
-        name: '财富强化II',
+        name: '财富精通',
         icon: '💰',
-        desc: '金币+20%',
-        cost: 20,
-        maxLevel: 5,
-        bonus: { stat: 'gold', value: 0.2 },
+        desc: '金币+5%',
+        cost: 100,
+        maxLevel: Infinity,
+        bonus: { stat: 'gold', value: 0.05 },
         requires: 'skill_slot_4',
         position: { x: 3, y: 5 },
-        branch: 'fortune'
+        branch: 'fortune',
+        infinite: true
     }
 };
 
@@ -300,6 +304,10 @@ const TalentTree = {
     getCost(talentId) {
         const talent = TALENT_TREE[talentId];
         if (!talent) return 0;
+        // 无限升级天赋固定100金币
+        if (talent.infinite) {
+            return 100;
+        }
         // 技能槽位固定100金币，其他固定20金币
         if (talent.bonus && talent.bonus.stat === 'skillSlot') {
             return 100;
@@ -311,6 +319,8 @@ const TalentTree = {
     isMaxed(talentId) {
         const talent = TALENT_TREE[talentId];
         if (!talent) return true;
+        // 无限升级天赋永远不会满级
+        if (talent.infinite) return false;
         return this.getLevel(talentId) >= talent.maxLevel;
     },
     
@@ -343,10 +353,16 @@ const TalentTree = {
     
     // 获取节点状态
     getNodeState(talentId) {
+        const talent = TALENT_TREE[talentId];
         const level = this.getLevel(talentId);
         const maxed = this.isMaxed(talentId);
         const unlocked = this.canUnlock(talentId);
         const canUpgrade = this.canUpgrade(talentId);
+        
+        // 无限升级天赋特殊状态
+        if (talent && talent.infinite && level > 0) {
+            return canUpgrade ? 'infinite-available' : 'infinite-active';
+        }
         
         if (maxed) return 'maxed';
         if (level > 0) return 'active';

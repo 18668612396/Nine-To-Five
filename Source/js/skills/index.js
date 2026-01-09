@@ -97,12 +97,13 @@ function initUpgrades() {
 
 // 技能掉落
 class SkillDrop {
-    constructor(x, y, skillId) {
+    constructor(x, y, skillId, star = 1) {
         this.x = x;
         this.y = y;
         this.skillId = skillId;
         this.skill = ALL_SKILLS[skillId];
-        this.radius = 12;
+        this.star = star;
+        this.radius = 12 + (star - 1) * 2; // 高星级稍大
         this.floatOffset = Math.random() * Math.PI * 2;
         this.markedForDeletion = false;
         this.life = 600;
@@ -125,8 +126,10 @@ class SkillDrop {
             if (dist < player.radius + this.radius) {
                 const skill = ALL_SKILLS[this.skillId];
                 if (skill) {
-                    player.skillInventory.push({ ...skill, star: 1 });
-                    Game.addFloatingText('+' + this.skill.name, this.x, this.y, '#00ff00');
+                    player.skillInventory.push({ ...skill, star: this.star });
+                    const starText = this.star > 1 ? ` ★${this.star}` : '';
+                    const color = this.star >= 2 ? '#ffaa00' : '#00ff00';
+                    Game.addFloatingText('+' + this.skill.name + starText, this.x, this.y, color);
                     this.markedForDeletion = true;
                 }
             }
@@ -143,14 +146,22 @@ class SkillDrop {
         ctx.globalAlpha = flash;
         
         const isMagic = this.skill.type === 'magic';
+        // 2星技能有金色光环
+        if (this.star >= 2) {
+            ctx.fillStyle = 'rgba(255,215,0,0.5)';
+            ctx.beginPath();
+            ctx.arc(x, y + float, this.radius + 10, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
         ctx.fillStyle = isMagic ? 'rgba(255,200,0,0.4)' : 'rgba(100,200,255,0.4)';
         ctx.beginPath();
         ctx.arc(x, y + float, this.radius + 6, 0, Math.PI * 2);
         ctx.fill();
         
         ctx.fillStyle = isMagic ? '#ffcc00' : '#66ccff';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = this.star >= 2 ? '#ffd700' : '#000';
+        ctx.lineWidth = this.star >= 2 ? 3 : 2;
         ctx.beginPath();
         ctx.arc(x, y + float, this.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -161,6 +172,16 @@ class SkillDrop {
         ctx.textBaseline = 'middle';
         ctx.fillStyle = '#000';
         ctx.fillText(this.skill.icon, x, y + float);
+        
+        // 显示星级
+        if (this.star >= 2) {
+            ctx.font = 'bold 10px Arial';
+            ctx.fillStyle = '#ffd700';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.strokeText('★' + this.star, x, y + float - this.radius - 5);
+            ctx.fillText('★' + this.star, x, y + float - this.radius - 5);
+        }
         
         ctx.restore();
     }
@@ -174,6 +195,9 @@ function trySpawnSkillDrop(x, y, player, bonusChance = 0) {
     const skillIds = Object.keys(ALL_SKILLS);
     const randomSkillId = skillIds[Math.floor(Math.random() * skillIds.length)];
     
+    // 15%概率掉落2星技能
+    const star = Math.random() < 0.15 ? 2 : 1;
+    
     Game.skillDrops = Game.skillDrops || [];
-    Game.skillDrops.push(new SkillDrop(x, y, randomSkillId));
+    Game.skillDrops.push(new SkillDrop(x, y, randomSkillId, star));
 }
