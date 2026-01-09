@@ -12,7 +12,8 @@ class TalentScreen extends FloatScreen {
         this.domCreated = false;
         this.selectedTalent = null;
         this.longPressTimer = null;
-        this.tooltip = null;
+        this.longPressDelay = 400;
+        this.isLongPress = false;
     }
     
     createDOM() {
@@ -32,13 +33,11 @@ class TalentScreen extends FloatScreen {
                     <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
                 </div>
                 <div class="talent-branches-container" id="talent-branches-container"></div>
-                <p class="talent-hint">点击节点升级天赋，需要先点满前置节点</p>
-                <div id="talent-tooltip" class="talent-tooltip hidden"></div>
+                <p class="talent-hint">点击节点升级天赋，长按查看详情</p>
             </div>
         `;
         
         container.appendChild(el);
-        this.tooltip = document.getElementById('talent-tooltip');
         this.domCreated = true;
     }
     
@@ -114,35 +113,28 @@ class TalentScreen extends FloatScreen {
                 `;
                 
                 // PC端点击
-                node.addEventListener('click', (e) => {
-                    if (!this.longPressTimer) {
+                node.addEventListener('click', () => {
+                    if (!this.isLongPress) {
                         this.onNodeClick(talentId);
                     }
+                    this.isLongPress = false;
                 });
                 
                 // 移动端长按显示信息
                 node.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
+                    this.isLongPress = false;
                     this.longPressTimer = setTimeout(() => {
-                        this.showTooltip(talentId, e.touches[0]);
-                        this.longPressTimer = null;
-                    }, 300);
-                });
+                        this.isLongPress = true;
+                        this.showTooltip(talentId);
+                    }, this.longPressDelay);
+                }, { passive: true });
                 
-                node.addEventListener('touchend', (e) => {
-                    if (this.longPressTimer) {
-                        clearTimeout(this.longPressTimer);
-                        this.longPressTimer = null;
-                        this.onNodeClick(talentId);
-                    }
-                    this.hideTooltip();
+                node.addEventListener('touchend', () => {
+                    clearTimeout(this.longPressTimer);
                 });
                 
                 node.addEventListener('touchmove', () => {
-                    if (this.longPressTimer) {
-                        clearTimeout(this.longPressTimer);
-                        this.longPressTimer = null;
-                    }
+                    clearTimeout(this.longPressTimer);
                 });
                 
                 node.title = `${talent.name}\n${talent.desc}\n费用: ${TalentTree.getCost(talentId)} 金币`;
@@ -155,27 +147,40 @@ class TalentScreen extends FloatScreen {
         });
     }
     
-    showTooltip(talentId, touch) {
+    showTooltip(talentId) {
         const talent = TalentTree.get(talentId);
-        if (!talent || !this.tooltip) return;
+        if (!talent) return;
+        
+        // 移除旧的tooltip
+        this.hideTooltip();
         
         const level = TalentTree.getLevel(talentId);
         const cost = TalentTree.getCost(talentId);
         const levelText = talent.infinite ? `Lv.${level}` : `${level}/${talent.maxLevel}`;
         
-        this.tooltip.innerHTML = `
+        const tooltip = document.createElement('div');
+        tooltip.id = 'talent-tooltip';
+        tooltip.className = 'talent-tooltip';
+        tooltip.innerHTML = `
             <div class="tooltip-title">${talent.icon} ${talent.name}</div>
             <div class="tooltip-level">${levelText}</div>
             <div class="tooltip-desc">${talent.desc}</div>
             <div class="tooltip-cost">💰 ${cost}</div>
+            <div class="tooltip-hint">点击任意处关闭</div>
         `;
-        this.tooltip.classList.remove('hidden');
+        
+        document.body.appendChild(tooltip);
+        
+        // 点击任意处关闭
+        setTimeout(() => {
+            document.addEventListener('touchstart', () => this.hideTooltip(), { once: true });
+            document.addEventListener('click', () => this.hideTooltip(), { once: true });
+        }, 100);
     }
     
     hideTooltip() {
-        if (this.tooltip) {
-            this.tooltip.classList.add('hidden');
-        }
+        const tooltip = document.getElementById('talent-tooltip');
+        if (tooltip) tooltip.remove();
     }
     
     onNodeClick(talentId) {
