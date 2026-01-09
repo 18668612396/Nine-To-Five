@@ -155,8 +155,8 @@ const Input = {
         if (this.touch.active) {
             const deltaX = this.touch.currentX - this.touch.startX;
             const deltaY = this.touch.currentY - this.touch.startY;
-            const threshold = 15;
-            const maxDist = 80;
+            const threshold = 5;  // 减小死区，提高灵敏度
+            const maxDist = 50;   // 减小最大距离，更快达到满速
             
             if (Math.abs(deltaX) > threshold) {
                 x = Math.sign(deltaX) * Math.min(Math.abs(deltaX) / maxDist, 1);
