@@ -309,39 +309,23 @@ const Lobby = {
             slotsContainer.appendChild(slot);
         }
         
-        // 渲染可选技能列表
+        // 渲染可选技能列表 - 合并主动和被动技能到一个网格
         skillsGrid.innerHTML = '';
         
-        // 主动技能区域
+        // 先添加主动技能
         if (typeof MAGIC_SKILLS !== 'undefined') {
-            const magicSection = document.createElement('div');
-            magicSection.className = 'skill-section';
-            magicSection.innerHTML = '<h5 class="skill-section-title">🔥 主动技能</h5>';
-            const magicGrid = document.createElement('div');
-            magicGrid.className = 'skill-section-grid';
-            
             Object.values(MAGIC_SKILLS).forEach(skill => {
                 const div = this.createSkillItem(skill, slotCount, 'magic');
-                magicGrid.appendChild(div);
+                skillsGrid.appendChild(div);
             });
-            magicSection.appendChild(magicGrid);
-            skillsGrid.appendChild(magicSection);
         }
         
-        // 被动技能区域
+        // 再添加被动技能
         if (typeof MODIFIER_SKILLS !== 'undefined') {
-            const modifierSection = document.createElement('div');
-            modifierSection.className = 'skill-section';
-            modifierSection.innerHTML = '<h5 class="skill-section-title">💠 被动技能</h5>';
-            const modifierGrid = document.createElement('div');
-            modifierGrid.className = 'skill-section-grid';
-            
             Object.values(MODIFIER_SKILLS).forEach(skill => {
                 const div = this.createSkillItem(skill, slotCount, 'modifier');
-                modifierGrid.appendChild(div);
+                skillsGrid.appendChild(div);
             });
-            modifierSection.appendChild(modifierGrid);
-            skillsGrid.appendChild(modifierSection);
         }
     },
     

@@ -1430,6 +1430,9 @@ body {
     flex-direction: column;
     max-height: calc(100vh - 80px);
     overflow: hidden;
+    max-width: 90%;
+    width: auto;
+    min-width: 400px;
 }
 
 .modal-header {
@@ -1444,6 +1447,12 @@ body {
 .modal-header h2 {
     margin: 0;
     color: #4488cc;
+}
+
+.modal-header h2 .modal-hint {
+    font-size: 14px;
+    color: #888;
+    font-weight: normal;
 }
 
 .modal-close {
@@ -2751,6 +2760,30 @@ body {
         max-height: 100px;
     }
     
+    /* 预装技能弹窗响应式 */
+    #skill-preload-modal .modal-container.wide {
+        min-width: unset;
+        width: 95%;
+    }
+    
+    .preload-slot,
+    .preload-skill-item {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .preload-skill-icon,
+    .preload-skill-item .skill-icon {
+        font-size: 16px;
+    }
+    
+    .preload-skills-grid {
+        grid-template-columns: repeat(auto-fill, minmax(36px, 36px));
+        gap: 3px;
+        padding: 6px;
+        max-height: 150px;
+    }
+    
     .inventory-item {
         width: 36px;
         height: 36px;
@@ -3570,8 +3603,8 @@ body {
 }
 
 .preload-slot {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     background: rgba(50, 50, 80, 0.8);
     border: 2px solid #444;
     border-radius: 6px;
@@ -3618,41 +3651,45 @@ body {
 
 .preload-skills-container {
     flex: 1;
-    overflow-y: auto;
+    overflow: hidden;
     min-height: 0;
 }
 
 .preload-skills-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-/* 技能分类 */
-.skill-section {
-    margin-bottom: 0;
-}
-
-.skill-section-title {
-    color: #aaa;
-    font-size: 13px;
-    margin-bottom: 8px;
-}
-
-.skill-section-grid {
     display: grid;
-    grid-template-columns: repeat(10, 50px);
-    gap: 6px;
+    grid-template-columns: repeat(auto-fill, minmax(48px, 48px));
+    gap: 5px;
     background: rgba(30, 30, 50, 0.8);
     padding: 10px;
-    border-radius: 8px;
+    border-radius: 6px;
     border: 2px solid #333;
+    overflow-y: auto;
+    max-height: 200px;
+    align-content: start;
 }
 
-/* 预装技能项 - 格子样式 */
+.preload-skills-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+.preload-skills-grid::-webkit-scrollbar-track {
+    background: rgba(30, 30, 50, 0.5);
+    border-radius: 4px;
+}
+
+.preload-skills-grid::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 4px;
+}
+
+.preload-skills-grid::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* 预装技能项 - 与背包格子样式一致 */
 .preload-skill-item {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     background: rgba(50, 50, 80, 0.8);
     border: 2px solid #444;
     border-radius: 6px;

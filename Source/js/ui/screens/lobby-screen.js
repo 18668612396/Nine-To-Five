@@ -77,8 +77,6 @@ class LobbyScreen extends FullScreen {
                     </button>
                 </div>
             </div>
-            
-            <button class="lobby-back-btn" onclick="Lobby.backToTitle()">🚪 退出</button>
         `;
         
         container.appendChild(el);

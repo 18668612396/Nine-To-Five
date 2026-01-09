@@ -24,11 +24,10 @@ class SkillPreloadScreen extends FloatScreen {
         el.innerHTML = `
             <div class="modal-container wide">
                 <div class="modal-header">
-                    <h2>🔮 预装技能</h2>
+                    <h2>🔮 选择开局携带的技能</h2>
                     <button class="modal-close" onclick="Lobby.closeModal()">✕</button>
                 </div>
                 <div class="preload-content">
-                    <p class="preload-hint">选择开局携带的技能（1星）</p>
                     <div class="preload-slots-container">
                         <h4>技能槽位</h4>
                         <div id="preload-slots" class="preload-slots"></div>
