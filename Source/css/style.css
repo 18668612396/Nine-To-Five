@@ -2326,37 +2326,41 @@ body {
     
     .talent-branches-container {
         grid-template-columns: repeat(4, 1fr);
-        gap: 6px;
-        padding: 6px;
+        gap: 4px;
+        padding: 4px;
     }
     
     .talent-branch {
-        padding: 6px;
+        padding: 4px;
         border-radius: 6px;
     }
     
     .talent-branch-title {
-        font-size: 11px;
-        padding: 3px 0;
-        margin-bottom: 5px;
+        font-size: 10px;
+        padding: 2px 0;
+        margin-bottom: 4px;
     }
     
     .talent-branch-nodes {
-        gap: 5px;
+        gap: 4px;
     }
     
     .talent-node-new {
-        width: 72px;
-        height: 72px;
+        width: calc((100vw - 80px) / 4 - 16px);
+        height: calc((100vw - 80px) / 4 - 16px);
+        min-width: 40px;
+        min-height: 40px;
+        max-width: 72px;
+        max-height: 72px;
         border-radius: 6px;
     }
     
     .talent-node-new .node-icon {
-        font-size: 26px;
+        font-size: clamp(14px, 4vw, 26px);
     }
     
     .talent-node-new .node-level {
-        font-size: 12px;
+        font-size: clamp(8px, 2vw, 12px);
     }
 }
 
