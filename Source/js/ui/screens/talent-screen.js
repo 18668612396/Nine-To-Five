@@ -11,6 +11,8 @@ class TalentScreen extends FloatScreen {
         
         this.domCreated = false;
         this.selectedTalent = null;
+        this.longPressTimer = null;
+        this.tooltip = null;
     }
     
     createDOM() {
@@ -31,10 +33,12 @@ class TalentScreen extends FloatScreen {
                 </div>
                 <div class="talent-branches-container" id="talent-branches-container"></div>
                 <p class="talent-hint">点击节点升级天赋，需要先点满前置节点</p>
+                <div id="talent-tooltip" class="talent-tooltip hidden"></div>
             </div>
         `;
         
         container.appendChild(el);
+        this.tooltip = document.getElementById('talent-tooltip');
         this.domCreated = true;
     }
     
@@ -46,6 +50,10 @@ class TalentScreen extends FloatScreen {
     onEnter() {
         this.updateGoldDisplay();
         this.renderTalentTree();
+    }
+    
+    onExit() {
+        this.hideTooltip();
     }
     
     updateGoldDisplay() {
@@ -105,7 +113,38 @@ class TalentScreen extends FloatScreen {
                     <span class="node-level">${levelText}</span>
                 `;
                 
-                node.addEventListener('click', () => this.onNodeClick(talentId));
+                // PC端点击
+                node.addEventListener('click', (e) => {
+                    if (!this.longPressTimer) {
+                        this.onNodeClick(talentId);
+                    }
+                });
+                
+                // 移动端长按显示信息
+                node.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.longPressTimer = setTimeout(() => {
+                        this.showTooltip(talentId, e.touches[0]);
+                        this.longPressTimer = null;
+                    }, 300);
+                });
+                
+                node.addEventListener('touchend', (e) => {
+                    if (this.longPressTimer) {
+                        clearTimeout(this.longPressTimer);
+                        this.longPressTimer = null;
+                        this.onNodeClick(talentId);
+                    }
+                    this.hideTooltip();
+                });
+                
+                node.addEventListener('touchmove', () => {
+                    if (this.longPressTimer) {
+                        clearTimeout(this.longPressTimer);
+                        this.longPressTimer = null;
+                    }
+                });
+                
                 node.title = `${talent.name}\n${talent.desc}\n费用: ${TalentTree.getCost(talentId)} 金币`;
                 
                 nodesDiv.appendChild(node);
@@ -114,6 +153,29 @@ class TalentScreen extends FloatScreen {
             branchDiv.appendChild(nodesDiv);
             container.appendChild(branchDiv);
         });
+    }
+    
+    showTooltip(talentId, touch) {
+        const talent = TalentTree.get(talentId);
+        if (!talent || !this.tooltip) return;
+        
+        const level = TalentTree.getLevel(talentId);
+        const cost = TalentTree.getCost(talentId);
+        const levelText = talent.infinite ? `Lv.${level}` : `${level}/${talent.maxLevel}`;
+        
+        this.tooltip.innerHTML = `
+            <div class="tooltip-title">${talent.icon} ${talent.name}</div>
+            <div class="tooltip-level">${levelText}</div>
+            <div class="tooltip-desc">${talent.desc}</div>
+            <div class="tooltip-cost">💰 ${cost}</div>
+        `;
+        this.tooltip.classList.remove('hidden');
+    }
+    
+    hideTooltip() {
+        if (this.tooltip) {
+            this.tooltip.classList.add('hidden');
+        }
     }
     
     onNodeClick(talentId) {
